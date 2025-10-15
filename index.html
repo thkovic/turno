@@ -7,7 +7,7 @@
 <style>
 body { font-family: Arial, sans-serif; background-color: #fff; color: #333; margin:0; padding:0; }
 .container { max-width: 1000px; margin: 40px auto; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-radius: 8px; }
-h1,h2 { color: #2d6a4f; text-align: center; margin-bottom: 20px; }
+h1, h2 { color: #2d6a4f; text-align: center; margin-bottom: 20px; }
 form { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom:20px; }
 form label { display: block; font-weight: bold; margin-bottom: 4px; }
 form input, form textarea { width: 100%; padding: 8px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box; }
@@ -24,22 +24,26 @@ button:hover { background-color:#74c69d; }
 .editBtn { background-color:#52b788; padding:4px 8px; font-size:12px; border-radius:3px; cursor:pointer; }
 .editBtn:hover { background-color:#2d6a4f; }
 #filterInput, #matriculaFilter { padding:6px; width:250px; margin-bottom:10px; }
-#loginContainer { max-width:400px; margin:100px auto; padding:20px; border:1px solid #ccc; border-radius:8px; }
+#loginContainer { text-align:center; margin-top:50px; }
+#turnoContainer { display:none; }
 </style>
 </head>
 <body>
-
-<div id="loginContainer">
+<div class="container" id="loginContainer">
 <h1>Login</h1>
 <form id="loginForm">
-<label for="loginMatricula">Matrícula</label>
-<input type="text" id="loginMatricula" required placeholder="Digite sua matrícula"/>
+<div class="full-width">
+<label for="matriculaLogin">Matrícula</label>
+<input type="text" id="matriculaLogin" required/>
+</div>
+<div class="full-width">
 <button type="submit">Entrar</button>
+</div>
 </form>
-<div id="loginMsg" style="color:red;margin-top:10px;"></div>
+<p id="loginMsg"></p>
 </div>
 
-<div class="container" id="mainContainer" style="display:none;">
+<div class="container" id="turnoContainer">
 <h1>Passagem de Turno</h1>
 
 <form id="turnoForm">
@@ -69,20 +73,16 @@ button:hover { background-color:#74c69d; }
 </div>
 <div class="full-width">
 <label for="executante">Executante</label>
-<input type="text" id="executante" name="executante" readonly/>
+<input type="text" id="executante" name="executante" required/>
 </div>
 <div class="full-width">
-<label for="matricula">Matrícula</label>
-<input type="text" id="matricula" name="matricula" readonly/>
-</div>
-<div class="full-width">
+<input type="hidden" id="matricula" name="matricula"/>
 <button type="submit">Registrar Turno</button>
 </div>
 </form>
 
 <div class="history">
 <h2>Histórico</h2>
-
 <div style="margin-bottom:10px;">
 <label>Filtrar:</label>
 <input type="text" id="filterInput" placeholder="Digite para filtrar..."/>
@@ -102,28 +102,28 @@ button:hover { background-color:#74c69d; }
 <table id="historyTable">
 <thead>
 <tr>
-<th>Tipo</th>
-<th>Nome</th>
-<th>Matrícula</th>
-<th>Data</th>
+<th>Data / Hora Original</th>
 <th>Equipamento</th>
 <th>Acionamento</th>
 <th>Problema</th>
 <th>Solução</th>
 <th>Encerramento</th>
-<th>Data/Hora Edição</th>
-<th>Watchdog</th>
+<th>Executante</th>
+<th>Data / Hora Edição</th>
 <th>Ações</th>
 </tr>
 </thead>
 <tbody></tbody>
 </table>
 </div>
-</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
 
 <script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwFS6gRrIGYeWFZ9KYjSaOMLfJd_TTsrZcLNGyvdb7R0RZBcXrQUlgLUdAjNr7B58o/exec"; // substitua com o Web App URL
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwFS6gRrIGYeWFZ9KYjSaOMLfJd_TTsrZcLNGyvdb7R0RZBcXrQUlgLUdAjNr7B58o/exec"; // coloque aqui o Apps Script deployado como Web App
 
+// ====== Funções utilitárias ======
 function setDateTime(){
   const now = new Date();
   const formatted = now.toISOString().slice(0,16);
@@ -131,10 +131,8 @@ function setDateTime(){
   if(!dataInput.value) dataInput.value = formatted;
 }
 
-// Converter data para dd/mm/yyyy hh:mm
 function formatDateTime(dateStr){
   const date = new Date(dateStr);
-  if(isNaN(date)) return "";
   const day = String(date.getDate()).padStart(2,'0');
   const month = String(date.getMonth()+1).padStart(2,'0');
   const year = date.getFullYear();
@@ -145,79 +143,77 @@ function formatDateTime(dateStr){
 
 function formatHour(dateStr){
   const date = new Date(dateStr);
-  if(isNaN(date)) return "";
-  return String(date.getHours()).padStart(2,'0');
+  const hours = String(date.getHours()).padStart(2,'0');
+  return hours;
 }
 
-// Funções de fetch
-async function postData(obj){
-  const resp = await fetch(SCRIPT_URL,{method:"POST",body:JSON.stringify(obj)});
+// ====== POST para Apps Script ======
+async function postData(dataObj){
+  const resp = await fetch(SCRIPT_URL,{
+    method:"POST",
+    body: JSON.stringify(dataObj)
+  });
   return resp.json();
 }
 
+// ====== Buscar histórico ======
 async function fetchHistory(){
-  const resp = await fetch(SCRIPT_URL + "?action=getAll");
-  return resp.json();
+  const data = await postData({action:"getAll"});
+  if(Array.isArray(data)) return data;
+  return [];
 }
 
-// Render histórico
-function renderHistory(data){
-  const tbody = document.querySelector("#historyTable tbody");
-  tbody.innerHTML="";
-  data.forEach((row,index)=>{
+// ====== Renderizar histórico ======
+function renderHistory(dataArray){
+  const tbody = document.getElementById("historyTable").querySelector("tbody");
+  tbody.innerHTML = "";
+  dataArray.forEach((row,index)=>{
     const tr = document.createElement("tr");
-    const keys=["Tipo","Nome","Matrícula","Data","Equipamento","Acionamento","Problema","Solução","Encerramento","Data/Hora Edição","Watchdog"];
-    keys.forEach(k=>{
-      const td=document.createElement("td");
-      if(k=="Data" || k=="Data/Hora Edição") td.textContent=formatDateTime(row[k]);
-      else if(k=="Acionamento" || k=="Encerramento") td.textContent=formatHour(row[k]);
-      else td.textContent=row[k]||"";
-      tr.appendChild(td);
-    });
-    // Ações (Editar/Excluir)
-    const tdAction=document.createElement("td");
-    const btnEdit=document.createElement("button");
-    btnEdit.textContent="Editar";
-    btnEdit.className="editBtn";
-    btnEdit.dataset.index=index;
-    const btnDelete=document.createElement("button");
-    btnDelete.textContent="Excluir";
-    btnDelete.className="editBtn";
-    btnDelete.style.backgroundColor="#d9534f";
-    btnDelete.style.marginLeft="5px";
-    btnDelete.dataset.index=index;
-    tdAction.appendChild(btnEdit);
-    tdAction.appendChild(btnDelete);
-    tr.appendChild(tdAction);
+
+    tr.innerHTML = `
+      <td>${formatDateTime(row[3])}</td>
+      <td>${row[4]}</td>
+      <td>${formatHour(row[2])}</td>
+      <td>${row[6]}</td>
+      <td>${row[7]}</td>
+      <td>${formatHour(row[5])}</td>
+      <td>${row[1]}</td>
+      <td>${row[9] ? formatDateTime(row[9]) : ''}</td>
+      <td>
+        <button class="editBtn" data-row="${index+2}">Editar</button>
+        <button class="editBtn" style="background-color:#d9534f;margin-left:5px;" data-row="${index+2}">Excluir</button>
+      </td>
+    `;
     tbody.appendChild(tr);
   });
 }
 
-// Login
-document.getElementById("loginForm").addEventListener("submit", async e=>{
+// ====== Login ======
+document.getElementById("loginForm").addEventListener("submit", async (e)=>{
   e.preventDefault();
-  const matricula=document.getElementById("loginMatricula").value.trim();
+  const matricula = document.getElementById("matriculaLogin").value.trim();
   if(!matricula) return;
-  try{
-    const resp=await postData({login:true,matricula});
-    if(resp.success){
-      document.getElementById("loginContainer").style.display="none";
-      document.getElementById("mainContainer").style.display="block";
-      document.getElementById("executante").value=resp.nome;
-      document.getElementById("matricula").value=matricula;
-      const hist=await fetchHistory();
-      renderHistory(hist);
-    }else{
-      document.getElementById("loginMsg").textContent=resp.message;
-    }
-  }catch(err){console.error(err);document.getElementById("loginMsg").textContent="Erro ao conectar com servidor";}
+
+  const resp = await postData({login:true, matricula});
+  if(resp.success){
+    document.getElementById("loginContainer").style.display = "none";
+    document.getElementById("turnoContainer").style.display = "block";
+    document.getElementById("executante").value = resp.nome;
+    document.getElementById("matricula").value = matricula;
+    setDateTime();
+    const hist = await fetchHistory();
+    renderHistory(hist);
+  }else{
+    document.getElementById("loginMsg").innerText = resp.message;
+  }
 });
 
-// Registrar/Atualizar turno
-document.getElementById("turnoForm").addEventListener("submit", async e=>{
+// ====== Registrar / Atualizar turno ======
+document.getElementById("turnoForm").addEventListener("submit", async (e)=>{
   e.preventDefault();
-  setDateTime();
-  const obj={
+
+  const rowIndex = e.target.dataset.editRow;
+  const dataObj = {
     data: document.getElementById("data").value,
     equipamento: document.getElementById("equipamento").value,
     acionamento: document.getElementById("acionamento").value,
@@ -225,41 +221,32 @@ document.getElementById("turnoForm").addEventListener("submit", async e=>{
     solucao: document.getElementById("solucao").value,
     encerramento: document.getElementById("encerramento").value,
     executante: document.getElementById("executante").value,
-    matricula: document.getElementById("matricula").value
+    matricula: document.getElementById("matricula").value,
+    rowIndex: rowIndex,
+    action: rowIndex ? "update" : "insert"
   };
-  try{
-    const resp=await postData(obj);
-    if(resp.success){
-      document.getElementById("equipamento").value="";
-      document.getElementById("acionamento").value="";
-      document.getElementById("problema").value="";
-      document.getElementById("solucao").value="";
-      document.getElementById("encerramento").value="";
-      const hist=await fetchHistory();
-      renderHistory(hist);
-    }else{
-      alert(resp.message);
-    }
-  }catch(err){console.error(err);alert("Erro ao registrar");}
-});
 
-// Filtros
-document.getElementById("filterInput").addEventListener("input", function(){
-  const filter=this.value.toLowerCase();
-  document.querySelectorAll("#historyTable tbody tr").forEach(tr=>{
-    tr.style.display=[...tr.querySelectorAll("td")].some(td=>td.textContent.toLowerCase().includes(filter))?"":"none";
-  });
-});
-document.getElementById("btnMeusChamados").addEventListener("click", async ()=>{
-  const matricula=document.getElementById("matriculaFilter").value.trim();
-  if(!matricula) return alert("Digite a matrícula");
-  const hist=await fetchHistory();
-  renderHistory(hist.filter(r=>r["Matrícula"]==matricula));
-});
-document.getElementById("btnTodos").addEventListener("click", async ()=>{
-  const hist=await fetchHistory();
+  await postData(dataObj);
+  delete e.target.dataset.editRow;
+
+  // limpar campos
+  document.getElementById("equipamento").value="";
+  document.getElementById("acionamento").value="";
+  document.getElementById("problema").value="";
+  document.getElementById("solucao").value="";
+  document.getElementById("encerramento").value="";
+
+  const hist = await fetchHistory();
   renderHistory(hist);
 });
-</script>
-</body>
-</html>
+
+// ====== Filtros ======
+document.getElementById("filterInput").addEventListener("input",()=>{
+  const filter = document.getElementById("filterInput").value.toLowerCase();
+  const rows = document.querySelectorAll("#historyTable tbody tr");
+  rows.forEach(tr=>{
+    tr.style.display = Array.from(tr.cells).some(td=>td.innerText.toLowerCase().includes(filter)) ? "" : "none";
+  });
+});
+
+document.getElementById("btnMeusChamados
