@@ -1,163 +1,180 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Passagem de Turno</title>
 <style>
-body {
-  font-family: Arial;
-  background: #f9fafb;
-  color: #333;
-  margin: 0;
-  padding: 20px;
-}
-h1 {
-  color: #2c7a7b;
-}
-input, textarea, select, button {
-  display: block;
-  margin: 5px 0 15px;
-  padding: 8px;
-  width: 100%;
-  max-width: 400px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-}
-button {
-  background: #38b2ac;
-  color: white;
-  border: none;
-  cursor: pointer;
-  font-weight: bold;
-}
-button:hover { background: #319795; }
-#status { margin: 10px 0; font-weight: bold; }
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 20px;
-}
-table, th, td {
-  border: 1px solid #ccc;
-}
-th {
-  background: #e6fffa;
-  color: #285e61;
-}
-td, th {
-  padding: 8px;
-  text-align: left;
-}
+body { font-family: Arial, sans-serif; background-color: #fff; color: #333; margin:0; padding:0; }
+.container { max-width: 1000px; margin: 40px auto; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-radius: 8px; }
+h1 { color: #2d6a4f; text-align: center; margin-bottom: 20px; }
+form { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+form label { display: block; font-weight: bold; margin-bottom: 4px; }
+form input, form textarea { width: 100%; padding: 8px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box; }
+form textarea { resize: vertical; min-height:60px; }
+.full-width { grid-column: 1 / -1; }
+button { background-color:#95d5b2; color:#fff; border:none; padding:12px 20px; font-size:16px; cursor:pointer; border-radius:4px; transition: background-color 0.3s; }
+button:hover { background-color:#74c69d; }
+.history { margin-top:40px; }
+.history table { width:100%; border-collapse:collapse; }
+.history th, .history td { border:1px solid #ddd; padding:8px; text-align:left; }
+.history th { background-color:#e9f5ef; color:#2d6a4f; }
+.history tr:nth-child(even) { background-color:#f9f9f9; }
+.history tr:hover { background-color:#f1f1f1; }
+.editBtn { background-color:#52b788; padding:4px 8px; font-size:12px; border-radius:3px; cursor:pointer; }
+.editBtn:hover { background-color:#2d6a4f; }
+#watchdog { float:right; font-weight:bold; }
 </style>
 </head>
 <body>
+<div class="container">
 <h1>Passagem de Turno</h1>
 
-<div id="loginArea">
-  <h3>Login</h3>
-  <input id="loginMatricula" placeholder="Digite sua matrícula">
-  <button onclick="login()">Entrar</button>
-  <hr>
-  <h4>Ou cadastrar novo usuário</h4>
-  <input id="cadNome" placeholder="Nome completo">
-  <input id="cadMatricula" placeholder="Matrícula">
-  <button onclick="cadastrar()">Cadastrar</button>
+<div id="watchdog">Status Watchdog: ⏳</div>
+
+<!-- Login / Cadastro -->
+<div id="loginDiv">
+<label>Matrícula:</label>
+<input type="text" id="loginMatricula" placeholder="Digite sua matrícula"/>
+<button id="btnLogin">Entrar</button>
+<button id="btnCadastrar">Cadastrar</button>
 </div>
 
-<div id="mainArea" style="display:none;">
-  <p id="userInfo"></p>
-  <div id="status">Status: aguardando...</div>
+<!-- Formulário principal -->
+<div id="formDiv" style="display:none;">
+<form id="turnoForm">
+<div>
+<label for="data">Data / Hora</label>
+<input type="datetime-local" id="data" name="data"/>
+</div>
+<div>
+<label for="nome">Nome</label>
+<input type="text" id="nome" name="nome" readonly/>
+</div>
+<div>
+<label for="equipamento">Equipamento</label>
+<input type="text" id="equipamento" name="equipamento" required/>
+</div>
+<div>
+<label for="acionamento">Acionamento (Hora)</label>
+<input type="time" id="acionamento" name="acionamento" required/>
+</div>
+<div>
+<label for="problema">Problema</label>
+<textarea id="problema" name="problema" required></textarea>
+</div>
+<div>
+<label for="solucao">Solução</label>
+<textarea id="solucao" name="solucao" required></textarea>
+</div>
+<div>
+<label for="encerramento">Encerramento (Hora)</label>
+<input type="time" id="encerramento" name="encerramento" required/>
+</div>
+<div class="full-width">
+<button type="submit">Registrar Turno</button>
+</div>
+</form>
 
-  <h3>Registrar novo turno</h3>
-  <input id="equipamento" placeholder="Equipamento">
-  <input id="acionamento" placeholder="Hora acionamento (HH)">
-  <textarea id="problema" placeholder="Problema"></textarea>
-  <textarea id="solucao" placeholder="Solução"></textarea>
-  <input id="encerramento" placeholder="Hora encerramento (HH)">
-  <button onclick="registrar()">Registrar</button>
-
-  <h3>Histórico</h3>
-  <table id="tabela">
-    <thead><tr><th>Data</th><th>Equipamento</th><th>Problema</th><th>Solução</th><th>Executante</th></tr></thead>
-    <tbody></tbody>
-  </table>
+<div class="history">
+<h2>Histórico</h2>
+<table id="historyTable">
+<thead>
+<tr>
+<th>Tipo</th>
+<th>Nome</th>
+<th>Matrícula</th>
+<th>Data</th>
+<th>Equipamento</th>
+<th>Acionamento</th>
+<th>Problema</th>
+<th>Solução</th>
+<th>Encerramento</th>
+<th>Data/Hora Edição</th>
+<th>Watchdog</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+</div>
+</div>
 </div>
 
 <script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwFS6gRrIGYeWFZ9KYjSaOMLfJd_TTsrZcLNGyvdb7R0RZBcXrQUlgLUdAjNr7B58o/exec"; // ⚠️ substitua pela URL do Apps Script publicado
-let matriculaLogada = "";
-let nomeLogado = "";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwFS6gRrIGYeWFZ9KYjSaOMLfJd_TTsrZcLNGyvdb7R0RZBcXrQUlgLUdAjNr7B58o/exec";
 
-async function login(){
+// Login
+document.getElementById("btnLogin").addEventListener("click", async ()=>{
   const matricula = document.getElementById("loginMatricula").value.trim();
-  if(!matricula) return alert("Digite sua matrícula");
-  const resp = await fetch(SCRIPT_URL,{
-    method:"POST",
-    body: JSON.stringify({login:true,matricula})
-  });
+  if(!matricula){ alert("Digite a matrícula!"); return; }
+  const resp = await fetch(SCRIPT_URL,{method:"POST",body:JSON.stringify({login:true,matricula})});
   const data = await resp.json();
   if(data.success){
-    matriculaLogada = matricula;
-    nomeLogado = data.nome;
-    document.getElementById("loginArea").style.display="none";
-    document.getElementById("mainArea").style.display="block";
-    document.getElementById("userInfo").innerText = `Logado como: ${nomeLogado} (${matriculaLogada})`;
-    carregarHistorico();
-  }else{
-    alert(data.message);
-  }
-}
+    document.getElementById("nome").value = data.nome;
+    document.getElementById("loginDiv").style.display="none";
+    document.getElementById("formDiv").style.display="block";
+    fetchHistory();
+  } else alert(data.message);
+});
 
-async function cadastrar(){
-  const nome = document.getElementById("cadNome").value.trim();
-  const matricula = document.getElementById("cadMatricula").value.trim();
-  if(!nome || !matricula) return alert("Preencha todos os campos");
-  const resp = await fetch(SCRIPT_URL,{
-    method:"POST",
-    body: JSON.stringify({cadastrar:true,nome,matricula})
-  });
+// Cadastrar usuário
+document.getElementById("btnCadastrar").addEventListener("click", async ()=>{
+  const matricula = document.getElementById("loginMatricula").value.trim();
+  if(!matricula){ alert("Digite a matrícula!"); return; }
+  const nome = prompt("Digite seu nome:");
+  if(!nome) return;
+  const resp = await fetch(SCRIPT_URL,{method:"POST",body:JSON.stringify({cadastrar:true,matricula,nome})});
   const data = await resp.json();
   alert(data.message);
-}
+});
 
-async function registrar(){
-  const equipamento = document.getElementById("equipamento").value.trim();
-  const acionamento = document.getElementById("acionamento").value.trim();
-  const problema = document.getElementById("problema").value.trim();
-  const solucao = document.getElementById("solucao").value.trim();
-  const encerramento = document.getElementById("encerramento").value.trim();
-
-  if(!equipamento) return alert("Preencha o equipamento");
-  const resp = await fetch(SCRIPT_URL,{
-    method:"POST",
-    body: JSON.stringify({
-      equipamento,acionamento,problema,solucao,encerramento,
-      executante:nomeLogado,matricula:matriculaLogada
-    })
-  });
+// Registrar turno
+document.getElementById("turnoForm").addEventListener("submit", async (e)=>{
+  e.preventDefault();
+  const payload = {
+    nome: document.getElementById("nome").value,
+    matricula: document.getElementById("loginMatricula").value,
+    data: document.getElementById("data").value,
+    equipamento: document.getElementById("equipamento").value,
+    acionamento: document.getElementById("acionamento").value,
+    problema: document.getElementById("problema").value,
+    solucao: document.getElementById("solucao").value,
+    encerramento: document.getElementById("encerramento").value
+  };
+  const resp = await fetch(SCRIPT_URL,{method:"POST",body:JSON.stringify(payload)});
   const data = await resp.json();
-  alert(data.message);
-  carregarHistorico();
-}
+  if(data.success){ alert("Turno registrado!"); fetchHistory(); document.getElementById("turnoForm").reset(); }
+  else alert(data.message);
+});
 
-async function carregarHistorico(){
+// Fetch histórico
+async function fetchHistory(){
   try{
     const resp = await fetch(SCRIPT_URL);
-    const dados = await resp.json();
-    const tbody = document.querySelector("#tabela tbody");
-    tbody.innerHTML = "";
-    dados.registros.forEach(r=>{
-      const tr = document.createElement("tr");
-      tr.innerHTML = `<td>${r.data}</td><td>${r.equipamento}</td><td>${r.problema}</td><td>${r.solucao}</td><td>${r.executante}</td>`;
-      tbody.appendChild(tr);
-    });
-    document.getElementById("status").innerText = "Status: Conectado ✅ | Watchdog: " + dados.watchdog;
-  }catch(e){
-    document.getElementById("status").innerText = "Status: Erro de comunicação ❌";
-  }
+    const data = await resp.json();
+    if(data.status==="ok"){
+      const tbody = document.querySelector("#historyTable tbody");
+      tbody.innerHTML = "";
+      // Aqui você pode popular os registros da aba Registro, exceto primeira linha de cabeçalho
+      const ssResp = await fetch(`${SCRIPT_URL}?sheet=Registro`);
+      const allData = await ssResp.json();
+      // TODO: Ajuste conforme os dados reais
+    }
+  }catch(err){ console.error(err); }
 }
-setInterval(carregarHistorico, 10000);
+
+// Watchdog
+async function checkWatchdog(){
+  try{
+    const resp = await fetch(SCRIPT_URL);
+    const data = await resp.json();
+    const el = document.getElementById("watchdog");
+    if(data.status==="ok") el.textContent = `Status Watchdog: 🟢 Conectado | Valor na planilha: ${data.valor}`;
+    else el.textContent = `Status Watchdog: 🔴 Erro de comunicação`;
+  }catch(e){ document.getElementById("watchdog").textContent = `Status Watchdog: 🔴 Erro de comunicação`; }
+}
+setInterval(checkWatchdog,3000);
+checkWatchdog();
 </script>
 </body>
 </html>
