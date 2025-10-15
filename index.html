@@ -29,103 +29,101 @@ button:hover { background-color:#74c69d; }
 <div class="container">
 <h1>Passagem de Turno</h1>
 
-<form id="turnoForm">
-  <div>
-    <label for="data">Data / Hora</label>
-    <input type="datetime-local" id="data" name="data"/>
-  </div>
-  <div>
-    <label for="equipamento">Equipamento</label>
-    <input type="text" id="equipamento" name="equipamento" required/>
-  </div>
-  <div>
-    <label for="acionamento">Acionamento (Hora)</label>
-    <input type="time" id="acionamento" name="acionamento" required/>
-  </div>
-  <div>
-    <label for="problema">Problema</label>
-    <textarea id="problema" name="problema" required></textarea>
-  </div>
-  <div>
-    <label for="solucao">Solução</label>
-    <textarea id="solucao" name="solucao" required></textarea>
-  </div>
-  <div>
-    <label for="encerramento">Encerramento (Hora)</label>
-    <input type="time" id="encerramento" name="encerramento" required/>
-  </div>
-  <div>
-    <label for="executante">Executante</label>
-    <input type="text" id="executante" name="executante" required/>
-  </div>
-  <div>
-    <label for="matricula">Matrícula</label>
-    <input type="text" id="matricula" name="matricula" required/>
-  </div>
-  <div class="full-width">
-    <button type="submit">Registrar Turno</button>
-  </div>
-</form>
-
-<div class="history">
-<h2>Histórico</h2>
-
-<div style="margin-bottom:10px;">
-<label>Filtrar: </label>
-<input type="text" id="filterInput" placeholder="Digite para filtrar..."/>
-<button id="btnHistorico">Mostrar Histórico</button>
+<div id="loginDiv">
+  <label>Matrícula:</label>
+  <input type="text" id="loginMatricula" placeholder="Digite sua matrícula"/>
+  <button id="btnLogin">Login</button>
 </div>
 
-<table id="historyTable">
-<thead>
-<tr>
-<th>Data / Hora</th>
-<th>Equipamento</th>
-<th>Acionamento</th>
-<th>Problema</th>
-<th>Solução</th>
-<th>Encerramento</th>
-<th>Executante</th>
-<th>Matrícula</th>
-<th>Data/Hora Edição</th>
-<th>Watchdog</th>
-</tr>
-</thead>
-<tbody></tbody>
-</table>
+<div id="formDiv" style="display:none;">
+  <form id="turnoForm">
+    <div>
+      <label>Tipo</label>
+      <input type="text" id="tipo" name="tipo"/>
+    </div>
+    <div>
+      <label>Executante</label>
+      <input type="text" id="executante" name="executante"/>
+    </div>
+    <div>
+      <label>Matrícula</label>
+      <input type="text" id="matricula" name="matricula" readonly/>
+    </div>
+    <div>
+      <label>Data / Hora</label>
+      <input type="datetime-local" id="data" name="data"/>
+    </div>
+    <div>
+      <label>Equipamento</label>
+      <input type="text" id="equipamento" name="equipamento" required/>
+    </div>
+    <div>
+      <label>Acionamento (Hora)</label>
+      <input type="time" id="acionamento" name="acionamento" required/>
+    </div>
+    <div>
+      <label>Problema</label>
+      <textarea id="problema" name="problema" required></textarea>
+    </div>
+    <div>
+      <label>Solução</label>
+      <textarea id="solucao" name="solucao" required></textarea>
+    </div>
+    <div>
+      <label>Encerramento (Hora)</label>
+      <input type="time" id="encerramento" name="encerramento" required/>
+    </div>
+    <div class="full-width">
+      <button type="submit">Registrar Turno</button>
+    </div>
+  </form>
+
+  <div style="margin-top:20px;">
+    <button id="btnHistorico">Histórico</button>
+  </div>
+
+  <div class="history" style="margin-top:20px;">
+    <table id="historyTable">
+      <thead>
+        <tr>
+          <th>Tipo</th>
+          <th>Executante</th>
+          <th>Matrícula</th>
+          <th>Data</th>
+          <th>Equipamento</th>
+          <th>Acionamento</th>
+          <th>Problema</th>
+          <th>Solução</th>
+          <th>Encerramento</th>
+          <th>Data/Hora Edição</th>
+          <th>Watchdog</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
 </div>
 </div>
 
 <script>
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwFS6gRrIGYeWFZ9KYjSaOMLfJd_TTsrZcLNGyvdb7R0RZBcXrQUlgLUdAjNr7B58o/exec";
 
-function setDateTime(){
-  const now = new Date();
-  const formatted = now.toISOString().slice(0,16);
-  const dataInput = document.getElementById("data");
-  if(!dataInput.value) dataInput.value = formatted;
+function formatDateTime(dateStr){
+  const date = new Date(dateStr);
+  const day = String(date.getDate()).padStart(2,'0');
+  const month = String(date.getMonth()+1).padStart(2,'0');
+  const year = date.getFullYear();
+  const hours = String(date.getHours()).padStart(2,'0');
+  const minutes = String(date.getMinutes()).padStart(2,'0');
+  return `${day}/${month}/${year} ${hours}:${minutes}`;
 }
 
-async function sendForm(dataObj){
-  const resp = await fetch(SCRIPT_URL,{
-    method:"POST",
-    body: JSON.stringify(dataObj)
-  });
-  return resp.json();
-}
-
-async function fetchHistory(){
-  const resp = await fetch(SCRIPT_URL);
-  const data = await resp.json();
-  return Array.isArray(data) ? data : [];
-}
-
-function renderHistory(dataArray){
-  const tbody = document.getElementById("historyTable").querySelector("tbody");
+function renderHistory(data){
+  const tbody = document.querySelector("#historyTable tbody");
   tbody.innerHTML = "";
-  dataArray.forEach(row=>{
+  data.forEach(row => {
     const tr = document.createElement("tr");
-    row.forEach(cell=>{
+    row.forEach(cell => {
       const td = document.createElement("td");
       td.textContent = cell;
       tr.appendChild(td);
@@ -134,4 +132,72 @@ function renderHistory(dataArray){
   });
 }
 
-document.getEl
+// Login
+document.getElementById("btnLogin").addEventListener("click", async () => {
+  const matricula = document.getElementById("loginMatricula").value.trim();
+  if(!matricula){ alert("Digite sua matrícula!"); return; }
+
+  try{
+    const resp = await fetch(SCRIPT_URL, {
+      method:"POST",
+      body: JSON.stringify({login:true, matricula}),
+    });
+    const data = await resp.json();
+    if(data.success){
+      alert("Login realizado: "+data.nome);
+      document.getElementById("formDiv").style.display="block";
+      document.getElementById("loginDiv").style.display="none";
+      document.getElementById("executante").value = data.nome;
+      document.getElementById("matricula").value = matricula;
+    } else {
+      alert(data.message);
+    }
+  } catch(err){
+    console.error(err);
+    alert("Erro ao conectar com servidor");
+  }
+});
+
+// Registrar Turno
+document.getElementById("turnoForm").addEventListener("submit", async (e)=>{
+  e.preventDefault();
+  const dataObj = {
+    tipo: document.getElementById("tipo").value,
+    executante: document.getElementById("executante").value,
+    matricula: document.getElementById("matricula").value,
+    data: document.getElementById("data").value,
+    equipamento: document.getElementById("equipamento").value,
+    acionamento: document.getElementById("acionamento").value,
+    problema: document.getElementById("problema").value,
+    solucao: document.getElementById("solucao").value,
+    encerramento: document.getElementById("encerramento").value
+  };
+  try{
+    const resp = await fetch(SCRIPT_URL,{method:"POST", body: JSON.stringify(dataObj)});
+    const result = await resp.json();
+    if(result.success){
+      alert("Turno registrado com sucesso!");
+      document.getElementById("turnoForm").reset();
+    } else {
+      alert(result.message);
+    }
+  } catch(err){
+    console.error(err);
+    alert("Erro ao registrar turno");
+  }
+});
+
+// Histórico
+document.getElementById("btnHistorico").addEventListener("click", async () => {
+  try{
+    const resp = await fetch(SCRIPT_URL);
+    const hist = await resp.json();
+    renderHistory(hist);
+  } catch(err){
+    console.error(err);
+    alert("Erro ao buscar histórico");
+  }
+});
+</script>
+</body>
+</html>
