@@ -56,9 +56,13 @@ button:hover { background-color:#74c69d; }
 <label for="encerramento">Encerramento (Hora)</label>
 <input type="time" id="encerramento" name="encerramento" required/>
 </div>
-<div class="full-width">
-<label for="executante">Executante (Matrícula)</label>
+<div>
+<label for="executante">Executante</label>
 <input type="text" id="executante" name="executante" required/>
+</div>
+<div>
+<label for="matricula">Matrícula</label>
+<input type="text" id="matricula" name="matricula" required/>
 </div>
 <div class="full-width">
 <button type="submit">Registrar Turno</button>
@@ -94,6 +98,7 @@ button:hover { background-color:#74c69d; }
 <th>Solução</th>
 <th>Encerramento</th>
 <th>Executante</th>
+<th>Matrícula</th>
 <th>Data / Hora Edição</th>
 <th>Ações</th>
 </tr>
@@ -106,7 +111,7 @@ button:hover { background-color:#74c69d; }
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
 <script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwFS6gRrIGYeWFZ9KYjSaOMLfJd_TTsrZcLNGyvdb7R0RZBcXrQUlgLUdAjNr7B58o/exec";
+const SCRIPT_URL = "COLE_SEU_SCRIPT_URL_AQUI";
 
 function setDateTime(){
   const now = new Date();
@@ -117,6 +122,7 @@ function setDateTime(){
 
 function formatDateTime(dateStr){
   const date = new Date(dateStr);
+  if(isNaN(date)) return "";
   const day = String(date.getDate()).padStart(2,'0');
   const month = String(date.getMonth()+1).padStart(2,'0');
   const year = date.getFullYear();
@@ -127,6 +133,7 @@ function formatDateTime(dateStr){
 
 function formatHour(dateStr){
   const date = new Date(dateStr);
+  if(isNaN(date)) return "";
   const hours = String(date.getHours()).padStart(2,'0');
   return hours;
 }
@@ -158,66 +165,59 @@ function renderHistory(dataArray){
   dataArray.forEach((row,index)=>{
     const tr = document.createElement("tr");
 
-    // Data / Hora Original
-    let td = document.createElement("td");
-    td.textContent = formatDateTime(row[0]);
-    tr.appendChild(td);
+    const tdData = document.createElement("td");
+    tdData.textContent = formatDateTime(row[0]);
+    tr.appendChild(tdData);
 
-    // Equipamento
-    td = document.createElement("td");
-    td.textContent = row[1];
-    tr.appendChild(td);
+    const tdEquip = document.createElement("td");
+    tdEquip.textContent = row[1];
+    tr.appendChild(tdEquip);
 
-    // Acionamento (hora apenas)
-    td = document.createElement("td");
-    td.textContent = formatHour(row[2]);
-    tr.appendChild(td);
+    const tdAc = document.createElement("td");
+    tdAc.textContent = formatHour(row[2]);
+    tr.appendChild(tdAc);
 
-    // Problema
-    td = document.createElement("td");
-    td.textContent = row[3];
-    tr.appendChild(td);
+    const tdProb = document.createElement("td");
+    tdProb.textContent = row[3];
+    tr.appendChild(tdProb);
 
-    // Solução
-    td = document.createElement("td");
-    td.textContent = row[4];
-    tr.appendChild(td);
+    const tdSol = document.createElement("td");
+    tdSol.textContent = row[4];
+    tr.appendChild(tdSol);
 
-    // Encerramento (hora apenas)
-    td = document.createElement("td");
-    td.textContent = formatHour(row[5]);
-    tr.appendChild(td);
+    const tdEnc = document.createElement("td");
+    tdEnc.textContent = formatHour(row[5]);
+    tr.appendChild(tdEnc);
 
-    // Executante
-    td = document.createElement("td");
-    td.textContent = row[6];
-    tr.appendChild(td);
+    const tdExec = document.createElement("td");
+    tdExec.textContent = row[6];
+    tr.appendChild(tdExec);
 
-    // Data / Hora Edição
-    td = document.createElement("td");
-    td.textContent = row[7]?formatDateTime(row[7]):"";
-    tr.appendChild(td);
+    const tdMat = document.createElement("td");
+    tdMat.textContent = row[7];
+    tr.appendChild(tdMat);
 
-    // Ações
-    const tdActions = document.createElement("td");
+    const tdEd = document.createElement("td");
+    tdEd.textContent = row[8] ? formatDateTime(row[8]) : "";
+    tr.appendChild(tdEd);
 
-    // Botão Editar
+    const tdAcoes = document.createElement("td");
+
     const btnEdit = document.createElement("button");
     btnEdit.textContent = "Editar";
     btnEdit.className = "editBtn";
     btnEdit.dataset.rowIndex = index + 2;
-    tdActions.appendChild(btnEdit);
+    tdAcoes.appendChild(btnEdit);
 
-    // Botão Excluir
     const btnDelete = document.createElement("button");
     btnDelete.textContent = "Excluir";
     btnDelete.className = "editBtn";
     btnDelete.style.backgroundColor = "#d9534f";
     btnDelete.style.marginLeft = "5px";
     btnDelete.dataset.rowIndex = index + 2;
-    tdActions.appendChild(btnDelete);
+    tdAcoes.appendChild(btnDelete);
 
-    tr.appendChild(tdActions);
+    tr.appendChild(tdAcoes);
     tbody.appendChild(tr);
   });
 }
@@ -225,24 +225,19 @@ function renderHistory(dataArray){
 // Filtro geral
 document.getElementById("filterInput").addEventListener("input",function(){
   const filter = this.value.toLowerCase();
-  const table = document.getElementById("historyTable");
-  const trs = table.querySelectorAll("tbody tr");
+  const trs = document.querySelectorAll("#historyTable tbody tr");
   trs.forEach(tr=>{
-    const tds = tr.querySelectorAll("td");
-    let match=false;
-    tds.forEach(td=>{
-      if(td.innerText.toLowerCase().includes(filter)) match=true;
-    });
-    tr.style.display = match?"":"none";
+    const text = tr.innerText.toLowerCase();
+    tr.style.display = text.includes(filter) ? "" : "none";
   });
 });
 
-// Meus Chamados
+// Meus chamados
 document.getElementById("btnMeusChamados").addEventListener("click", async () => {
   const matricula = document.getElementById("matriculaFilter").value.trim();
   if(!matricula){ alert("Digite sua matrícula!"); return; }
   const hist = await fetchHistory();
-  const filtrado = hist.filter(row => row[6].includes(matricula));
+  const filtrado = hist.filter(row => row[7].toLowerCase().includes(matricula.toLowerCase()));
   renderHistory(filtrado);
 });
 
@@ -252,35 +247,32 @@ document.getElementById("btnTodos").addEventListener("click", async ()=>{
   renderHistory(hist);
 });
 
-// Editar / Excluir
+// Editar/Excluir
 document.addEventListener("click", async (e)=>{
   const tr = e.target.closest("tr");
   if(e.target.textContent==="Editar"){
     const cells = tr.querySelectorAll("td");
-    document.getElementById("data").value = cells[0].innerText ? new Date(cells[0].innerText.split('/').reverse().join('-')).toISOString().slice(0,16) : "";
+    document.getElementById("data").value = new Date(cells[0].innerText.split('/').reverse().join('-')).toISOString().slice(0,16);
     document.getElementById("equipamento").value = cells[1].innerText;
-    document.getElementById("acionamento").value = cells[2].innerText.padStart(2,'0') + ":00";
+    document.getElementById("acionamento").value = cells[2].innerText.padStart(2,'0')+":00";
     document.getElementById("problema").value = cells[3].innerText;
     document.getElementById("solucao").value = cells[4].innerText;
-    document.getElementById("encerramento").value = cells[5].innerText.padStart(2,'0') + ":00";
+    document.getElementById("encerramento").value = cells[5].innerText.padStart(2,'0')+":00";
     document.getElementById("executante").value = cells[6].innerText;
+    document.getElementById("matricula").value = cells[7].innerText;
     document.getElementById("turnoForm").dataset.editRow = e.target.dataset.rowIndex;
   }
+
   if(e.target.textContent==="Excluir"){
     if(confirm("Tem certeza que deseja excluir este chamado?")){
-      try{
-        await deleteForm(e.target.dataset.rowIndex);
-        const hist = await fetchHistory();
-        renderHistory(hist);
-      }catch(err){
-        console.error("Erro ao excluir",err);
-        alert("Erro ao excluir. Veja console.");
-      }
+      await deleteForm(e.target.dataset.rowIndex);
+      const hist = await fetchHistory();
+      renderHistory(hist);
     }
   }
 });
 
-// Registrar / Atualizar
+// Registrar/Atualizar
 document.getElementById("turnoForm").addEventListener("submit", async (e)=>{
   e.preventDefault();
   setDateTime();
@@ -293,33 +285,19 @@ document.getElementById("turnoForm").addEventListener("submit", async (e)=>{
     solucao: document.getElementById("solucao").value,
     encerramento: document.getElementById("encerramento").value,
     executante: document.getElementById("executante").value,
+    matricula: document.getElementById("matricula").value,
     rowIndex: rowIndex
   };
-  try{
-    if(rowIndex){
-      await updateForm(dataObj);
-      delete e.target.dataset.editRow;
-    }else{
-      await sendForm(dataObj);
-    }
-    document.getElementById("equipamento").value="";
-    document.getElementById("acionamento").value="";
-    document.getElementById("problema").value="";
-    document.getElementById("solucao").value="";
-    document.getElementById("encerramento").value="";
-    document.getElementById("executante").value="";
-    const hist = await fetchHistory();
-    renderHistory(hist);
-  }catch(err){ console.error(err); alert("Erro ao registrar/editar. Veja console."); }
-});
-
-// Carregar histórico
-document.addEventListener("DOMContentLoaded", async ()=>{
+  if(rowIndex){
+    await updateForm(dataObj);
+    delete e.target.dataset.editRow;
+  }else{
+    await sendForm(dataObj);
+  }
+  e.target.reset();
   setDateTime();
-  try{
-    const hist = await fetchHistory();
-    renderHistory(hist);
-  }catch(err){ console.error("Erro ao buscar histórico",err); }
+  const hist = await fetchHistory();
+  renderHistory(hist);
 });
 
 // PDF
@@ -328,7 +306,7 @@ document.getElementById("btnPDF").addEventListener("click",()=>{
   const doc = new jsPDF();
   doc.setFontSize(16);
   doc.text("Histórico de Passagem de Turno",14,20);
-  const headers=[["Data/Hora Original","Equipamento","Acionamento","Problema","Solução","Encerramento","Executante","Data/Hora Edição"]];
+  const headers=[["Data/Hora Original","Equipamento","Acionamento","Problema","Solução","Encerramento","Executante","Matrícula","Data/Hora Edição"]];
   const table = document.getElementById("historyTable");
   const data=[];
   for(let i=1;i<table.rows.length;i++){
@@ -340,6 +318,13 @@ document.getElementById("btnPDF").addEventListener("click",()=>{
   }
   doc.autoTable({startY:30,head:headers,body:data,theme:'grid',headStyles:{ fillColor:[149,213,178], textColor:0 },styles:{ fontSize:10 },margin:{ left:14,right:14 }});
   doc.save("Historico_Passagem_de_Turno.pdf");
+});
+
+// Carregar histórico
+document.addEventListener("DOMContentLoaded", async ()=>{
+  setDateTime();
+  const hist = await fetchHistory();
+  renderHistory(hist);
 });
 </script>
 </body>
