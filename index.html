@@ -130,4 +130,17 @@ document.addEventListener("click", async e=>{
     document.getElementById("encerramento").value=cells[5].innerText;
     document.getElementById("executante").value=cells[6].innerText;
     document.getElementById("matricula").value=cells[7].innerText;
-    document.getElementById("turnoForm").dataset.editRow=e
+    document.getElementById("turnoForm").dataset.editRow=e.target.dataset.rowIndex;
+  }
+  if(e.target.classList.contains("deleteBtn")){
+    if(confirm("Deseja excluir este registro?")){
+      await deleteRecord(e.target.dataset.rowIndex);
+      renderHistory(await fetchHistory());
+    }
+  }
+});
+
+document.addEventListener("DOMContentLoaded", async ()=>{ setDateTime(); renderHistory(await fetchHistory()); });
+</script>
+</body>
+</html>
