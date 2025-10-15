@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Login - Passagem de Turno</title>
+<style>
+body { font-family: Arial, sans-serif; background-color: #fff; color: #333; margin:0; padding:0; }
+.container { max-width: 400px; margin: 80px auto; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-radius: 8px; }
+h1 { color: #2d6a4f; text-align: center; margin-bottom: 20px; }
+form { display: grid; gap: 16px; }
+label { font-weight: bold; }
+input { width: 100%; padding: 8px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box; }
+button { background-color:#95d5b2; color:#fff; border:none; padding:12px 20px; font-size:16px; cursor:pointer; border-radius:4px; transition: background-color 0.3s; }
+button:hover { background-color:#74c69d; }
+</style>
+</head>
+<body>
+<div class="container">
+<h1>Login</h1>
+<form id="loginForm">
+<div>
+<label for="nome">Nome</label>
+<input type="text" id="nome" name="nome" required/>
+</div>
+<div>
+<label for="matricula">Matrícula</label>
+<input type="text" id="matricula" name="matricula" required pattern="\d{7,10}" title="Digite sua matrícula (7 a 10 números)"/>
+</div>
+<div>
+<button type="submit">Entrar</button>
+</div>
+</form>
+</div>
+
+<script>
+document.getElementById("loginForm").addEventListener("submit", function(e){
+    e.preventDefault();
+    const nome = document.getElementById("nome").value.trim();
+    const matricula = document.getElementById("matricula").value.trim();
+
+    if(!nome || !matricula){
+        alert("Preencha todos os campos!");
+        return;
+    }
+
+    // Salva no localStorage
+    localStorage.setItem("nome", nome);
+    localStorage.setItem("matricula", matricula);
+
+    // Redireciona para a página principal
+    window.location.href = "index.html";
+});
+</script>
+</body>
+</html>
