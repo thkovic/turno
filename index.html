@@ -5,15 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Passagem de Turno</title>
 <style>
-body { font-family: Arial, sans-serif; background-color: #fff; margin:0; padding:0; }
-.container { max-width: 1000px; margin: 40px auto; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-radius: 8px; }
-h1 { color: #2d6a4f; text-align: center; margin-bottom: 20px; }
-form { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-form label { display: block; font-weight: bold; margin-bottom: 4px; }
-form input, form textarea { width: 100%; padding: 8px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box; }
-form textarea { resize: vertical; min-height:60px; }
-.full-width { grid-column: 1 / -1; }
-button { background-color:#95d5b2; color:#fff; border:none; padding:12px 20px; font-size:16px; cursor:pointer; border-radius:4px; transition: background-color 0.3s; }
+body { font-family: Arial; background:#fff; margin:0; padding:0; }
+.container { max-width:1000px; margin:40px auto; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.1); border-radius:8px; }
+h1 { color:#2d6a4f; text-align:center; margin-bottom:20px; }
+form { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+form label { font-weight:bold; margin-bottom:4px; display:block; }
+form input, form textarea { width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box; }
+form textarea { resize:vertical; min-height:60px; }
+.full-width { grid-column:1 / -1; }
+button { background-color:#95d5b2; color:#fff; border:none; padding:12px 20px; cursor:pointer; border-radius:4px; transition:0.3s; }
 button:hover { background-color:#74c69d; }
 .history { margin-top:40px; }
 .history table { width:100%; border-collapse:collapse; }
@@ -21,7 +21,6 @@ button:hover { background-color:#74c69d; }
 .history th { background-color:#e9f5ef; color:#2d6a4f; }
 .history tr:nth-child(even) { background-color:#f9f9f9; }
 .history tr:hover { background-color:#f1f1f1; }
-#btnPDF { float:right; margin-bottom:10px; }
 #filterInput { padding:6px; width:250px; margin-bottom:10px; }
 </style>
 </head>
@@ -30,41 +29,15 @@ button:hover { background-color:#74c69d; }
 <h1>Passagem de Turno</h1>
 
 <form id="turnoForm">
-  <div>
-    <label for="data">Data / Hora</label>
-    <input type="datetime-local" id="data"/>
-  </div>
-  <div>
-    <label for="equipamento">Equipamento</label>
-    <input type="text" id="equipamento" required/>
-  </div>
-  <div>
-    <label for="acionamento">Acionamento (Hora)</label>
-    <input type="time" id="acionamento" required/>
-  </div>
-  <div>
-    <label for="problema">Problema</label>
-    <textarea id="problema" required></textarea>
-  </div>
-  <div>
-    <label for="solucao">Solução</label>
-    <textarea id="solucao" required></textarea>
-  </div>
-  <div>
-    <label for="encerramento">Encerramento (Hora)</label>
-    <input type="time" id="encerramento" required/>
-  </div>
-  <div>
-    <label for="executanteNome">Executante (Nome)</label>
-    <input type="text" id="executanteNome" required/>
-  </div>
-  <div>
-    <label for="matricula">Matrícula</label>
-    <input type="text" id="matricula" required/>
-  </div>
-  <div class="full-width">
-    <button type="submit">Registrar Turno</button>
-  </div>
+  <div><label>Data / Hora</label><input type="datetime-local" id="data"/></div>
+  <div><label>Equipamento</label><input type="text" id="equipamento" required/></div>
+  <div><label>Acionamento (Hora)</label><input type="time" id="acionamento" required/></div>
+  <div><label>Problema</label><textarea id="problema" required></textarea></div>
+  <div><label>Solução</label><textarea id="solucao" required></textarea></div>
+  <div><label>Encerramento (Hora)</label><input type="time" id="encerramento" required/></div>
+  <div><label>Executante (Nome)</label><input type="text" id="executanteNome" required/></div>
+  <div><label>Matrícula</label><input type="text" id="matricula" required/></div>
+  <div class="full-width"><button type="submit">Registrar Turno</button></div>
 </form>
 
 <div style="margin-bottom:10px;">
@@ -73,27 +46,14 @@ button:hover { background-color:#74c69d; }
 
 <div class="history">
 <h2>Histórico</h2>
-
-<div style="margin-bottom:10px;">
-  <label>Filtrar: </label>
-  <input type="text" id="filterInput" placeholder="Digite para filtrar..."/>
-</div>
-
-<div style="text-align:right; margin-bottom:10px;">
-  <button id="btnPDF">Gerar PDF</button>
-</div>
-
+<label>Filtrar:</label>
+<input type="text" id="filterInput" placeholder="Digite para filtrar..."/>
 <table id="historyTable">
 <thead>
 <tr>
-<th>Data / Hora Original</th>
-<th>Equipamento</th>
-<th>Acionamento</th>
-<th>Problema</th>
-<th>Solução</th>
-<th>Encerramento</th>
-<th>Executante</th>
-<th>Data / Hora Edição</th>
+<th>Data / Hora Original</th><th>Equipamento</th><th>Acionamento</th>
+<th>Problema</th><th>Solução</th><th>Encerramento</th>
+<th>Executante</th><th>Data / Hora Edição</th>
 </tr>
 </thead>
 <tbody></tbody>
@@ -101,8 +61,6 @@ button:hover { background-color:#74c69d; }
 </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
 <script>
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwFS6gRrIGYeWFZ9KYjSaOMLfJd_TTsrZcLNGyvdb7R0RZBcXrQUlgLUdAjNr7B58o/exec";
 
@@ -114,22 +72,22 @@ function setDateTime(){
 }
 
 function formatDateTime(dateStr){
-  const date = new Date(dateStr);
-  const day = String(date.getDate()).padStart(2,'0');
-  const month = String(date.getMonth()+1).padStart(2,'0');
-  const year = date.getFullYear();
-  const hours = String(date.getHours()).padStart(2,'0');
-  const minutes = String(date.getMinutes()).padStart(2,'0');
+  const d = new Date(dateStr);
+  const day = String(d.getDate()).padStart(2,'0');
+  const month = String(d.getMonth()+1).padStart(2,'0');
+  const year = d.getFullYear();
+  const hours = String(d.getHours()).padStart(2,'0');
+  const minutes = String(d.getMinutes()).padStart(2,'0');
   return `${day}/${month}/${year} ${hours}:${minutes}`;
 }
 
 function formatHour(dateStr){
-  const date = new Date(dateStr);
-  return String(date.getHours()).padStart(2,'0');
+  const d = new Date(dateStr);
+  return String(d.getHours()).padStart(2,'0');
 }
 
-async function sendForm(dataObj){
-  await fetch(SCRIPT_URL,{method:"POST",body:JSON.stringify(dataObj)});
+async function sendForm(obj){
+  await fetch(SCRIPT_URL,{method:"POST",body:JSON.stringify(obj)});
 }
 
 async function fetchHistory(){
@@ -137,10 +95,10 @@ async function fetchHistory(){
   return await resp.json();
 }
 
-function renderHistory(dataArray){
+function renderHistory(data){
   const tbody = document.querySelector("#historyTable tbody");
   tbody.innerHTML = "";
-  dataArray.forEach((row)=>{
+  data.forEach(row=>{
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>${formatDateTime(row[0])}</td>
@@ -156,7 +114,7 @@ function renderHistory(dataArray){
   });
 }
 
-document.getElementById("turnoForm").addEventListener("submit", async (e)=>{
+document.getElementById("turnoForm").addEventListener("submit", async e=>{
   e.preventDefault();
   setDateTime();
   const dataObj = {
@@ -179,8 +137,7 @@ document.getElementById("turnoForm").addEventListener("submit", async (e)=>{
 
 document.getElementById("filterInput").addEventListener("input", function(){
   const filter = this.value.toLowerCase();
-  const trs = document.querySelectorAll("#historyTable tbody tr");
-  trs.forEach(tr=>{
+  document.querySelectorAll("#historyTable tbody tr").forEach(tr=>{
     tr.style.display = Array.from(tr.children).some(td=>td.innerText.toLowerCase().includes(filter)) ? "" : "none";
   });
 });
@@ -191,30 +148,7 @@ document.getElementById("btnMeusChamados").addEventListener("click", ()=>{
 
 document.addEventListener("DOMContentLoaded", async ()=>{
   setDateTime();
-  try{
-    const hist = await fetchHistory();
-    renderHistory(hist);
-  }catch(err){ console.error("Erro ao buscar histórico",err); }
-});
-
-// PDF
-document.getElementById("btnPDF").addEventListener("click", ()=>{
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-  doc.setFontSize(16);
-  doc.text("Histórico de Passagem de Turno",14,20);
-  const headers=[["Data/Hora Original","Equipamento","Acionamento","Problema","Solução","Encerramento","Executante","Data/Hora Edição"]];
-  const table = document.getElementById("historyTable");
-  const data=[];
-  for(let i=1;i<table.rows.length;i++){
-    const row=[];
-    for(let j=0;j<table.rows[i].cells.length;j++){
-      row.push(table.rows[i].cells[j].innerText);
-    }
-    data.push(row);
-  }
-  doc.autoTable({startY:30,head:headers,body:data,theme:'grid',headStyles:{ fillColor:[149,213,178], textColor:0 },styles:{ fontSize:10 },margin:{ left:14,right:14 }});
-  doc.save("Historico_Passagem_de_Turno.pdf");
+  renderHistory(await fetchHistory());
 });
 </script>
 </body>
