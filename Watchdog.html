@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-br">
 <head>
   <meta charset="UTF-8">
   <title>Watchdog Automático</title>
@@ -20,10 +20,14 @@
       try {
         const resp = await fetch(SCRIPT_URL);
         const data = await resp.json();
+
+        const timestamp = new Date(data.timestamp).toLocaleTimeString();
+
         document.getElementById("status").innerHTML = 
-          `Status: <span style="color:green;">Conectado</span> | Valor na planilha: <span>${data.valor}</span> | Última verificação: <span>${new Date(data.timestamp).toLocaleTimeString()}</span>`;
+          `Status: <span style="color:green;">Conectado</span> | Valor na planilha: <span>${data.valor}</span> | Última verificação: <span>${timestamp}</span>`;
       } catch(err){
-        document.getElementById("status").innerHTML = `Status: <span style="color:red;">Erro de comunicação</span>`;
+        document.getElementById("status").innerHTML = 
+          `Status: <span style="color:red;">Erro de comunicação</span>`;
         console.error("Erro ao acessar Apps Script:", err);
       }
     }
