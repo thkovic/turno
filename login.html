@@ -3,53 +3,100 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Login - Passagem de Turno</title>
+<title>Login / Cadastro - Passagem de Turno</title>
 <style>
 body { font-family: Arial, sans-serif; background-color: #fff; margin:0; padding:0; }
-.container { max-width: 400px; margin: 80px auto; padding: 20px; box-shadow:0 2px 8px rgba(0,0,0,0.1); border-radius:8px; }
+.container { max-width: 400px; margin: 60px auto; padding: 20px; box-shadow:0 2px 8px rgba(0,0,0,0.1); border-radius:8px; }
 h1 { color:#2d6a4f; text-align:center; margin-bottom:20px; }
 form { display:grid; gap:16px; }
 input { width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; }
 button { background-color:#95d5b2; color:#fff; border:none; padding:12px; font-size:16px; cursor:pointer; border-radius:4px; }
 button:hover { background-color:#74c69d; }
-#msg { color:red; }
+#msg { color:red; text-align:center; }
+.toggle-link { color:#2d6a4f; text-align:center; cursor:pointer; text-decoration:underline; margin-top:10px; display:block; }
 </style>
 </head>
 <body>
 <div class="container">
-<h1>Login</h1>
+<h1 id="formTitle">Login</h1>
+
 <form id="loginForm">
+<div id="campoNome" style="display:none;">
+<label for="nome">Nome</label>
+<input type="text" id="nome" name="nome" placeholder="Digite seu nome"/>
+</div>
+
 <label for="matricula">Matrícula</label>
-<input type="text" id="matricula" required pattern="\d{7,10}" title="Digite sua matrícula (7 a 10 números)">
-<button type="submit">Entrar</button>
+<input type="text" id="matricula" name="matricula" required pattern="\d{7,10}" title="Digite sua matrícula (7 a 10 números)">
+
+<button type="submit" id="btnSubmit">Entrar</button>
 </form>
+
 <p id="msg"></p>
+<span class="toggle-link" id="toggleForm">Cadastrar nova matrícula</span>
 </div>
 
 <script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwFS6gRrIGYeWFZ9KYjSaOMLfJd_TTsrZcLNGyvdb7R0RZBcXrQUlgLUdAjNr7B58o/exec"; // URL do Apps Script
+const SCRIPT_URL = "COLE_AQUI_O_WEBAPP_URL";
+
+let cadastroAtivo = false;
+
+document.getElementById("toggleForm").addEventListener("click", () => {
+  cadastroAtivo = !cadastroAtivo;
+  document.getElementById("campoNome").style.display = cadastroAtivo ? "block" : "none";
+  document.getElementById("formTitle").innerText = cadastroAtivo ? "Cadastro" : "Login";
+  document.getElementById("btnSubmit").innerText = cadastroAtivo ? "Cadastrar" : "Entrar";
+  document.getElementById("msg").innerText = "";
+});
 
 document.getElementById("loginForm").addEventListener("submit", async function(e){
   e.preventDefault();
   const matricula = document.getElementById("matricula").value.trim();
-  if(!matricula) return;
+  const nome = document.getElementById("nome").value.trim();
 
-  try{
-    const resp = await fetch(SCRIPT_URL,{
-      method:"POST",
-      body: JSON.stringify({matricula}),
-    });
-    const data = await resp.json();
-    if(data.success){
-      localStorage.setItem("matricula", matricula);
-      localStorage.setItem("nome", data.nome);
-      window.location.href = "index.html";
-    } else {
-      document.getElementById("msg").innerText = data.message;
+  if(cadastroAtivo){
+    if(!nome) { document.getElementById("msg").innerText = "Informe seu nome."; return; }
+    // Cadastro
+    try{
+      const resp = await fetch(SCRIPT_URL, {
+        method:"POST",
+        body: JSON.stringify({matricula, nome, cadastrar:true})
+      });
+      const data = await resp.json();
+      if(data.success){
+        alert("Cadastro realizado com sucesso! Faça login.");
+        cadastroAtivo = false;
+        document.getElementById("campoNome").style.display = "none";
+        document.getElementById("formTitle").innerText = "Login";
+        document.getElementById("btnSubmit").innerText = "Entrar";
+        document.getElementById("msg").innerText = "";
+        document.getElementById("nome").value = "";
+      } else {
+        document.getElementById("msg").innerText = data.message;
+      }
+    } catch(err){
+      console.error(err);
+      document.getElementById("msg").innerText = "Erro ao cadastrar. Veja console.";
     }
-  } catch(err){
-    console.error(err);
-    document.getElementById("msg").innerText = "Erro ao validar matrícula.";
+  } else {
+    // Login
+    try{
+      const resp = await fetch(SCRIPT_URL, {
+        method:"POST",
+        body: JSON.stringify({matricula})
+      });
+      const data = await resp.json();
+      if(data.success){
+        localStorage.setItem("matricula", matricula);
+        localStorage.setItem("nome", data.nome);
+        window.location.href = "index.html";
+      } else {
+        document.getElementById("msg").innerText = data.message;
+      }
+    } catch(err){
+      console.error(err);
+      document.getElementById("msg").innerText = "Erro ao validar matrícula.";
+    }
   }
 });
 </script>
