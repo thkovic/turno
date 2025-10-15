@@ -5,51 +5,52 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Login - Passagem de Turno</title>
 <style>
-body { font-family: Arial, sans-serif; background-color: #fff; color: #333; margin:0; padding:0; }
-.container { max-width: 400px; margin: 80px auto; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-radius: 8px; }
-h1 { color: #2d6a4f; text-align: center; margin-bottom: 20px; }
-form { display: grid; gap: 16px; }
-label { font-weight: bold; }
-input { width: 100%; padding: 8px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box; }
-button { background-color:#95d5b2; color:#fff; border:none; padding:12px 20px; font-size:16px; cursor:pointer; border-radius:4px; transition: background-color 0.3s; }
+body { font-family: Arial, sans-serif; background-color: #fff; margin:0; padding:0; }
+.container { max-width: 400px; margin: 80px auto; padding: 20px; box-shadow:0 2px 8px rgba(0,0,0,0.1); border-radius:8px; }
+h1 { color:#2d6a4f; text-align:center; margin-bottom:20px; }
+form { display:grid; gap:16px; }
+input { width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; }
+button { background-color:#95d5b2; color:#fff; border:none; padding:12px; font-size:16px; cursor:pointer; border-radius:4px; }
 button:hover { background-color:#74c69d; }
+#msg { color:red; }
 </style>
 </head>
 <body>
 <div class="container">
 <h1>Login</h1>
 <form id="loginForm">
-<div>
-<label for="nome">Nome</label>
-<input type="text" id="nome" name="nome" required/>
-</div>
-<div>
 <label for="matricula">Matrícula</label>
-<input type="text" id="matricula" name="matricula" required pattern="\d{7,10}" title="Digite sua matrícula (7 a 10 números)"/>
-</div>
-<div>
+<input type="text" id="matricula" required pattern="\d{7,10}" title="Digite sua matrícula (7 a 10 números)">
 <button type="submit">Entrar</button>
-</div>
 </form>
+<p id="msg"></p>
 </div>
 
 <script>
-document.getElementById("loginForm").addEventListener("submit", function(e){
-    e.preventDefault();
-    const nome = document.getElementById("nome").value.trim();
-    const matricula = document.getElementById("matricula").value.trim();
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwFS6gRrIGYeWFZ9KYjSaOMLfJd_TTsrZcLNGyvdb7R0RZBcXrQUlgLUdAjNr7B58o/exec"; // URL do Apps Script
 
-    if(!nome || !matricula){
-        alert("Preencha todos os campos!");
-        return;
+document.getElementById("loginForm").addEventListener("submit", async function(e){
+  e.preventDefault();
+  const matricula = document.getElementById("matricula").value.trim();
+  if(!matricula) return;
+
+  try{
+    const resp = await fetch(SCRIPT_URL,{
+      method:"POST",
+      body: JSON.stringify({matricula}),
+    });
+    const data = await resp.json();
+    if(data.success){
+      localStorage.setItem("matricula", matricula);
+      localStorage.setItem("nome", data.nome);
+      window.location.href = "index.html";
+    } else {
+      document.getElementById("msg").innerText = data.message;
     }
-
-    // Salva no localStorage
-    localStorage.setItem("nome", nome);
-    localStorage.setItem("matricula", matricula);
-
-    // Redireciona para a página principal
-    window.location.href = "index.html";
+  } catch(err){
+    console.error(err);
+    document.getElementById("msg").innerText = "Erro ao validar matrícula.";
+  }
 });
 </script>
 </body>
