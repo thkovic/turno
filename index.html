@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Passagem de Turno</title>
 <style>
-body { font-family: Arial, sans-serif; background-color: #fff; color: #333; margin:0; padding:0; }
+body { font-family: Arial, sans-serif; background-color: #fff; margin:0; padding:0; }
 .container { max-width: 1000px; margin: 40px auto; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-radius: 8px; }
 h1 { color: #2d6a4f; text-align: center; margin-bottom: 20px; }
 form { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
@@ -32,35 +32,35 @@ button:hover { background-color:#74c69d; }
 <form id="turnoForm">
   <div>
     <label for="data">Data / Hora</label>
-    <input type="datetime-local" id="data" name="data"/>
+    <input type="datetime-local" id="data"/>
   </div>
   <div>
     <label for="equipamento">Equipamento</label>
-    <input type="text" id="equipamento" name="equipamento" required/>
+    <input type="text" id="equipamento" required/>
   </div>
   <div>
     <label for="acionamento">Acionamento (Hora)</label>
-    <input type="time" id="acionamento" name="acionamento" required/>
+    <input type="time" id="acionamento" required/>
   </div>
   <div>
     <label for="problema">Problema</label>
-    <textarea id="problema" name="problema" required></textarea>
+    <textarea id="problema" required></textarea>
   </div>
   <div>
     <label for="solucao">Solução</label>
-    <textarea id="solucao" name="solucao" required></textarea>
+    <textarea id="solucao" required></textarea>
   </div>
   <div>
     <label for="encerramento">Encerramento (Hora)</label>
-    <input type="time" id="encerramento" name="encerramento" required/>
+    <input type="time" id="encerramento" required/>
   </div>
   <div>
     <label for="executanteNome">Executante (Nome)</label>
-    <input type="text" id="executanteNome" name="executanteNome" required/>
+    <input type="text" id="executanteNome" required/>
   </div>
   <div>
     <label for="matricula">Matrícula</label>
-    <input type="text" id="matricula" name="matricula" required/>
+    <input type="text" id="matricula" required/>
   </div>
   <div class="full-width">
     <button type="submit">Registrar Turno</button>
@@ -109,8 +109,8 @@ const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwFS6gRrIGYeWFZ9KYjS
 function setDateTime(){
   const now = new Date();
   const formatted = now.toISOString().slice(0,16);
-  const dataInput = document.getElementById("data");
-  if(!dataInput.value) dataInput.value = formatted;
+  const input = document.getElementById("data");
+  if(!input.value) input.value = formatted;
 }
 
 function formatDateTime(dateStr){
@@ -129,14 +129,12 @@ function formatHour(dateStr){
 }
 
 async function sendForm(dataObj){
-  const resp = await fetch(SCRIPT_URL,{method:"POST",body:JSON.stringify(dataObj)});
-  return resp.text();
+  await fetch(SCRIPT_URL,{method:"POST",body:JSON.stringify(dataObj)});
 }
 
 async function fetchHistory(){
   const resp = await fetch(SCRIPT_URL);
-  const data = await resp.json();
-  return data;
+  return await resp.json();
 }
 
 function renderHistory(dataArray){
@@ -151,7 +149,7 @@ function renderHistory(dataArray){
       <td>${row[3]}</td>
       <td>${row[4]}</td>
       <td>${formatHour(row[5])}</td>
-      <td>${row[7]}</td> <!-- Nome do executante -->
+      <td>${row[7]}</td>
       <td>${row[8]?formatDateTime(row[8]):''}</td>
     `;
     tbody.appendChild(tr);
@@ -175,8 +173,7 @@ document.getElementById("turnoForm").addEventListener("submit", async (e)=>{
     await sendForm(dataObj);
     document.getElementById("turnoForm").reset();
     setDateTime();
-    const hist = await fetchHistory();
-    renderHistory(hist);
+    renderHistory(await fetchHistory());
   }catch(err){ console.error(err); alert("Erro ao registrar. Veja console."); }
 });
 
@@ -200,6 +197,7 @@ document.addEventListener("DOMContentLoaded", async ()=>{
   }catch(err){ console.error("Erro ao buscar histórico",err); }
 });
 
+// PDF
 document.getElementById("btnPDF").addEventListener("click", ()=>{
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
