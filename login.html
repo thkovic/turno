@@ -5,72 +5,84 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Login Passagem de Turno</title>
 <style>
-body { font-family: Arial, sans-serif; background-color: #fff; display:flex; justify-content:center; align-items:center; height:100vh; margin:0; }
-.container { background-color:#f1f1f1; padding:30px; border-radius:10px; box-shadow:0 2px 10px rgba(0,0,0,0.2); width:300px; }
+body { font-family: Arial, sans-serif; background-color: #f0f2f5; display:flex; justify-content:center; align-items:center; height:100vh; margin:0; }
+.container { background-color:#fff; padding:30px; border-radius:8px; box-shadow:0 2px 10px rgba(0,0,0,0.1); width:320px; }
 h1 { text-align:center; color:#2d6a4f; margin-bottom:20px; }
-input { width:100%; padding:10px; margin-bottom:10px; border-radius:5px; border:1px solid #ccc; box-sizing:border-box; }
-button { width:100%; padding:10px; background-color:#95d5b2; color:#fff; border:none; border-radius:5px; cursor:pointer; transition:0.3s; }
+input { width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box; }
+button { width:100%; padding:10px; background-color:#95d5b2; color:#fff; border:none; border-radius:4px; cursor:pointer; font-size:16px; transition:0.3s; }
 button:hover { background-color:#74c69d; }
+.message { margin-bottom:10px; text-align:center; font-weight:bold; color:red; }
 </style>
 </head>
 <body>
 <div class="container">
-<h1>Login</h1>
-<input type="text" id="matriculaLogin" placeholder="Digite sua matrícula"/>
-<button id="btnLogin">Entrar</button>
-<hr>
-<h3>Cadastrar Usuário</h3>
-<input type="text" id="nomeCadastro" placeholder="Nome completo"/>
-<input type="text" id="matriculaCadastro" placeholder="Matrícula"/>
-<button id="btnCadastrar">Cadastrar</button>
+  <h1>Login</h1>
+
+  <div class="message" id="msg"></div>
+
+  <input type="text" id="nome" placeholder="Nome (para cadastro)"/>
+  <input type="text" id="matricula" placeholder="Matrícula" required/>
+
+  <button id="btnLogin">Login</button>
+  <button id="btnCadastrar" style="margin-top:10px; background-color:#52b788;">Cadastrar Matrícula</button>
 </div>
 
 <script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwFS6gRrIGYeWFZ9KYjSaOMLfJd_TTsrZcLNGyvdb7R0RZBcXrQUlgLUdAjNr7B58o/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwFS6gRrIGYeWFZ9KYjSaOMLfJd_TTsrZcLNGyvdb7R0RZBcXrQUlgLUdAjNr7B58o/exec"; // Substitua pela URL do Web App
 
-async function postToScript(obj){
-  const resp = await fetch(SCRIPT_URL, {method:"POST", body:JSON.stringify(obj)});
-  return resp.json();
+const msgDiv = document.getElementById("msg");
+
+// Função para login
+async function login(){
+  const matricula = document.getElementById("matricula").value.trim();
+  if(!matricula){ msgDiv.innerText="Digite a matrícula!"; return; }
+
+  try{
+    const resp = await fetch(SCRIPT_URL,{
+      method:"POST",
+      body: JSON.stringify({matricula}),
+    });
+    const data = await resp.json();
+    if(data.success){
+      localStorage.setItem("matricula", matricula);
+      localStorage.setItem("nome", data.nome);
+      window.location.href="index.html";
+    } else {
+      msgDiv.innerText = data.message;
+    }
+  }catch(err){
+    console.error(err);
+    msgDiv.innerText = "Erro ao conectar com servidor.";
+  }
 }
 
-// Login
-document.getElementById("btnLogin").addEventListener("click", async ()=>{
-  const matricula = document.getElementById("matriculaLogin").value.trim();
-  if(!matricula){ alert("Digite sua matrícula"); return; }
-  try{
-    const resp = await postToScript({matricula});
-    if(resp.success){
-      localStorage.setItem("matricula", matricula);
-      localStorage.setItem("nome", resp.nome);
-      window.location.href="index.html";
-    }else{
-      alert(resp.message);
-    }
-  }catch(err){
-    console.error(err);
-    alert("Erro ao validar matrícula");
-  }
-});
+// Função para cadastrar usuário
+async function cadastrar(){
+  const nome = document.getElementById("nome").value.trim();
+  const matricula = document.getElementById("matricula").value.trim();
+  if(!nome || !matricula){ msgDiv.innerText="Preencha nome e matrícula!"; return; }
 
-// Cadastro
-document.getElementById("btnCadastrar").addEventListener("click", async ()=>{
-  const nome = document.getElementById("nomeCadastro").value.trim();
-  const matricula = document.getElementById("matriculaCadastro").value.trim();
-  if(!nome || !matricula){ alert("Preencha nome e matrícula"); return; }
   try{
-    const resp = await postToScript({cadastrar:true,nome,matricula});
-    if(resp.success){
-      alert("Usuário cadastrado com sucesso!");
-      document.getElementById("nomeCadastro").value="";
-      document.getElementById("matriculaCadastro").value="";
-    }else{
-      alert(resp.message);
+    const resp = await fetch(SCRIPT_URL,{
+      method:"POST",
+      body: JSON.stringify({cadastrar:true,nome,matricula}),
+    });
+    const data = await resp.json();
+    if(data.success){
+      msgDiv.style.color="green";
+      msgDiv.innerText = "Usuário cadastrado com sucesso! Agora faça login.";
+    } else {
+      msgDiv.style.color="red";
+      msgDiv.innerText = data.message;
     }
   }catch(err){
     console.error(err);
-    alert("Erro ao cadastrar usuário");
+    msgDiv.innerText = "Erro ao conectar com servidor.";
   }
-});
+}
+
+document.getElementById("btnLogin").addEventListener("click", login);
+document.getElementById("btnCadastrar").addEventListener("click", cadastrar);
 </script>
 </body>
 </html>
