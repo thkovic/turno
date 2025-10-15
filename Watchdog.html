@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Watchdog Automático</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 40px; background: #f5f5f5; }
+    #status { font-size: 18px; margin-top: 20px; }
+    #status span { font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h1>Watchdog Automático</h1>
+  <p id="status">Status: <span>Esperando...</span></p>
+
+  <script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwFS6gRrIGYeWFZ9KYjSaOMLfJd_TTsrZcLNGyvdb7R0RZBcXrQUlgLUdAjNr7B58o/exec";
+
+    async function checkWatchdog(){
+      try {
+        const resp = await fetch(SCRIPT_URL);
+        const data = await resp.json();
+        document.getElementById("status").innerHTML = 
+          `Status: <span style="color:green;">Conectado</span> | Valor na planilha: <span>${data.valor}</span> | Última verificação: <span>${new Date(data.timestamp).toLocaleTimeString()}</span>`;
+      } catch(err){
+        document.getElementById("status").innerHTML = `Status: <span style="color:red;">Erro de comunicação</span>`;
+        console.error("Erro ao acessar Apps Script:", err);
+      }
+    }
+
+    // Verifica a cada 5 segundos
+    setInterval(checkWatchdog, 5000);
+
+    // Primeira verificação imediata
+    checkWatchdog();
+  </script>
+</body>
+</html>
