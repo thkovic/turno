@@ -2,9 +2,10 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Meus Chamados</title>
 <style>
-body { font-family: Arial; margin:20px; }
+body { font-family: Arial, sans-serif; margin:20px; }
 input, button { padding:6px; margin:5px; }
 table { width:100%; border-collapse:collapse; margin-top:20px;}
 th, td { border:1px solid #ddd; padding:8px;}
@@ -37,7 +38,7 @@ th { background-color:#e9f5ef; color:#2d6a4f;}
 </table>
 
 <script>
-const SCRIPT_URL = "COLE_SEU_SCRIPT_URL_AQUI";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwFS6gRrIGYeWFZ9KYjSaOMLfJd_TTsrZcLNGyvdb7R0RZBcXrQUlgLUdAjNr7B58o/exec";
 
 function formatDateTime(dateStr){
   const date = new Date(dateStr);
@@ -54,12 +55,14 @@ function formatHour(dateStr){
   return String(date.getHours()).padStart(2,'0');
 }
 
+// Busca todos os chamados
 async function fetchHistory(){
   const resp = await fetch(SCRIPT_URL);
   const data = await resp.json();
   return data;
 }
 
+// Renderiza tabela filtrada
 function renderHistory(data){
   const tbody = document.querySelector("#historyTable tbody");
   tbody.innerHTML="";
@@ -72,8 +75,8 @@ function renderHistory(data){
       <td>${row[3]}</td>
       <td>${row[4]}</td>
       <td>${formatHour(row[5])}</td>
-      <td>${row[6]}</td>
-      <td>${row[7]?formatDateTime(row[7]):''}</td>
+      <td>${row[7]}</td> <!-- Nome executante -->
+      <td>${row[8]?formatDateTime(row[8]):''}</td>
       <td>
         <button class="editBtn" data-index="${index+2}" data-action="editar">Editar</button>
         <button class="editBtn" data-index="${index+2}" data-action="excluir">Excluir</button>
@@ -83,27 +86,31 @@ function renderHistory(data){
   });
 }
 
+// Filtrar por matrícula
 document.getElementById("btnBuscar").addEventListener("click", async ()=>{
   const matricula = document.getElementById("matriculaFilter").value.trim();
-  if(!matricula){ alert("Digite a matrícula!"); return; }
+  if(!matricula){ alert("Digite sua matrícula!"); return; }
   const hist = await fetchHistory();
-  const filtrado = hist.filter(row=>row[6].includes(matricula));
+  const filtrado = hist.filter(row=>row[6]===matricula); // matrícula está na coluna 6
   renderHistory(filtrado);
 });
 
+// Editar ou Excluir
 document.addEventListener("click", async (e)=>{
   if(e.target.classList.contains("editBtn")){
     const rowIndex = e.target.dataset.index;
     const action = e.target.dataset.action;
+    const tr = e.target.closest("tr");
+    const cells = tr.querySelectorAll("td");
+
     if(action==="excluir"){
       if(confirm("Deseja realmente excluir este chamado?")){
         await fetch(SCRIPT_URL,{method:"DELETE", body:JSON.stringify({rowIndex})});
         document.getElementById("btnBuscar").click();
       }
     }
+
     if(action==="editar"){
-      const tr = e.target.closest("tr");
-      const cells = tr.querySelectorAll("td");
       const novoProblema = prompt("Problema:", cells[3].innerText);
       const novaSolucao = prompt("Solução:", cells[4].innerText);
       if(novoProblema!==null && novaSolucao!==null){
@@ -117,7 +124,8 @@ document.addEventListener("click", async (e)=>{
             problema: novoProblema,
             solucao: novaSolucao,
             encerramento: cells[5].innerText + ":00",
-            executante: cells[6].innerText
+            executante: cells[6].innerText,
+            matricula: document.getElementById("matriculaFilter").value
           })
         });
         document.getElementById("btnBuscar").click();
