@@ -1,311 +1,163 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Passagem de Turno</title>
 <style>
-body { font-family: Arial, sans-serif; background-color: #fff; color: #333; margin:0; padding:0; }
-.container { max-width: 1000px; margin: 20px auto; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-radius: 8px; }
-h1,h2 { color: #2d6a4f; text-align: center; margin-bottom: 20px; }
-form { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-form label { display: block; font-weight: bold; margin-bottom: 4px; }
-form input, form textarea { width: 100%; padding: 8px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box; }
-form textarea { resize: vertical; min-height:60px; }
-.full-width { grid-column: 1 / -1; }
-button { background-color:#95d5b2; color:#fff; border:none; padding:12px 20px; font-size:16px; cursor:pointer; border-radius:4px; transition: background-color 0.3s; }
-button:hover { background-color:#74c69d; }
-.history { margin-top:40px; }
-.history table { width:100%; border-collapse:collapse; }
-.history th, .history td { border:1px solid #ddd; padding:8px; text-align:left; }
-.history th { background-color:#e9f5ef; color:#2d6a4f; }
-.history tr:nth-child(even) { background-color:#f9f9f9; }
-.history tr:hover { background-color:#f1f1f1; }
-#btnPDF { float:right; margin-bottom:10px; }
-.editBtn { background-color:#52b788; padding:4px 8px; font-size:12px; border-radius:3px; cursor:pointer; }
-.editBtn:hover { background-color:#2d6a4f; }
-#filterInput, #matriculaFilter { padding:6px; width:250px; margin-bottom:10px; }
-#watchdogStatus { margin-bottom:10px; font-weight:bold; }
-#loginContainer, #registroContainer { max-width:600px; margin:auto; }
+body {
+  font-family: Arial;
+  background: #f9fafb;
+  color: #333;
+  margin: 0;
+  padding: 20px;
+}
+h1 {
+  color: #2c7a7b;
+}
+input, textarea, select, button {
+  display: block;
+  margin: 5px 0 15px;
+  padding: 8px;
+  width: 100%;
+  max-width: 400px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+button {
+  background: #38b2ac;
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+}
+button:hover { background: #319795; }
+#status { margin: 10px 0; font-weight: bold; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+table, th, td {
+  border: 1px solid #ccc;
+}
+th {
+  background: #e6fffa;
+  color: #285e61;
+}
+td, th {
+  padding: 8px;
+  text-align: left;
+}
 </style>
 </head>
 <body>
-
-<div id="loginContainer" class="container">
-<h1>Login Passagem de Turno</h1>
-<form id="loginForm">
-  <div class="full-width">
-    <label>Matrícula</label>
-    <input type="text" id="loginMatricula" required placeholder="Digite sua matrícula"/>
-  </div>
-  <div class="full-width">
-    <button type="submit">Login</button>
-  </div>
-</form>
-<form id="cadastrarForm">
-  <h2>Ou Cadastre uma Matrícula</h2>
-  <div>
-    <label>Nome</label>
-    <input type="text" id="cadNome" required/>
-  </div>
-  <div>
-    <label>Matrícula</label>
-    <input type="text" id="cadMatricula" required/>
-  </div>
-  <div class="full-width">
-    <button type="submit">Cadastrar</button>
-  </div>
-</form>
-</div>
-
-<div id="registroContainer" class="container" style="display:none;">
 <h1>Passagem de Turno</h1>
 
-<div id="watchdogStatus">Watchdog: --</div>
-
-<form id="turnoForm">
-<div>
-<label for="data">Data / Hora</label>
-<input type="datetime-local" id="data" name="data"/>
-</div>
-<div>
-<label for="equipamento">Equipamento</label>
-<input type="text" id="equipamento" name="equipamento" required/>
-</div>
-<div>
-<label for="acionamento">Acionamento (Hora)</label>
-<input type="time" id="acionamento" name="acionamento" required/>
-</div>
-<div>
-<label for="problema">Problema</label>
-<textarea id="problema" name="problema" required></textarea>
-</div>
-<div>
-<label for="solucao">Solução</label>
-<textarea id="solucao" name="solucao" required></textarea>
-</div>
-<div>
-<label for="encerramento">Encerramento (Hora)</label>
-<input type="time" id="encerramento" name="encerramento" required/>
-</div>
-<div class="full-width">
-<label for="executante">Executante</label>
-<input type="text" id="executante" name="executante" required/>
-</div>
-<div class="full-width">
-<button type="submit">Registrar Turno</button>
-</div>
-</form>
-
-<div class="history">
-<h2>Histórico</h2>
-
-<div style="margin-bottom:10px;">
-<label>Filtrar: </label>
-<input type="text" id="filterInput" placeholder="Digite para filtrar..."/>
+<div id="loginArea">
+  <h3>Login</h3>
+  <input id="loginMatricula" placeholder="Digite sua matrícula">
+  <button onclick="login()">Entrar</button>
+  <hr>
+  <h4>Ou cadastrar novo usuário</h4>
+  <input id="cadNome" placeholder="Nome completo">
+  <input id="cadMatricula" placeholder="Matrícula">
+  <button onclick="cadastrar()">Cadastrar</button>
 </div>
 
-<div style="margin-bottom:10px;">
-<label>Minha Matrícula:</label>
-<input type="text" id="matriculaFilter" placeholder="Digite sua matrícula"/>
-<button id="btnMeusChamados">Meus Chamados</button>
-<button id="btnTodos">Mostrar Todos</button>
+<div id="mainArea" style="display:none;">
+  <p id="userInfo"></p>
+  <div id="status">Status: aguardando...</div>
+
+  <h3>Registrar novo turno</h3>
+  <input id="equipamento" placeholder="Equipamento">
+  <input id="acionamento" placeholder="Hora acionamento (HH)">
+  <textarea id="problema" placeholder="Problema"></textarea>
+  <textarea id="solucao" placeholder="Solução"></textarea>
+  <input id="encerramento" placeholder="Hora encerramento (HH)">
+  <button onclick="registrar()">Registrar</button>
+
+  <h3>Histórico</h3>
+  <table id="tabela">
+    <thead><tr><th>Data</th><th>Equipamento</th><th>Problema</th><th>Solução</th><th>Executante</th></tr></thead>
+    <tbody></tbody>
+  </table>
 </div>
 
-<div style="text-align:right; margin-bottom:10px;">
-<button id="btnPDF">Gerar PDF</button>
-</div>
-
-<table id="historyTable">
-<thead>
-<tr>
-<th>Matrícula</th>
-<th>Executante</th>
-<th>Data / Hora Original</th>
-<th>Equipamento</th>
-<th>Acionamento</th>
-<th>Problema</th>
-<th>Solução</th>
-<th>Encerramento</th>
-<th>Data / Hora Edição</th>
-<th>Ações</th>
-</tr>
-</thead>
-<tbody></tbody>
-</table>
-</div>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
 <script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwFS6gRrIGYeWFZ9KYjSaOMLfJd_TTsrZcLNGyvdb7R0RZBcXrQUlgLUdAjNr7B58o/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwFS6gRrIGYeWFZ9KYjSaOMLfJd_TTsrZcLNGyvdb7R0RZBcXrQUlgLUdAjNr7B58o/exec"; // ⚠️ substitua pela URL do Apps Script publicado
+let matriculaLogada = "";
+let nomeLogado = "";
 
-// =============== WATCHDOG ===============
-async function atualizarWatchdog(){
-  try{
-    const resp = await fetch(SCRIPT_URL);
-    const data = await resp.json();
-    document.getElementById("watchdogStatus").innerText = 
-      `Watchdog: ${data.valor} | Última verificação: ${new Date(data.timestamp).toLocaleTimeString()}`;
-  }catch(err){
-    document.getElementById("watchdogStatus").innerText = "Watchdog: Erro de comunicação";
-    console.error(err);
+async function login(){
+  const matricula = document.getElementById("loginMatricula").value.trim();
+  if(!matricula) return alert("Digite sua matrícula");
+  const resp = await fetch(SCRIPT_URL,{
+    method:"POST",
+    body: JSON.stringify({login:true,matricula})
+  });
+  const data = await resp.json();
+  if(data.success){
+    matriculaLogada = matricula;
+    nomeLogado = data.nome;
+    document.getElementById("loginArea").style.display="none";
+    document.getElementById("mainArea").style.display="block";
+    document.getElementById("userInfo").innerText = `Logado como: ${nomeLogado} (${matriculaLogada})`;
+    carregarHistorico();
+  }else{
+    alert(data.message);
   }
 }
-setInterval(atualizarWatchdog,5000);
-atualizarWatchdog();
 
-// =============== LOGIN ===============
-document.getElementById("loginForm").addEventListener("submit", async (e)=>{
-  e.preventDefault();
-  const matricula = document.getElementById("loginMatricula").value.trim();
-  if(!matricula){ alert("Digite sua matrícula"); return; }
-  try{
-    const resp = await fetch(SCRIPT_URL,{method:"POST",body:JSON.stringify({login:true,matricula})});
-    const data = await resp.json();
-    if(data.success){
-      alert("Bem-vindo, "+data.nome);
-      document.getElementById("loginContainer").style.display="none";
-      document.getElementById("registroContainer").style.display="block";
-      document.getElementById("executante").value = data.nome;
-    }else{
-      alert(data.message);
-    }
-  }catch(err){ console.error(err); alert("Erro ao conectar com servidor"); }
-});
-
-// =============== CADASTRO MATRÍCULA ===============
-document.getElementById("cadastrarForm").addEventListener("submit", async (e)=>{
-  e.preventDefault();
+async function cadastrar(){
   const nome = document.getElementById("cadNome").value.trim();
   const matricula = document.getElementById("cadMatricula").value.trim();
-  if(!nome || !matricula){ alert("Preencha todos os campos"); return; }
-  try{
-    const resp = await fetch(SCRIPT_URL,{method:"POST",body:JSON.stringify({cadastrar:true,nome,matricula})});
-    const data = await resp.json();
-    if(data.success){
-      alert("Usuário cadastrado com sucesso!");
-      document.getElementById("cadNome").value="";
-      document.getElementById("cadMatricula").value="";
-    }else{
-      alert(data.message);
-    }
-  }catch(err){ console.error(err); alert("Erro ao cadastrar"); }
-});
-
-// =============== FORMULARIO DE TURNO ===============
-function setDateTime(){
-  const now = new Date();
-  const formatted = now.toISOString().slice(0,16);
-  const dataInput = document.getElementById("data");
-  if(!dataInput.value) dataInput.value = formatted;
-}
-
-function formatDateTime(dateStr){
-  const date = new Date(dateStr);
-  const day = String(date.getDate()).padStart(2,'0');
-  const month = String(date.getMonth()+1).padStart(2,'0');
-  const year = date.getFullYear();
-  const hours = String(date.getHours()).padStart(2,'0');
-  const minutes = String(date.getMinutes()).padStart(2,'0');
-  return `${day}/${month}/${year} ${hours}:${minutes}`;
-}
-
-function formatHour(dateStr){
-  const date = new Date(dateStr);
-  const hours = String(date.getHours()).padStart(2,'0');
-  return hours;
-}
-
-async function sendForm(dataObj){
-  const resp = await fetch(SCRIPT_URL,{method:"POST",body:JSON.stringify(dataObj)});
-  return resp.json();
-}
-
-// =============== HISTORICO ===============
-async function fetchHistory(){
-  const resp = await fetch(SCRIPT_URL);
+  if(!nome || !matricula) return alert("Preencha todos os campos");
+  const resp = await fetch(SCRIPT_URL,{
+    method:"POST",
+    body: JSON.stringify({cadastrar:true,nome,matricula})
+  });
   const data = await resp.json();
-  return data;
+  alert(data.message);
 }
 
-function renderHistory(dataArray){
-  const tbody = document.getElementById("historyTable").querySelector("tbody");
-  tbody.innerHTML = "";
-  dataArray.forEach((row,index)=>{
-    const tr = document.createElement("tr");
-    row.forEach(cell=>{
-      const td = document.createElement("td");
-      td.textContent = typeof cell === "object" && cell instanceof Date ? formatDateTime(cell) : cell;
-      tr.appendChild(td);
+async function registrar(){
+  const equipamento = document.getElementById("equipamento").value.trim();
+  const acionamento = document.getElementById("acionamento").value.trim();
+  const problema = document.getElementById("problema").value.trim();
+  const solucao = document.getElementById("solucao").value.trim();
+  const encerramento = document.getElementById("encerramento").value.trim();
+
+  if(!equipamento) return alert("Preencha o equipamento");
+  const resp = await fetch(SCRIPT_URL,{
+    method:"POST",
+    body: JSON.stringify({
+      equipamento,acionamento,problema,solucao,encerramento,
+      executante:nomeLogado,matricula:matriculaLogada
+    })
+  });
+  const data = await resp.json();
+  alert(data.message);
+  carregarHistorico();
+}
+
+async function carregarHistorico(){
+  try{
+    const resp = await fetch(SCRIPT_URL);
+    const dados = await resp.json();
+    const tbody = document.querySelector("#tabela tbody");
+    tbody.innerHTML = "";
+    dados.registros.forEach(r=>{
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>${r.data}</td><td>${r.equipamento}</td><td>${r.problema}</td><td>${r.solucao}</td><td>${r.executante}</td>`;
+      tbody.appendChild(tr);
     });
-    const tdAction = document.createElement("td");
-    tdAction.innerHTML = "<span class='editBtn'>Editar</span>";
-    tr.appendChild(tdAction);
-    tbody.appendChild(tr);
-  });
-}
-
-// =============== ENVIO TURNO ===============
-document.getElementById("turnoForm").addEventListener("submit", async (e)=>{
-  e.preventDefault();
-  setDateTime();
-  const dataObj = {
-    data: document.getElementById("data").value,
-    equipamento: document.getElementById("equipamento").value,
-    acionamento: document.getElementById("acionamento").value,
-    problema: document.getElementById("problema").value,
-    solucao: document.getElementById("solucao").value,
-    encerramento: document.getElementById("encerramento").value,
-    executante: document.getElementById("executante").value,
-    matricula: document.getElementById("loginMatricula").value
-  };
-  try{
-    const resp = await sendForm(dataObj);
-    if(resp.success){
-      alert("Registro enviado com sucesso!");
-      document.getElementById("turnoForm").reset();
-      fetchAndRender();
-    }else{
-      alert(resp.message);
-    }
-  }catch(err){ console.error(err); alert("Erro ao enviar"); }
-});
-
-// =============== FILTRO ===============
-document.getElementById("filterInput").addEventListener("input",()=>{
-  const filter = document.getElementById("filterInput").value.toLowerCase();
-  document.querySelectorAll("#historyTable tbody tr").forEach(tr=>{
-    tr.style.display = [...tr.children].some(td=>td.textContent.toLowerCase().includes(filter)) ? "" : "none";
-  });
-});
-
-document.getElementById("btnMeusChamados").addEventListener("click",()=>{
-  const matricula = document.getElementById("matriculaFilter").value.trim();
-  document.querySelectorAll("#historyTable tbody tr").forEach(tr=>{
-    tr.style.display = tr.children[0].textContent===matricula ? "" : "none";
-  });
-});
-
-document.getElementById("btnTodos").addEventListener("click",()=> fetchAndRender());
-
-// =============== FETCH E RENDER HISTÓRICO ===============
-async function fetchAndRender(){
-  const resp = await fetch(SCRIPT_URL);
-  const data = await resp.json();
-  if(data.status==="ok" && data.registros){
-    renderHistory(data.registros);
+    document.getElementById("status").innerText = "Status: Conectado ✅ | Watchdog: " + dados.watchdog;
+  }catch(e){
+    document.getElementById("status").innerText = "Status: Erro de comunicação ❌";
   }
 }
-fetchAndRender();
-
-// =============== GERAR PDF ===============
-document.getElementById("btnPDF").addEventListener("click", ()=>{
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-  doc.autoTable({ html:"#historyTable" });
-  doc.save("Historico.pdf");
-});
+setInterval(carregarHistorico, 10000);
 </script>
 </body>
 </html>
