@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Passagem de Turno</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #ffffff;
+      color: #333333;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 900px;
+      margin: 40px auto;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      border-radius: 8px;
+    }
+    h1 {
+      color: #2d6a4f; /* verde escuro suave */
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    form {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    form label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 4px;
+    }
+    form input, form textarea, form select {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    form textarea {
+      resize: vertical;
+      min-height: 60px;
+    }
+    .full-width {
+      grid-column: 1 / -1;
+    }
+    button {
+      background-color: #95d5b2; /* verde claro suave */
+      color: #ffffff;
+      border: none;
+      padding: 12px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: #74c69d;
+    }
+    .history {
+      margin-top: 40px;
+    }
+    .history table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .history th, .history td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+    .history th {
+      background-color: #e9f5ef;
+      color: #2d6a4f;
+    }
+    .history tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+    .history tr:hover {
+      background-color: #f1f1f1;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Passagem de Turno</h1>
+    <form id="turnoForm">
+      <div>
+        <label for="data">Data / Hora</label>
+        <input type="text" id="data" name="data" disabled />
+      </div>
+      <div>
+        <label for="equipamento">Equipamento</label>
+        <input type="text" id="equipamento" name="equipamento" required />
+      </div>
+      <div>
+        <label for="acionamento">Acionamento</label>
+        <input type="text" id="acionamento" name="acionamento" required />
+      </div>
+      <div>
+        <label for="problema">Problema</label>
+        <textarea id="problema" name="problema" required></textarea>
+      </div>
+      <div>
+        <label for="solucao">Solução</label>
+        <textarea id="solucao" name="solucao" required></textarea>
+      </div>
+      <div>
+        <label for="encerramento">Encerramento</label>
+        <textarea id="encerramento" name="encerramento" required></textarea>
+      </div>
+      <div class="full-width">
+        <label for="executante">Executante</label>
+        <input type="text" id="executante" name="executante" required />
+      </div>
+      <div class="full-width">
+        <button type="submit">Registrar Turno</button>
+      </div>
+    </form>
+
+    <div class="history">
+      <h2>Histórico</h2>
+      <table id="historyTable">
+        <thead>
+          <tr>
+            <th>Data / Hora</th>
+            <th>Equipamento</th>
+            <th>Acionamento</th>
+            <th>Problema</th>
+            <th>Solução</th>
+            <th>Encerramento</th>
+            <th>Executante</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Linhas serão inseridas via JavaScript -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    // Coloque aqui o URL do seu Web App do Google Apps Script (link que termina com /exec)
+    const SCRIPT_URL = "LINK_DO_SEU_WEB_APP_AQUI";
+
+    // Ajusta o campo data/hora automaticamente
+    function setDateTime() {
+      const now = new Date();
+      const str = now.toLocaleString("pt-BR", { hour12: false });
+      document.getElementById("data").value = str;
+    }
+
+    // Envia o formulário para a planilha
+    async function sendForm(dataObj) {
+      const resp = await fetch(SCRIPT_URL, {
+        method: "POST",
+        body: JSON.stringify(dataObj),
+      });
+      return resp.text();
+    }
+
+    // Pega os registros salvos e popula tabela
+    async function fetchHistory() {
+      const resp = await fetch(SCRIPT_URL);
+      const data = await resp.json();
+      return data;
+    }
+
+    // Renderiza a tabela de histórico
+    function renderHistory(dataArray) {
+      const tbody = document.getElementById("historyTable").querySelector("tbody");
+      tbody.innerHTML = "";
+      dataArray.forEach(row => {
+        const tr = document.createElement("tr");
+        row.forEach(cell => {
+          const td = document.createElement("td");
+          td.textContent = cell;
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Evento ao enviar formulário
+    document.getElementById("turnoForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      setDateTime();
+      const dataObj = {
+        data: document.getElementById("data").value,
+        equipamento: document.getElementById("equipamento").value,
+        acionamento: document.getElementById("acionamento").value,
+        problema: document.getElementById("problema").value,
+        solucao: document.getElementById("solucao").value,
+        encerramento: document.getElementById("encerramento").value,
+        executante: document.getElementById("executante").value,
+      };
+
+      try {
+        const resp = await sendForm(dataObj);
+        console.log("Resposta do servidor:", resp);
+        // Limpar campos (menos a data, que será recalculada)
+        document.getElementById("equipamento").value = "";
+        document.getElementById("acionamento").value = "";
+        document.getElementById("problema").value = "";
+        document.getElementById("solucao").value = "";
+        document.getElementById("encerramento").value = "";
+        document.getElementById("executante").value = "";
+        // Atualiza histórico
+        const hist = await fetchHistory();
+        renderHistory(hist);
+      } catch (err) {
+        console.error("Erro ao enviar dados", err);
+        alert("Erro ao registrar. Veja console.");
+      }
+    });
+
+    // Inicialização ao carregar a página
+    document.addEventListener("DOMContentLoaded", async () => {
+      setDateTime();
+      try {
+        const hist = await fetchHistory();
+        renderHistory(hist);
+      } catch (err) {
+        console.error("Erro ao buscar histórico", err);
+      }
+    });
+  </script>
+</body>
+</html>
