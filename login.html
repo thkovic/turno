@@ -1,88 +1,65 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Login Passagem de Turno</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login - Passagem de Turno</title>
 <style>
-body { font-family: Arial, sans-serif; background-color: #f0f2f5; display:flex; justify-content:center; align-items:center; height:100vh; margin:0; }
-.container { background-color:#fff; padding:30px; border-radius:8px; box-shadow:0 2px 10px rgba(0,0,0,0.1); width:320px; }
-h1 { text-align:center; color:#2d6a4f; margin-bottom:20px; }
-input { width:100%; padding:10px; margin-bottom:15px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box; }
-button { width:100%; padding:10px; background-color:#95d5b2; color:#fff; border:none; border-radius:4px; cursor:pointer; font-size:16px; transition:0.3s; }
-button:hover { background-color:#74c69d; }
-.message { margin-bottom:10px; text-align:center; font-weight:bold; color:red; }
+body { font-family: Arial, sans-serif; background:#f5f5f5; display:flex; justify-content:center; align-items:center; height:100vh; margin:0; }
+.container { background:#fff; padding:30px; border-radius:8px; box-shadow:0 2px 10px rgba(0,0,0,0.1); width:300px; }
+h2 { text-align:center; color:#2d6a4f; }
+input { width:100%; padding:8px; margin-bottom:12px; border:1px solid #ccc; border-radius:4px; }
+button { width:100%; padding:10px; border:none; background:#95d5b2; color:#fff; font-size:16px; border-radius:4px; cursor:pointer; }
+button:hover { background:#74c69d; }
+#msg { text-align:center; margin-bottom:10px; color:red; font-size:14px; }
 </style>
 </head>
 <body>
 <div class="container">
-  <h1>Login</h1>
-
-  <div class="message" id="msg"></div>
-
-  <input type="text" id="nome" placeholder="Nome (para cadastro)"/>
-  <input type="text" id="matricula" placeholder="Matrícula" required/>
-
-  <button id="btnLogin">Login</button>
-  <button id="btnCadastrar" style="margin-top:10px; background-color:#52b788;">Cadastrar Matrícula</button>
-</div>
-
+<h2>Login</h2>
+<div id="msg"></div>
+<input type="text" id="nome" placeholder="Nome (para cadastro)">
+<input type="text" id="matricula" placeholder="Matrícula">
+<button id="btnLogin">Login</button>
+<button id="btnCadastrar">Cadastrar</button>
 <script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwFS6gRrIGYeWFZ9KYjSaOMLfJd_TTsrZcLNGyvdb7R0RZBcXrQUlgLUdAjNr7B58o/exec"; // Substitua pela URL do Web App
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwFS6gRrIGYeWFZ9KYjSaOMLfJd_TTsrZcLNGyvdb7R0RZBcXrQUlgLUdAjNr7B58o/exec";
 
-const msgDiv = document.getElementById("msg");
-
-// Função para login
-async function login(){
-  const matricula = document.getElementById("matricula").value.trim();
-  if(!matricula){ msgDiv.innerText="Digite a matrícula!"; return; }
-
+async function postData(payload){
   try{
-    const resp = await fetch(SCRIPT_URL,{
-      method:"POST",
-      body: JSON.stringify({matricula}),
-    });
-    const data = await resp.json();
-    if(data.success){
-      localStorage.setItem("matricula", matricula);
-      localStorage.setItem("nome", data.nome);
-      window.location.href="index.html";
-    } else {
-      msgDiv.innerText = data.message;
-    }
+    const resp = await fetch(SCRIPT_URL,{method:"POST",body:JSON.stringify(payload)});
+    return await resp.json();
   }catch(err){
     console.error(err);
-    msgDiv.innerText = "Erro ao conectar com servidor.";
+    return {success:false,message:"Erro ao conectar com servidor"};
   }
 }
 
-// Função para cadastrar usuário
-async function cadastrar(){
+document.getElementById("btnLogin").addEventListener("click", async ()=>{
+  const matricula = document.getElementById("matricula").value.trim();
+  if(!matricula){ showMsg("Digite sua matrícula"); return; }
+  const data = await postData({login:true, matricula});
+  if(data.success){
+    localStorage.setItem("nome", data.nome);
+    localStorage.setItem("matricula", matricula);
+    window.location.href = "index.html";
+  }else showMsg(data.message);
+});
+
+document.getElementById("btnCadastrar").addEventListener("click", async ()=>{
   const nome = document.getElementById("nome").value.trim();
   const matricula = document.getElementById("matricula").value.trim();
-  if(!nome || !matricula){ msgDiv.innerText="Preencha nome e matrícula!"; return; }
+  if(!nome || !matricula){ showMsg("Preencha nome e matrícula"); return; }
+  const data = await postData({cadastrar:true, nome, matricula});
+  showMsg(data.message);
+});
 
-  try{
-    const resp = await fetch(SCRIPT_URL,{
-      method:"POST",
-      body: JSON.stringify({cadastrar:true,nome,matricula}),
-    });
-    const data = await resp.json();
-    if(data.success){
-      msgDiv.style.color="green";
-      msgDiv.innerText = "Usuário cadastrado com sucesso! Agora faça login.";
-    } else {
-      msgDiv.style.color="red";
-      msgDiv.innerText = data.message;
-    }
-  }catch(err){
-    console.error(err);
-    msgDiv.innerText = "Erro ao conectar com servidor.";
-  }
+function showMsg(msg){ 
+  const div = document.getElementById("msg");
+  div.innerText = msg;
+  setTimeout(()=>{ div.innerText=""; },3000);
 }
-
-document.getElementById("btnLogin").addEventListener("click", login);
-document.getElementById("btnCadastrar").addEventListener("click", cadastrar);
 </script>
+</div>
 </body>
 </html>
