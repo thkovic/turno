@@ -5,60 +5,59 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Passagem de Turno</title>
 <style>
-body { font-family: Arial, sans-serif; background-color: #fff; color: #333; margin:0; padding:0; }
-.container { max-width: 1000px; margin: 40px auto; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-radius: 8px; }
-h1 { color: #2d6a4f; text-align: center; margin-bottom: 20px; }
-form { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-form label { display: block; font-weight: bold; margin-bottom: 4px; }
-form input, form textarea { width: 100%; padding: 8px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box; }
-form textarea { resize: vertical; min-height:60px; }
-.full-width { grid-column: 1 / -1; }
-button { background-color:#95d5b2; color:#fff; border:none; padding:12px 20px; font-size:16px; cursor:pointer; border-radius:4px; transition: background-color 0.3s; }
-button:hover { background-color:#74c69d; }
+body { font-family: Arial,sans-serif; background:#fff; margin:0; padding:0; }
+.container { max-width:1000px; margin:40px auto; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.1); border-radius:8px; }
+h1 { color:#2d6a4f; text-align:center; margin-bottom:20px; }
+form { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+form label { font-weight:bold; display:block; margin-bottom:4px; }
+form input, form textarea { width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; }
+form textarea { min-height:60px; resize:vertical; }
+.full-width { grid-column:1 / -1; }
+button { background:#95d5b2; color:#fff; border:none; padding:12px; border-radius:4px; cursor:pointer; }
+button:hover { background:#74c69d; }
 .history { margin-top:40px; }
 .history table { width:100%; border-collapse:collapse; }
-.history th, .history td { border:1px solid #ddd; padding:8px; text-align:left; }
-.history th { background-color:#e9f5ef; color:#2d6a4f; }
-.history tr:nth-child(even) { background-color:#f9f9f9; }
-.history tr:hover { background-color:#f1f1f1; }
-#btnPDF { float:right; margin-bottom:10px; }
-.editBtn { background-color:#52b788; padding:4px 8px; font-size:12px; border-radius:3px; cursor:pointer; }
-.editBtn:hover { background-color:#2d6a4f; }
-#filterInput, #matriculaFilter { padding:6px; width:250px; margin-bottom:10px; }
+.history th, .history td { border:1px solid #ddd; padding:8px; }
+.history th { background:#e9f5ef; color:#2d6a4f; }
+.history tr:nth-child(even){ background:#f9f9f9; }
+.history tr:hover{ background:#f1f1f1; }
+.editBtn { background:#52b788; padding:4px 8px; font-size:12px; border-radius:3px; cursor:pointer; }
+.editBtn:hover { background:#2d6a4f; }
+#filterInput, #matriculaFilter { padding:6px; width:200px; margin-bottom:10px; }
 </style>
 </head>
 <body>
 <div class="container">
-<h1>Passagem de Turno - <span id="usuarioNome"></span></h1>
+<h1>Passagem de Turno</h1>
 
 <form id="turnoForm">
 <div>
-<label for="data">Data / Hora</label>
-<input type="datetime-local" id="data" name="data"/>
+<label>Data / Hora</label>
+<input type="datetime-local" id="data"/>
 </div>
 <div>
-<label for="equipamento">Equipamento</label>
-<input type="text" id="equipamento" name="equipamento" required/>
+<label>Equipamento</label>
+<input type="text" id="equipamento" required/>
 </div>
 <div>
-<label for="acionamento">Acionamento (Hora)</label>
-<input type="time" id="acionamento" name="acionamento" required/>
+<label>Acionamento (Hora)</label>
+<input type="time" id="acionamento" required/>
 </div>
 <div>
-<label for="problema">Problema</label>
-<textarea id="problema" name="problema" required></textarea>
+<label>Problema</label>
+<textarea id="problema" required></textarea>
 </div>
 <div>
-<label for="solucao">Solução</label>
-<textarea id="solucao" name="solucao" required></textarea>
+<label>Solução</label>
+<textarea id="solucao" required></textarea>
 </div>
 <div>
-<label for="encerramento">Encerramento (Hora)</label>
-<input type="time" id="encerramento" name="encerramento" required/>
+<label>Encerramento (Hora)</label>
+<input type="time" id="encerramento" required/>
 </div>
-<div>
-<label for="executante">Executante</label>
-<input type="text" id="executante" name="executante" readonly/>
+<div class="full-width">
+<label>Executante</label>
+<input type="text" id="executante" readonly/>
 </div>
 <div class="full-width">
 <button type="submit">Registrar Turno</button>
@@ -67,23 +66,16 @@ button:hover { background-color:#74c69d; }
 
 <div class="history">
 <h2>Histórico</h2>
-
 <div style="margin-bottom:10px;">
-<label>Filtrar: </label>
-<input type="text" id="filterInput" placeholder="Digite para filtrar..."/>
+<label>Filtrar:</label>
+<input type="text" id="filterInput" placeholder="Filtrar histórico..."/>
 </div>
-
 <div style="margin-bottom:10px;">
 <label>Minha Matrícula:</label>
-<input type="text" id="matriculaFilter" placeholder="Digite sua matrícula"/>
+<input type="text" id="matriculaFilter" readonly/>
 <button id="btnMeusChamados">Meus Chamados</button>
 <button id="btnTodos">Mostrar Todos</button>
 </div>
-
-<div style="text-align:right; margin-bottom:10px;">
-<button id="btnPDF">Gerar PDF</button>
-</div>
-
 <table id="historyTable">
 <thead>
 <tr>
@@ -103,223 +95,111 @@ button:hover { background-color:#74c69d; }
 </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
 <script>
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwFS6gRrIGYeWFZ9KYjSaOMLfJd_TTsrZcLNGyvdb7R0RZBcXrQUlgLUdAjNr7B58o/exec";
 
-function setDateTime(){
-  const now = new Date();
-  const formatted = now.toISOString().slice(0,16);
-  const dataInput = document.getElementById("data");
-  if(!dataInput.value) dataInput.value = formatted;
-}
+// Preenche executante e matrícula do login
+document.addEventListener("DOMContentLoaded", ()=>{
+  const nome = localStorage.getItem("nome") || "";
+  const matricula = localStorage.getItem("matricula") || "";
+  document.getElementById("executante").value = nome;
+  document.getElementById("matriculaFilter").value = matricula;
+  fetchHistory();
+});
 
-function formatDateTime(dateStr){
-  const date = new Date(dateStr);
-  const day = String(date.getDate()).padStart(2,'0');
-  const month = String(date.getMonth()+1).padStart(2,'0');
-  const year = date.getFullYear();
-  const hours = String(date.getHours()).padStart(2,'0');
-  const minutes = String(date.getMinutes()).padStart(2,'0');
-  return `${day}/${month}/${year} ${hours}:${minutes}`;
-}
-
-function formatHour(dateStr){
-  const date = new Date(dateStr);
-  const hours = String(date.getHours()).padStart(2,'0');
-  return hours;
-}
-
-async function sendForm(dataObj){
-  const resp = await fetch(SCRIPT_URL,{method:"POST",body:JSON.stringify(dataObj)});
-  return resp.json();
-}
-
-async function updateForm(dataObj){
-  const resp = await fetch(SCRIPT_URL,{method:"POST",body:JSON.stringify(dataObj)});
-  return resp.json();
-}
-
-async function deleteForm(rowIndex){
-  const resp = await fetch(SCRIPT_URL,{method:"DELETE",body:JSON.stringify({rowIndex})});
-  return resp.json();
+async function postData(payload){
+  try{
+    const resp = await fetch(SCRIPT_URL,{method:"POST",body:JSON.stringify(payload)});
+    return await resp.json();
+  }catch(err){
+    console.error(err);
+    return {success:false,message:"Erro ao conectar com servidor"};
+  }
 }
 
 async function fetchHistory(){
-  const resp = await fetch(SCRIPT_URL);
-  return resp.json();
+  try{
+    const resp = await fetch(SCRIPT_URL);
+    const data = await resp.json();
+    renderHistory(data);
+  }catch(err){
+    console.error(err);
+  }
 }
 
-function renderHistory(dataArray){
+function renderHistory(data){
   const tbody = document.getElementById("historyTable").querySelector("tbody");
-  tbody.innerHTML = "";
-  dataArray.forEach((row,index)=>{
+  tbody.innerHTML="";
+  data.forEach((row,index)=>{
     const tr = document.createElement("tr");
-
-    let td = document.createElement("td");
-    td.textContent = formatDateTime(row[0]);
-    tr.appendChild(td);
-
-    td = document.createElement("td");
-    td.textContent = row[1];
-    tr.appendChild(td);
-
-    td = document.createElement("td");
-    td.textContent = formatHour(row[2]);
-    tr.appendChild(td);
-
-    td = document.createElement("td");
-    td.textContent = row[3];
-    tr.appendChild(td);
-
-    td = document.createElement("td");
-    td.textContent = row[4];
-    tr.appendChild(td);
-
-    td = document.createElement("td");
-    td.textContent = formatHour(row[5]);
-    tr.appendChild(td);
-
-    td = document.createElement("td");
-    td.textContent = row[6];
-    tr.appendChild(td);
-
-    td = document.createElement("td");
-    td.textContent = row[7]?formatDateTime(row[7]):"";
-    tr.appendChild(td);
-
-    const tdActions = document.createElement("td");
-    const btnEdit = document.createElement("button");
-    btnEdit.textContent = "Editar";
-    btnEdit.className = "editBtn";
-    btnEdit.dataset.rowIndex = index+2;
-    tdActions.appendChild(btnEdit);
-
-    const btnDelete = document.createElement("button");
-    btnDelete.textContent = "Excluir";
-    btnDelete.className = "editBtn";
-    btnDelete.style.backgroundColor="#d9534f";
-    btnDelete.style.marginLeft="5px";
-    btnDelete.dataset.rowIndex=index+2;
-    tdActions.appendChild(btnDelete);
-
-    tr.appendChild(tdActions);
+    tr.innerHTML = `
+      <td>${formatDateTime(row[0])}</td>
+      <td>${row[1]}</td>
+      <td>${row[2]}</td>
+      <td>${row[3]}</td>
+      <td>${row[4]}</td>
+      <td>${row[5]}</td>
+      <td>${row[6]}</td>
+      <td>${row[8]||''}</td>
+      <td>
+        <button class="editBtn" data-row="${index+2}">Editar</button>
+        <button class="editBtn" style="background:#d9534f;margin-left:5px;" data-row="${index+2}">Excluir</button>
+      </td>
+    `;
     tbody.appendChild(tr);
   });
 }
 
-// ================= FILTROS =================
-document.getElementById("filterInput").addEventListener("input",function(){
-  const filter = this.value.toLowerCase();
-  const table = document.getElementById("historyTable");
-  const trs = table.querySelectorAll("tbody tr");
-  trs.forEach(tr=>{
-    const tds = tr.querySelectorAll("td");
-    let match=false;
-    tds.forEach(td=>{
-      if(td.innerText.toLowerCase().includes(filter)) match=true;
-    });
-    tr.style.display = match?"":"none";
-  });
-});
+function formatDateTime(str){
+  const date = new Date(str);
+  return date.toLocaleString("pt-BR",{hour12:false});
+}
 
-// Meus Chamados
-document.getElementById("btnMeusChamados").addEventListener("click", async () => {
-  const matricula = document.getElementById("matriculaFilter").value.trim();
-  if(!matricula){ alert("Digite sua matrícula!"); return; }
-  const hist = await fetchHistory();
-  const filtrado = hist.filter(row => row[6].includes(matricula));
-  renderHistory(filtrado);
-});
-
-// Mostrar todos
-document.getElementById("btnTodos").addEventListener("click", async ()=>{
-  const hist = await fetchHistory();
-  renderHistory(hist);
-});
-
-// ================= EDITAR / EXCLUIR =================
-document.addEventListener("click", async (e)=>{
-  const tr = e.target.closest("tr");
-  if(e.target.textContent==="Editar"){
-    const cells = tr.querySelectorAll("td");
-    document.getElementById("data").value = cells[0].innerText ? new Date(cells[0].innerText.split('/').reverse().join('-')).toISOString().slice(0,16) : "";
-    document.getElementById("equipamento").value = cells[1].innerText;
-    document.getElementById("acionamento").value = cells[2].innerText.padStart(2,'0') + ":00";
-    document.getElementById("problema").value = cells[3].innerText;
-    document.getElementById("solucao").value = cells[4].innerText;
-    document.getElementById("encerramento").value = cells[5].innerText.padStart(2,'0') + ":00";
-    document.getElementById("executante").value = cells[6].innerText;
-    document.getElementById("turnoForm").dataset.editRow = e.target.dataset.rowIndex;
-  }
-  if(e.target.textContent==="Excluir"){
-    if(confirm("Tem certeza que deseja excluir este chamado?")){
-      await deleteForm(e.target.dataset.rowIndex);
-      const hist = await fetchHistory();
-      renderHistory(hist);
-    }
-  }
-});
-
-// ================= REGISTRAR / ATUALIZAR =================
+// Registrar turno
 document.getElementById("turnoForm").addEventListener("submit", async (e)=>{
   e.preventDefault();
-  setDateTime();
-  const rowIndex = e.target.dataset.editRow;
-  const dataObj = {
-    data: document.getElementById("data").value,
+  const payload = {
     equipamento: document.getElementById("equipamento").value,
     acionamento: document.getElementById("acionamento").value,
     problema: document.getElementById("problema").value,
     solucao: document.getElementById("solucao").value,
     encerramento: document.getElementById("encerramento").value,
     executante: document.getElementById("executante").value,
-    rowIndex: rowIndex
+    matricula: document.getElementById("matriculaFilter").value,
+    data: document.getElementById("data").value
   };
-  if(rowIndex){
-    await updateForm(dataObj);
-    delete e.target.dataset.editRow;
-  }else{
-    await sendForm(dataObj);
-  }
-  e.target.reset();
-  setDateTime();
-  const hist = await fetchHistory();
-  renderHistory(hist);
+  const resp = await postData(payload);
+  if(resp.success){
+    alert("Registro adicionado!");
+    document.getElementById("turnoForm").reset();
+    document.getElementById("executante").value = payload.executante;
+    document.getElementById("matriculaFilter").value = payload.matricula;
+    fetchHistory();
+  }else alert(resp.message);
 });
 
-// ================= CARREGAR HISTÓRICO E USUÁRIO =================
-document.addEventListener("DOMContentLoaded", async ()=>{
-  const nome = localStorage.getItem("nome");
-  const matricula = localStorage.getItem("matricula");
-  if(!nome || !matricula) window.location.href="login.html";
-  document.getElementById("usuarioNome").innerText = nome;
-  document.getElementById("executante").value = nome;
-
-  setDateTime();
-  const hist = await fetchHistory();
-  renderHistory(hist);
+// Filtrar históricos
+document.getElementById("filterInput").addEventListener("input", ()=>{
+  const filter = document.getElementById("filterInput").value.toLowerCase();
+  const rows = document.querySelectorAll("#historyTable tbody tr");
+  rows.forEach(r=>{
+    r.style.display = [...r.querySelectorAll("td")].some(td=>td.innerText.toLowerCase().includes(filter))?"":"none";
+  });
 });
 
-// ================= PDF =================
-document.getElementById("btnPDF").addEventListener("click",()=>{
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-  doc.setFontSize(16);
-  doc.text("Histórico de Passagem de Turno",14,20);
-  const headers=[["Data/Hora Original","Equipamento","Acionamento","Problema","Solução","Encerramento","Executante","Data/Hora Edição"]];
-  const table = document.getElementById("historyTable");
-  const data=[];
-  for(let i=1;i<table.rows.length;i++){
-    const row=[];
-    for(let j=0;j<table.rows[i].cells.length-1;j++){
-      row.push(table.rows[i].cells[j].innerText);
-    }
-    data.push(row);
-  }
-  doc.autoTable({startY:30,head:headers,body:data,theme:'grid',headStyles:{ fillColor:[149,213,178], textColor:0 },styles:{ fontSize:10 },margin:{ left:14,right:14 }});
-  doc.save("Historico_Passagem_de_Turno.pdf");
+// Meus chamados
+document.getElementById("btnMeusChamados").addEventListener("click", ()=>{
+  const matricula = document.getElementById("matriculaFilter").value;
+  const rows = document.querySelectorAll("#historyTable tbody tr");
+  rows.forEach(r=>{
+    r.style.display = r.children[7].innerText === matricula ? "" : "none";
+  });
+});
+
+// Mostrar todos
+document.getElementById("btnTodos").addEventListener("click", ()=>{
+  const rows = document.querySelectorAll("#historyTable tbody tr");
+  rows.forEach(r=> r.style.display="");
 });
 </script>
 </body>
