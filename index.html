@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Passagem de Turno</title>
 <style>
-body { font-family: Arial, sans-serif; background-color: #ffffff; color: #333; margin:0; padding:0; }
+body { font-family: Arial, sans-serif; background-color: #fff; color: #333; margin:0; padding:0; }
 .container { max-width: 1000px; margin: 40px auto; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-radius: 8px; }
 h1 { color: #2d6a4f; text-align: center; margin-bottom: 20px; }
 form { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
@@ -22,9 +22,9 @@ button:hover { background-color:#74c69d; }
 .history tr:nth-child(even) { background-color:#f9f9f9; }
 .history tr:hover { background-color:#f1f1f1; }
 #btnPDF { float:right; margin-bottom:10px; }
-.editBtn { background-color:#52b788; padding:4px 8px; font-size:12px; border-radius:3px; }
+.editBtn { background-color:#52b788; padding:4px 8px; font-size:12px; border-radius:3px; cursor:pointer; }
 .editBtn:hover { background-color:#2d6a4f; }
-#filterInput { padding:6px; width:250px; margin-bottom:10px; }
+#filterInput, #matriculaFilter { padding:6px; width:250px; margin-bottom:10px; }
 </style>
 </head>
 <body>
@@ -57,7 +57,7 @@ button:hover { background-color:#74c69d; }
 <input type="time" id="encerramento" name="encerramento" required/>
 </div>
 <div class="full-width">
-<label for="executante">Executante</label>
+<label for="executante">Executante (Matrícula)</label>
 <input type="text" id="executante" name="executante" required/>
 </div>
 <div class="full-width">
@@ -67,13 +67,23 @@ button:hover { background-color:#74c69d; }
 
 <div class="history">
 <h2>Histórico</h2>
-<div>
+
+<div style="margin-bottom:10px;">
 <label>Filtrar: </label>
 <input type="text" id="filterInput" placeholder="Digite para filtrar..."/>
 </div>
+
+<div style="margin-bottom:10px;">
+<label>Minha Matrícula:</label>
+<input type="text" id="matriculaFilter" placeholder="Digite sua matrícula"/>
+<button id="btnMeusChamados">Meus Chamados</button>
+<button id="btnTodos">Mostrar Todos</button>
+</div>
+
 <div style="text-align:right; margin-bottom:10px;">
 <button id="btnPDF">Gerar PDF</button>
 </div>
+
 <table id="historyTable">
 <thead>
 <tr>
@@ -131,6 +141,11 @@ async function updateForm(dataObj){
   return resp.text();
 }
 
+async function deleteForm(rowIndex){
+  const resp = await fetch(SCRIPT_URL,{method:"DELETE",body:JSON.stringify({rowIndex})});
+  return resp.text();
+}
+
 async function fetchHistory(){
   const resp = await fetch(SCRIPT_URL);
   const data = await resp.json();
@@ -184,18 +199,30 @@ function renderHistory(dataArray){
     tr.appendChild(td);
 
     // Ações
-    const tdEdit = document.createElement("td");
-    const btn = document.createElement("button");
-    btn.textContent = "Editar";
-    btn.className = "editBtn";
-    btn.dataset.rowIndex = index + 2;
-    tdEdit.appendChild(btn);
-    tr.appendChild(tdEdit);
+    const tdActions = document.createElement("td");
 
+    // Botão Editar
+    const btnEdit = document.createElement("button");
+    btnEdit.textContent = "Editar";
+    btnEdit.className = "editBtn";
+    btnEdit.dataset.rowIndex = index + 2;
+    tdActions.appendChild(btnEdit);
+
+    // Botão Excluir
+    const btnDelete = document.createElement("button");
+    btnDelete.textContent = "Excluir";
+    btnDelete.className = "editBtn";
+    btnDelete.style.backgroundColor = "#d9534f";
+    btnDelete.style.marginLeft = "5px";
+    btnDelete.dataset.rowIndex = index + 2;
+    tdActions.appendChild(btnDelete);
+
+    tr.appendChild(tdActions);
     tbody.appendChild(tr);
   });
 }
 
+// Filtro geral
 document.getElementById("filterInput").addEventListener("input",function(){
   const filter = this.value.toLowerCase();
   const table = document.getElementById("historyTable");
@@ -210,10 +237,25 @@ document.getElementById("filterInput").addEventListener("input",function(){
   });
 });
 
-document.addEventListener("click",(e)=>{
-  if(e.target.classList.contains("editBtn")){
-    const rowIndex = e.target.dataset.rowIndex;
-    const tr = e.target.closest("tr");
+// Meus Chamados
+document.getElementById("btnMeusChamados").addEventListener("click", async () => {
+  const matricula = document.getElementById("matriculaFilter").value.trim();
+  if(!matricula){ alert("Digite sua matrícula!"); return; }
+  const hist = await fetchHistory();
+  const filtrado = hist.filter(row => row[6].includes(matricula));
+  renderHistory(filtrado);
+});
+
+// Mostrar todos
+document.getElementById("btnTodos").addEventListener("click", async ()=>{
+  const hist = await fetchHistory();
+  renderHistory(hist);
+});
+
+// Editar / Excluir
+document.addEventListener("click", async (e)=>{
+  const tr = e.target.closest("tr");
+  if(e.target.textContent==="Editar"){
     const cells = tr.querySelectorAll("td");
     document.getElementById("data").value = cells[0].innerText ? new Date(cells[0].innerText.split('/').reverse().join('-')).toISOString().slice(0,16) : "";
     document.getElementById("equipamento").value = cells[1].innerText;
@@ -222,11 +264,24 @@ document.addEventListener("click",(e)=>{
     document.getElementById("solucao").value = cells[4].innerText;
     document.getElementById("encerramento").value = cells[5].innerText.padStart(2,'0') + ":00";
     document.getElementById("executante").value = cells[6].innerText;
-    document.getElementById("turnoForm").dataset.editRow = rowIndex;
+    document.getElementById("turnoForm").dataset.editRow = e.target.dataset.rowIndex;
+  }
+  if(e.target.textContent==="Excluir"){
+    if(confirm("Tem certeza que deseja excluir este chamado?")){
+      try{
+        await deleteForm(e.target.dataset.rowIndex);
+        const hist = await fetchHistory();
+        renderHistory(hist);
+      }catch(err){
+        console.error("Erro ao excluir",err);
+        alert("Erro ao excluir. Veja console.");
+      }
+    }
   }
 });
 
-document.getElementById("turnoForm").addEventListener("submit",async (e)=>{
+// Registrar / Atualizar
+document.getElementById("turnoForm").addEventListener("submit", async (e)=>{
   e.preventDefault();
   setDateTime();
   const rowIndex = e.target.dataset.editRow;
@@ -255,22 +310,19 @@ document.getElementById("turnoForm").addEventListener("submit",async (e)=>{
     document.getElementById("executante").value="";
     const hist = await fetchHistory();
     renderHistory(hist);
-  }catch(err){
-    console.error("Erro ao registrar/editar",err);
-    alert("Erro ao registrar/editar. Veja console.");
-  }
+  }catch(err){ console.error(err); alert("Erro ao registrar/editar. Veja console."); }
 });
 
-document.addEventListener("DOMContentLoaded",async ()=>{
+// Carregar histórico
+document.addEventListener("DOMContentLoaded", async ()=>{
   setDateTime();
   try{
     const hist = await fetchHistory();
     renderHistory(hist);
-  }catch(err){
-    console.error("Erro ao buscar histórico",err);
-  }
+  }catch(err){ console.error("Erro ao buscar histórico",err); }
 });
 
+// PDF
 document.getElementById("btnPDF").addEventListener("click",()=>{
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
