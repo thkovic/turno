@@ -22,9 +22,7 @@ button:hover { background-color:#74c69d; }
 .history tr:nth-child(even) { background-color:#f9f9f9; }
 .history tr:hover { background-color:#f1f1f1; }
 #btnPDF { float:right; margin-bottom:10px; }
-.editBtn { background-color:#52b788; padding:4px 8px; font-size:12px; border-radius:3px; cursor:pointer; }
-.editBtn:hover { background-color:#2d6a4f; }
-#filterInput, #matriculaFilter { padding:6px; width:250px; margin-bottom:10px; }
+#filterInput { padding:6px; width:250px; margin-bottom:10px; }
 </style>
 </head>
 <body>
@@ -32,56 +30,53 @@ button:hover { background-color:#74c69d; }
 <h1>Passagem de Turno</h1>
 
 <form id="turnoForm">
-<div>
-<label for="data">Data / Hora</label>
-<input type="datetime-local" id="data" name="data"/>
-</div>
-<div>
-<label for="equipamento">Equipamento</label>
-<input type="text" id="equipamento" name="equipamento" required/>
-</div>
-<div>
-<label for="acionamento">Acionamento (Hora)</label>
-<input type="time" id="acionamento" name="acionamento" required/>
-</div>
-<div>
-<label for="problema">Problema</label>
-<textarea id="problema" name="problema" required></textarea>
-</div>
-<div>
-<label for="solucao">Solução</label>
-<textarea id="solucao" name="solucao" required></textarea>
-</div>
-<div>
-<label for="encerramento">Encerramento (Hora)</label>
-<input type="time" id="encerramento" name="encerramento" required/>
-</div>
-<div class="full-width">
-<label for="executante">Executante (Matrícula)</label>
-<input type="text" id="executante" name="executante" required/>
-</div>
-<div class="full-width">
-<button type="submit">Registrar Turno</button>
-</div>
+  <div>
+    <label for="data">Data / Hora</label>
+    <input type="datetime-local" id="data" name="data"/>
+  </div>
+  <div>
+    <label for="equipamento">Equipamento</label>
+    <input type="text" id="equipamento" name="equipamento" required/>
+  </div>
+  <div>
+    <label for="acionamento">Acionamento (Hora)</label>
+    <input type="time" id="acionamento" name="acionamento" required/>
+  </div>
+  <div>
+    <label for="problema">Problema</label>
+    <textarea id="problema" name="problema" required></textarea>
+  </div>
+  <div>
+    <label for="solucao">Solução</label>
+    <textarea id="solucao" name="solucao" required></textarea>
+  </div>
+  <div>
+    <label for="encerramento">Encerramento (Hora)</label>
+    <input type="time" id="encerramento" name="encerramento" required/>
+  </div>
+  <div class="full-width">
+    <label for="executante">Executante (Matrícula)</label>
+    <input type="text" id="executante" name="executante" required/>
+  </div>
+  <div class="full-width">
+    <button type="submit">Registrar Turno</button>
+  </div>
 </form>
+
+<div style="margin-bottom:10px;">
+  <button id="btnMeusChamados">Meus Chamados</button>
+</div>
 
 <div class="history">
 <h2>Histórico</h2>
 
 <div style="margin-bottom:10px;">
-<label>Filtrar: </label>
-<input type="text" id="filterInput" placeholder="Digite para filtrar..."/>
-</div>
-
-<div style="margin-bottom:10px;">
-<label>Minha Matrícula:</label>
-<input type="text" id="matriculaFilter" placeholder="Digite sua matrícula"/>
-<button id="btnMeusChamados">Meus Chamados</button>
-<button id="btnTodos">Mostrar Todos</button>
+  <label>Filtrar: </label>
+  <input type="text" id="filterInput" placeholder="Digite para filtrar..."/>
 </div>
 
 <div style="text-align:right; margin-bottom:10px;">
-<button id="btnPDF">Gerar PDF</button>
+  <button id="btnPDF">Gerar PDF</button>
 </div>
 
 <table id="historyTable">
@@ -95,7 +90,6 @@ button:hover { background-color:#74c69d; }
 <th>Encerramento</th>
 <th>Executante</th>
 <th>Data / Hora Edição</th>
-<th>Ações</th>
 </tr>
 </thead>
 <tbody></tbody>
@@ -108,6 +102,7 @@ button:hover { background-color:#74c69d; }
 <script>
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwFS6gRrIGYeWFZ9KYjSaOMLfJd_TTsrZcLNGyvdb7R0RZBcXrQUlgLUdAjNr7B58o/exec";
 
+// Define data atual
 function setDateTime(){
   const now = new Date();
   const formatted = now.toISOString().slice(0,16);
@@ -127,22 +122,12 @@ function formatDateTime(dateStr){
 
 function formatHour(dateStr){
   const date = new Date(dateStr);
-  const hours = String(date.getHours()).padStart(2,'0');
-  return hours;
+  return String(date.getHours()).padStart(2,'0');
 }
 
+// Funções para Apps Script
 async function sendForm(dataObj){
   const resp = await fetch(SCRIPT_URL,{method:"POST",body:JSON.stringify(dataObj)});
-  return resp.text();
-}
-
-async function updateForm(dataObj){
-  const resp = await fetch(SCRIPT_URL,{method:"PUT",body:JSON.stringify(dataObj)});
-  return resp.text();
-}
-
-async function deleteForm(rowIndex){
-  const resp = await fetch(SCRIPT_URL,{method:"DELETE",body:JSON.stringify({rowIndex})});
   return resp.text();
 }
 
@@ -152,139 +137,30 @@ async function fetchHistory(){
   return data;
 }
 
+// Renderizar tabela
 function renderHistory(dataArray){
-  const tbody = document.getElementById("historyTable").querySelector("tbody");
+  const tbody = document.querySelector("#historyTable tbody");
   tbody.innerHTML = "";
-  dataArray.forEach((row,index)=>{
+  dataArray.forEach((row)=>{
     const tr = document.createElement("tr");
-
-    // Data / Hora Original
-    let td = document.createElement("td");
-    td.textContent = formatDateTime(row[0]);
-    tr.appendChild(td);
-
-    // Equipamento
-    td = document.createElement("td");
-    td.textContent = row[1];
-    tr.appendChild(td);
-
-    // Acionamento (hora apenas)
-    td = document.createElement("td");
-    td.textContent = formatHour(row[2]);
-    tr.appendChild(td);
-
-    // Problema
-    td = document.createElement("td");
-    td.textContent = row[3];
-    tr.appendChild(td);
-
-    // Solução
-    td = document.createElement("td");
-    td.textContent = row[4];
-    tr.appendChild(td);
-
-    // Encerramento (hora apenas)
-    td = document.createElement("td");
-    td.textContent = formatHour(row[5]);
-    tr.appendChild(td);
-
-    // Executante
-    td = document.createElement("td");
-    td.textContent = row[6];
-    tr.appendChild(td);
-
-    // Data / Hora Edição
-    td = document.createElement("td");
-    td.textContent = row[7]?formatDateTime(row[7]):"";
-    tr.appendChild(td);
-
-    // Ações
-    const tdActions = document.createElement("td");
-
-    // Botão Editar
-    const btnEdit = document.createElement("button");
-    btnEdit.textContent = "Editar";
-    btnEdit.className = "editBtn";
-    btnEdit.dataset.rowIndex = index + 2;
-    tdActions.appendChild(btnEdit);
-
-    // Botão Excluir
-    const btnDelete = document.createElement("button");
-    btnDelete.textContent = "Excluir";
-    btnDelete.className = "editBtn";
-    btnDelete.style.backgroundColor = "#d9534f";
-    btnDelete.style.marginLeft = "5px";
-    btnDelete.dataset.rowIndex = index + 2;
-    tdActions.appendChild(btnDelete);
-
-    tr.appendChild(tdActions);
+    tr.innerHTML = `
+      <td>${formatDateTime(row[0])}</td>
+      <td>${row[1]}</td>
+      <td>${formatHour(row[2])}</td>
+      <td>${row[3]}</td>
+      <td>${row[4]}</td>
+      <td>${formatHour(row[5])}</td>
+      <td>${row[6]}</td>
+      <td>${row[7]?formatDateTime(row[7]):''}</td>
+    `;
     tbody.appendChild(tr);
   });
 }
 
-// Filtro geral
-document.getElementById("filterInput").addEventListener("input",function(){
-  const filter = this.value.toLowerCase();
-  const table = document.getElementById("historyTable");
-  const trs = table.querySelectorAll("tbody tr");
-  trs.forEach(tr=>{
-    const tds = tr.querySelectorAll("td");
-    let match=false;
-    tds.forEach(td=>{
-      if(td.innerText.toLowerCase().includes(filter)) match=true;
-    });
-    tr.style.display = match?"":"none";
-  });
-});
-
-// Meus Chamados
-document.getElementById("btnMeusChamados").addEventListener("click", async () => {
-  const matricula = document.getElementById("matriculaFilter").value.trim();
-  if(!matricula){ alert("Digite sua matrícula!"); return; }
-  const hist = await fetchHistory();
-  const filtrado = hist.filter(row => row[6].includes(matricula));
-  renderHistory(filtrado);
-});
-
-// Mostrar todos
-document.getElementById("btnTodos").addEventListener("click", async ()=>{
-  const hist = await fetchHistory();
-  renderHistory(hist);
-});
-
-// Editar / Excluir
-document.addEventListener("click", async (e)=>{
-  const tr = e.target.closest("tr");
-  if(e.target.textContent==="Editar"){
-    const cells = tr.querySelectorAll("td");
-    document.getElementById("data").value = cells[0].innerText ? new Date(cells[0].innerText.split('/').reverse().join('-')).toISOString().slice(0,16) : "";
-    document.getElementById("equipamento").value = cells[1].innerText;
-    document.getElementById("acionamento").value = cells[2].innerText.padStart(2,'0') + ":00";
-    document.getElementById("problema").value = cells[3].innerText;
-    document.getElementById("solucao").value = cells[4].innerText;
-    document.getElementById("encerramento").value = cells[5].innerText.padStart(2,'0') + ":00";
-    document.getElementById("executante").value = cells[6].innerText;
-    document.getElementById("turnoForm").dataset.editRow = e.target.dataset.rowIndex;
-  }
-  if(e.target.textContent==="Excluir"){
-    if(confirm("Tem certeza que deseja excluir este chamado?")){
-      try{
-        await deleteForm(e.target.dataset.rowIndex);
-        const hist = await fetchHistory();
-        renderHistory(hist);
-      }catch(err){
-        console.error("Erro ao excluir",err);
-        alert("Erro ao excluir. Veja console.");
-      }
-    }
-  }
-});
-
-// Registrar / Atualizar
+// Registrar turno
 document.getElementById("turnoForm").addEventListener("submit", async (e)=>{
   e.preventDefault();
   setDateTime();
-  const rowIndex = e.target.dataset.editRow;
   const dataObj = {
     data: document.getElementById("data").value,
     equipamento: document.getElementById("equipamento").value,
@@ -292,28 +168,32 @@ document.getElementById("turnoForm").addEventListener("submit", async (e)=>{
     problema: document.getElementById("problema").value,
     solucao: document.getElementById("solucao").value,
     encerramento: document.getElementById("encerramento").value,
-    executante: document.getElementById("executante").value,
-    rowIndex: rowIndex
+    executante: document.getElementById("executante").value
   };
   try{
-    if(rowIndex){
-      await updateForm(dataObj);
-      delete e.target.dataset.editRow;
-    }else{
-      await sendForm(dataObj);
-    }
-    document.getElementById("equipamento").value="";
-    document.getElementById("acionamento").value="";
-    document.getElementById("problema").value="";
-    document.getElementById("solucao").value="";
-    document.getElementById("encerramento").value="";
-    document.getElementById("executante").value="";
+    await sendForm(dataObj);
+    document.getElementById("turnoForm").reset();
+    setDateTime();
     const hist = await fetchHistory();
     renderHistory(hist);
-  }catch(err){ console.error(err); alert("Erro ao registrar/editar. Veja console."); }
+  }catch(err){ console.error(err); alert("Erro ao registrar. Veja console."); }
 });
 
-// Carregar histórico
+// Filtrar histórico
+document.getElementById("filterInput").addEventListener("input", function(){
+  const filter = this.value.toLowerCase();
+  const trs = document.querySelectorAll("#historyTable tbody tr");
+  trs.forEach(tr=>{
+    tr.style.display = Array.from(tr.children).some(td=>td.innerText.toLowerCase().includes(filter)) ? "" : "none";
+  });
+});
+
+// Abrir página Meus Chamados
+document.getElementById("btnMeusChamados").addEventListener("click", ()=>{
+  window.open("meusChamados.html","_blank");
+});
+
+// Carregar histórico ao iniciar
 document.addEventListener("DOMContentLoaded", async ()=>{
   setDateTime();
   try{
@@ -323,7 +203,7 @@ document.addEventListener("DOMContentLoaded", async ()=>{
 });
 
 // PDF
-document.getElementById("btnPDF").addEventListener("click",()=>{
+document.getElementById("btnPDF").addEventListener("click", ()=>{
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
   doc.setFontSize(16);
@@ -333,7 +213,7 @@ document.getElementById("btnPDF").addEventListener("click",()=>{
   const data=[];
   for(let i=1;i<table.rows.length;i++){
     const row=[];
-    for(let j=0;j<table.rows[i].cells.length-1;j++){
+    for(let j=0;j<table.rows[i].cells.length;j++){
       row.push(table.rows[i].cells[j].innerText);
     }
     data.push(row);
