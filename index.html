@@ -13,14 +13,14 @@
       padding: 0;
     }
     .container {
-      max-width: 900px;
+      max-width: 1000px;
       margin: 40px auto;
       padding: 20px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.1);
       border-radius: 8px;
     }
     h1 {
-      color: #2d6a4f; /* verde escuro suave */
+      color: #2d6a4f;
       text-align: center;
       margin-bottom: 20px;
     }
@@ -49,7 +49,7 @@
       grid-column: 1 / -1;
     }
     button {
-      background-color: #95d5b2; /* verde claro suave */
+      background-color: #95d5b2;
       color: #ffffff;
       border: none;
       padding: 12px 20px;
@@ -83,23 +83,37 @@
     .history tr:hover {
       background-color: #f1f1f1;
     }
+    #btnPDF {
+      float: right;
+      margin-bottom: 10px;
+    }
+    .editBtn {
+      background-color: #52b788;
+      padding: 4px 8px;
+      font-size: 12px;
+      border-radius: 3px;
+    }
+    .editBtn:hover {
+      background-color: #2d6a4f;
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>Passagem de Turno</h1>
+
     <form id="turnoForm">
       <div>
         <label for="data">Data / Hora</label>
-        <input type="text" id="data" name="data" disabled />
+        <input type="datetime-local" id="data" name="data" />
       </div>
       <div>
         <label for="equipamento">Equipamento</label>
         <input type="text" id="equipamento" name="equipamento" required />
       </div>
       <div>
-        <label for="acionamento">Acionamento</label>
-        <input type="text" id="acionamento" name="acionamento" required />
+        <label for="acionamento">Acionamento (Hora)</label>
+        <input type="time" id="acionamento" name="acionamento" required />
       </div>
       <div>
         <label for="problema">Problema</label>
@@ -110,8 +124,8 @@
         <textarea id="solucao" name="solucao" required></textarea>
       </div>
       <div>
-        <label for="encerramento">Encerramento</label>
-        <textarea id="encerramento" name="encerramento" required></textarea>
+        <label for="encerramento">Encerramento (Hora)</label>
+        <input type="time" id="encerramento" name="encerramento" required />
       </div>
       <div class="full-width">
         <label for="executante">Executante</label>
@@ -124,16 +138,21 @@
 
     <div class="history">
       <h2>Histórico</h2>
+      <div style="text-align:right; margin-bottom:10px;">
+        <button id="btnPDF">Gerar PDF</button>
+      </div>
       <table id="historyTable">
         <thead>
           <tr>
-            <th>Data / Hora</th>
+            <th>Data / Hora Original</th>
             <th>Equipamento</th>
             <th>Acionamento</th>
             <th>Problema</th>
             <th>Solução</th>
             <th>Encerramento</th>
             <th>Executante</th>
+            <th>Data / Hora Edição</th>
+            <th>Ações</th>
           </tr>
         </thead>
         <tbody>
@@ -143,19 +162,21 @@
     </div>
   </div>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+
   <script>
-    // Coloque aqui o URL do seu Web App do Google Apps Script (link que termina com /exec)
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwFS6gRrIGYeWFZ9KYjSaOMLfJd_TTsrZcLNGyvdb7R0RZBcXrQUlgLUdAjNr7B58o/exec";
+    const SCRIPT_URL = "COLE_SEU_SCRIPT_URL_AQUI";
 
-
-    // Ajusta o campo data/hora automaticamente
     function setDateTime() {
       const now = new Date();
-      const str = now.toLocaleString("pt-BR", { hour12: false });
-      document.getElementById("data").value = str;
+      const formatted = now.toISOString().slice(0,16);
+      const dataInput = document.getElementById("data");
+      if (!dataInput.value) {
+        dataInput.value = formatted;
+      }
     }
 
-    // Envia o formulário para a planilha
     async function sendForm(dataObj) {
       const resp = await fetch(SCRIPT_URL, {
         method: "POST",
@@ -164,32 +185,65 @@
       return resp.text();
     }
 
-    // Pega os registros salvos e popula tabela
+    async function updateForm(dataObj) {
+      const resp = await fetch(SCRIPT_URL, {
+        method: "PUT",
+        body: JSON.stringify(dataObj),
+      });
+      return resp.text();
+    }
+
     async function fetchHistory() {
       const resp = await fetch(SCRIPT_URL);
       const data = await resp.json();
       return data;
     }
 
-    // Renderiza a tabela de histórico
     function renderHistory(dataArray) {
       const tbody = document.getElementById("historyTable").querySelector("tbody");
       tbody.innerHTML = "";
-      dataArray.forEach(row => {
+      dataArray.forEach((row, index) => {
         const tr = document.createElement("tr");
         row.forEach(cell => {
           const td = document.createElement("td");
           td.textContent = cell;
           tr.appendChild(td);
         });
+        // Adiciona botão Editar
+        const tdEdit = document.createElement("td");
+        const btn = document.createElement("button");
+        btn.textContent = "Editar";
+        btn.className = "editBtn";
+        btn.dataset.rowIndex = index + 2; // +2 considerando cabeçalho da planilha
+        tdEdit.appendChild(btn);
+        tr.appendChild(tdEdit);
         tbody.appendChild(tr);
       });
     }
 
-    // Evento ao enviar formulário
+    // Editar linha
+    document.addEventListener("click", (e) => {
+      if(e.target.classList.contains("editBtn")){
+        const rowIndex = e.target.dataset.rowIndex;
+        const tr = e.target.closest("tr");
+        const cells = tr.querySelectorAll("td");
+
+        document.getElementById("data").value = cells[0].innerText ? new Date(cells[0].innerText).toISOString().slice(0,16) : "";
+        document.getElementById("equipamento").value = cells[1].innerText;
+        document.getElementById("acionamento").value = cells[2].innerText;
+        document.getElementById("problema").value = cells[3].innerText;
+        document.getElementById("solucao").value = cells[4].innerText;
+        document.getElementById("encerramento").value = cells[5].innerText;
+        document.getElementById("executante").value = cells[6].innerText;
+
+        document.getElementById("turnoForm").dataset.editRow = rowIndex;
+      }
+    });
+
     document.getElementById("turnoForm").addEventListener("submit", async (e) => {
       e.preventDefault();
       setDateTime();
+      const rowIndex = e.target.dataset.editRow;
       const dataObj = {
         data: document.getElementById("data").value,
         equipamento: document.getElementById("equipamento").value,
@@ -198,12 +252,17 @@
         solucao: document.getElementById("solucao").value,
         encerramento: document.getElementById("encerramento").value,
         executante: document.getElementById("executante").value,
+        rowIndex: rowIndex
       };
 
       try {
-        const resp = await sendForm(dataObj);
-        console.log("Resposta do servidor:", resp);
-        // Limpar campos (menos a data, que será recalculada)
+        if(rowIndex){
+          await updateForm(dataObj);
+          delete e.target.dataset.editRow;
+        } else {
+          await sendForm(dataObj);
+        }
+        // Limpar campos
         document.getElementById("equipamento").value = "";
         document.getElementById("acionamento").value = "";
         document.getElementById("problema").value = "";
@@ -213,23 +272,51 @@
         // Atualiza histórico
         const hist = await fetchHistory();
         renderHistory(hist);
-      } catch (err) {
-        console.error("Erro ao enviar dados", err);
-        alert("Erro ao registrar. Veja console.");
+      } catch(err){
+        console.error("Erro ao registrar/editar", err);
+        alert("Erro ao registrar/editar. Veja console.");
       }
     });
 
-    // Inicialização ao carregar a página
     document.addEventListener("DOMContentLoaded", async () => {
       setDateTime();
       try {
         const hist = await fetchHistory();
         renderHistory(hist);
-      } catch (err) {
+      } catch(err){
         console.error("Erro ao buscar histórico", err);
       }
+    });
+
+    document.getElementById("btnPDF").addEventListener("click", () => {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      doc.setFontSize(16);
+      doc.text("Histórico de Passagem de Turno", 14, 20);
+
+      const headers = [["Data/Hora Original","Equipamento","Acionamento","Problema","Solução","Encerramento","Executante","Data/Hora Edição"]];
+      const table = document.getElementById("historyTable");
+      const data = [];
+      for(let i=1;i<table.rows.length;i++){
+        const row = [];
+        for(let j=0;j<table.rows[i].cells.length-1;j++){
+          row.push(table.rows[i].cells[j].innerText);
+        }
+        data.push(row);
+      }
+
+      doc.autoTable({
+        startY:30,
+        head: headers,
+        body: data,
+        theme:'grid',
+        headStyles:{ fillColor:[149,213,178], textColor:0 },
+        styles:{ fontSize:10 },
+        margin:{ left:14, right:14 }
+      });
+
+      doc.save("Historico_Passagem_de_Turno.pdf");
     });
   </script>
 </body>
 </html>
-
