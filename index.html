@@ -2,37 +2,113 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Teste Final</title>
+    <title>Sistema Passagem de Turno</title>
+    <style>
+        body { font-family: Arial; margin: 20px; }
+        button { padding: 10px; margin: 5px; background: #4CAF50; color: white; border: none; cursor: pointer; }
+        #result { margin: 20px; padding: 15px; border: 1px solid #ddd; background: #f9f9f9; }
+        .success { color: green; }
+        .error { color: red; }
+    </style>
 </head>
 <body>
-    <h1>Teste Final</h1>
-    <button onclick="testar()">Testar Tudo</button>
-    <div id="result"></div>
+    <h1>🔄 Sistema Passagem de Turno</h1>
+    
+    <button onclick="testarConexao()">1. Testar Conexão</button>
+    <button onclick="carregarHistorico()">2. Carregar Histórico</button>
+    <button onclick="registrarTurno()">3. Registrar Turno de Teste</button>
+    
+    <div id="result">Clique em um botão para começar...</div>
 
 <script>
-const URL = "https://script.google.com/macros/s/AKfycbwFS6gRrIGYeWFZ9KYjSaOMLfJd_TTsrZcLNGyvdb7R0RZBcXrQUlgLUdAjNr7B58o/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwFS6gRrIGYeWFZ9KYjSaOMLfJd_TTsrZcLNGyvdb7R0RZBcXrQUlgLUdAjNr7B58o/exec";
 
-async function testar() {
-    const result = document.getElementById('result');
-    
+async function fazerRequisicao(dados) {
     try {
-        // Teste 1: Conexão básica
-        result.innerHTML = "Testando conexão...<br>";
-        const conexao = await fetch(URL);
-        const dadosConexao = await conexao.json();
-        result.innerHTML += "Conexão: " + JSON.stringify(dadosConexao) + "<br><br>";
-        
-        // Teste 2: Histórico
-        result.innerHTML += "Testando histórico...<br>";
-        const historico = await fetch(URL, {
+        console.log("📤 Enviando:", dados);
+        const resposta = await fetch(SCRIPT_URL, {
             method: 'POST',
-            body: JSON.stringify({ getHistory: true })
+            body: JSON.stringify(dados)
         });
-        const dadosHistorico = await historico.json();
-        result.innerHTML += "Histórico: " + JSON.stringify(dadosHistorico) + "<br>";
-        
+        const resultado = await resposta.json();
+        console.log("📥 Recebido:", resultado);
+        return resultado;
     } catch (erro) {
-        result.innerHTML += "ERRO: " + erro.message;
+        console.error("❌ Erro:", erro);
+        throw erro;
+    }
+}
+
+function mostrarResultado(mensagem, tipo = 'info') {
+    const div = document.getElementById('result');
+    div.innerHTML = `<div class="${tipo}">${mensagem}</div>`;
+}
+
+async function testarConexao() {
+    try {
+        mostrarResultado("🔗 Testando conexão com o servidor...");
+        const resposta = await fetch(SCRIPT_URL);
+        const dados = await resposta.json();
+        
+        if (dados.status === "ok") {
+            mostrarResultado(`✅ <strong>Conexão estabelecida!</strong><br>
+                Mensagem: ${dados.message}<br>
+                Watchdog: ${dados.valor}<br>
+                ID Planilha: ${dados.planilha_id || 'N/A'}<br>
+                URL: ${dados.planilha_url || 'N/A'}`, 'success');
+        } else {
+            mostrarResultado(`❌ Erro: ${dados.message}`, 'error');
+        }
+    } catch (erro) {
+        mostrarResultado(`❌ Falha na conexão: ${erro.message}`, 'error');
+    }
+}
+
+async function carregarHistorico() {
+    try {
+        mostrarResultado("📊 Carregando histórico...");
+        const resultado = await fazerRequisicao({ getHistory: true });
+        
+        if (Array.isArray(resultado)) {
+            if (resultado.length === 0) {
+                mostrarResultado("📭 Nenhum registro encontrado na planilha", 'info');
+            } else {
+                let html = `<strong>✅ ${resultado.length} registros encontrados:</strong><br><br>`;
+                resultado.forEach((reg, index) => {
+                    html += `<strong>Registro ${index + 1}:</strong> ${JSON.stringify(reg)}<br>`;
+                });
+                mostrarResultado(html, 'success');
+            }
+        } else {
+            mostrarResultado(`❌ Erro: ${JSON.stringify(resultado)}`, 'error');
+        }
+    } catch (erro) {
+        mostrarResultado(`❌ Erro ao carregar histórico: ${erro.message}`, 'error');
+    }
+}
+
+async function registrarTurno() {
+    try {
+        mostrarResultado("📝 Registrando turno de teste...");
+        const resultado = await fazerRequisicao({
+            equipamento: "EQUIP-TESTE-" + Date.now(),
+            nome: "Usuario Teste",
+            matricula: "TESTE123",
+            acionamento: "08:00",
+            problema: "Problema de teste automático",
+            solucao: "Solução aplicada com sucesso",
+            encerramento: "09:30"
+        });
+        
+        if (resultado.success) {
+            mostrarResultado(`✅ ${resultado.message}`, 'success');
+            // Atualizar histórico após registrar
+            setTimeout(carregarHistorico, 1000);
+        } else {
+            mostrarResultado(`❌ ${resultado.message}`, 'error');
+        }
+    } catch (erro) {
+        mostrarResultado(`❌ Erro ao registrar: ${erro.message}`, 'error');
     }
 }
 </script>
