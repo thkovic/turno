@@ -28,6 +28,7 @@ button:disabled { background-color:#ccc; cursor:not-allowed; }
 .info { background:#d1ecf1; color:#0c5460; border:1px solid #bee5eb; }
 .loading { display:inline-block; width:20px; height:20px; border:3px solid #f3f3f3; border-top:3px solid #2d6a4f; border-radius:50%; animation:spin 1s linear infinite; margin-left:10px; }
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+.debug-info { background:#fff3cd; color:#856404; border:1px solid #ffeaa7; padding:10px; margin:10px 0; border-radius:4px; font-size:12px; }
 </style>
 </head>
 <body>
@@ -50,8 +51,15 @@ button:disabled { background-color:#ccc; cursor:not-allowed; }
 <div><label>Encerramento (Hora) *</label><input type="time" id="encerramento" required/></div>
 <div class="full-width">
 <button type="submit" id="btnSubmit">✅ Registrar Passagem de Turno</button>
+<button type="button" id="btnLimpar" style="background: #ff6b6b; margin-left: 10px;">🗑️ Limpar Planilha</button>
 </div>
 </form>
+
+<!-- DEBUG INFO -->
+<div id="debugInfo" class="debug-info hidden">
+<strong>🐛 Informações de Debug:</strong>
+<div id="debugContent"></div>
+</div>
 
 <!-- HISTÓRICO -->
 <div class="history">
@@ -104,7 +112,7 @@ throw error;
 }
 }
 
-// Função para buscar histórico - USANDO POST AGORA
+// Função para buscar histórico - USANDO POST
 async function getHistoryData(){
 try {
 console.log("📤 SOLICITANDO HISTÓRICO VIA POST...");
@@ -137,24 +145,36 @@ btn.textContent = "Registrando...";
 btn.disabled = true;
 
 try {
+// VALIDAR E FORMATAR DADOS ANTES DE ENVIAR
+const dataInput = document.getElementById("data").value;
+const acionamentoInput = document.getElementById("acionamento").value;
+const encerramentoInput = document.getElementById("encerramento").value;
+
+// Validar formato das datas/horas
+if (!dataInput || !acionamentoInput || !encerramentoInput) {
+showAlert("❌ Todos os campos de data e hora são obrigatórios", "error");
+btn.textContent = originalText;
+btn.disabled = false;
+return;
+}
+
 const obj = {
 nome: document.getElementById("nome").value.trim(),
 matricula: document.getElementById("matricula").value.trim(),
-data: document.getElementById("data").value,
+data: dataInput, // Data no formato YYYY-MM-DD
 equipamento: document.getElementById("equipamento").value.trim(),
-acionamento: document.getElementById("acionamento").value,
+acionamento: acionamentoInput, // Hora no formato HH:MM
 problema: document.getElementById("problema").value.trim(),
 solucao: document.getElementById("solucao").value.trim(),
-encerramento: document.getElementById("encerramento").value
+encerramento: encerramentoInput // Hora no formato HH:MM
 };
 
 console.log("🎯 DADOS QUE SERÃO ENVIADOS:", obj);
 
-// Validação
+// Validação adicional
 const validacao = [
 { campo: obj.nome, mensagem: "Nome do operador é obrigatório" },
 { campo: obj.matricula, mensagem: "Matrícula é obrigatória" },
-{ campo: obj.data, mensagem: "Data é obrigatória" },
 { campo: obj.equipamento, mensagem: "Equipamento é obrigatório" },
 { campo: obj.problema, mensagem: "Problema é obrigatório" },
 { campo: obj.solucao, mensagem: "Solução é obrigatória" }
@@ -174,7 +194,7 @@ if(resp.success) {
 showAlert("✅ " + resp.message, "success");
 console.log("🎉 REGISTRO BEM-SUCEDIDO:", resp);
 
-// Limpar campos específicos
+// Limpar apenas alguns campos
 document.getElementById("equipamento").value = "";
 document.getElementById("problema").value = "";
 document.getElementById("solucao").value = "";
@@ -234,14 +254,14 @@ console.log("📝 RENDERIZANDO " + data.length + " REGISTROS...");
 data.forEach((row, index) => {
 const tr = document.createElement("tr");
 const colunas = [
-formatarData(row[0]), // Data
-row[1] || "",        // Operador
-row[2] || "",        // Matrícula
-row[3] || "",        // Equipamento
-row[4] || "",        // Acionamento
-row[5] || "",        // Problema
-row[6] || "",        // Solução
-row[7] || ""         // Encerramento
+formatarDataParaExibicao(row[0]), // Data formatada
+row[1] || "",                    // Operador
+row[2] || "",                    // Matrícula
+row[3] || "",                    // Equipamento
+formatarHoraParaExibicao(row[4]), // Acionamento formatado
+row[5] || "",                    // Problema
+row[6] || "",                    // Solução
+formatarHoraParaExibicao(row[7])  // Encerramento formatado
 ];
 
 colunas.forEach(valor => {
@@ -274,12 +294,40 @@ btn.disabled = false;
 }
 }
 
+// Botão Limpar Planilha
+document.getElementById("btnLimpar").addEventListener("click", async function() {
+if (!confirm("⚠️ ATENÇÃO: Isso irá apagar TODOS os dados da planilha. Tem certeza?")) {
+return;
+}
+
+const btn = this;
+const originalText = btn.textContent;
+btn.textContent = "Limpando...";
+btn.disabled = true;
+
+try {
+const result = await postData({acao: "limparPlanilha"});
+if (result.success) {
+showAlert("✅ " + result.message, "success");
+setTimeout(() => loadHistory(), 1000);
+} else {
+showAlert("❌ Erro: " + (result.error || result.message), "error");
+}
+} catch(error) {
+showAlert("❌ Erro ao limpar planilha: " + error.message, "error");
+} finally {
+btn.textContent = originalText;
+btn.disabled = false;
+}
+});
+
 // Função de Debug
 document.getElementById("btnDebug").addEventListener("click", async function() {
 console.log("🐛 INICIANDO DEBUG...");
 try {
 const data = await getHistoryData();
 console.log("📋 ESTRUTURA ATUAL:", data);
+showDebugInfo("Dados recebidos: " + JSON.stringify(data, null, 2));
 showAlert("🔍 Debug executado - verifique console (F12)", "info");
 } catch(error) {
 showAlert("❌ Erro no debug: " + error.message, "error");
@@ -289,19 +337,65 @@ showAlert("❌ Erro no debug: " + error.message, "error");
 // Evento para carregar histórico
 document.getElementById("btnLoadHistory").addEventListener("click", loadHistory);
 
-// Funções auxiliares
-function formatarData(dataString) {
+// FUNÇÕES AUXILIARES DE FORMATAÇÃO
+function formatarDataParaExibicao(dataString) {
 if (!dataString) return "";
 try {
 // Se já estiver no formato brasileiro, retornar como está
 if (dataString.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
 return dataString;
 }
+
+// Tentar converter para objeto Date
 const date = new Date(dataString);
-if (isNaN(date.getTime())) return dataString;
-return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+if (isNaN(date.getTime())) {
+// Se não for data válida, tentar formato YYYY-MM-DD
+if (dataString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+const [ano, mes, dia] = dataString.split('-');
+return `${dia}/${mes}/${ano}`;
+}
+return dataString;
+}
+
+// Formatar como DD/MM/YYYY
+return date.toLocaleDateString('pt-BR', { 
+day: '2-digit', 
+month: '2-digit', 
+year: 'numeric' 
+});
 } catch {
 return dataString;
+}
+}
+
+function formatarHoraParaExibicao(horaString) {
+if (!horaString) return "";
+try {
+// Se já está no formato HH:MM, retornar como está
+if (horaString.match(/^\d{2}:\d{2}$/)) {
+return horaString;
+}
+
+// Se for um objeto Date, formatar apenas a hora
+if (horaString instanceof Date) {
+return horaString.toLocaleTimeString('pt-BR', { 
+hour: '2-digit', 
+minute: '2-digit' 
+});
+}
+
+// Tentar converter string de data/hora
+const date = new Date(horaString);
+if (!isNaN(date.getTime())) {
+return date.toLocaleTimeString('pt-BR', { 
+hour: '2-digit', 
+minute: '2-digit' 
+});
+}
+
+return horaString; // Retornar original se não conseguir formatar
+} catch {
+return horaString;
 }
 }
 
@@ -325,6 +419,13 @@ alert.remove();
 }, 5000);
 }
 
+function showDebugInfo(content) {
+const debugInfo = document.getElementById('debugInfo');
+const debugContent = document.getElementById('debugContent');
+debugContent.textContent = content;
+debugInfo.classList.remove('hidden');
+}
+
 // Inicialização
 setInterval(fetchWatchdog, 5000);
 fetchWatchdog();
@@ -340,6 +441,11 @@ setTimeout(() => loadHistory(), 1000);
 showAlert("🚀 Sistema carregado! Preencha o formulário para registrar passagens de turno.", "info");
 console.log("🔧 SISTEMA INICIALIZADO - PRONTO PARA USO");
 });
+
+// CSS para hidden
+const style = document.createElement('style');
+style.textContent = '.hidden { display: none !important; }';
+document.head.appendChild(style);
 </script>
 </body>
 </html>
