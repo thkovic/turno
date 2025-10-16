@@ -129,12 +129,10 @@ document.getElementById("turnoForm").addEventListener("submit", async(e)=>{
     btn.disabled = true;
     
     try {
-        // CORREÇÃO: Criar objeto com estrutura correta
+        // ESTRUTURA SIMPLIFICADA E CORRETA
         const obj = {
-            tipo: "registro", // Adicionar tipo
             nome: document.getElementById("nome").value.trim(),
             matricula: document.getElementById("matricula").value.trim(),
-            data: document.getElementById("data").value,
             equipamento: document.getElementById("equipamento").value.trim(),
             acionamento: document.getElementById("acionamento").value,
             problema: document.getElementById("problema").value.trim(),
@@ -169,7 +167,7 @@ document.getElementById("turnoForm").addEventListener("submit", async(e)=>{
         if(resp.success) {
             showAlert("✅ " + resp.message, "success");
             
-            // Limpar apenas campos específicos, manter nome e matrícula
+            // Limpar apenas campos específicos
             document.getElementById("equipamento").value = "";
             document.getElementById("problema").value = "";
             document.getElementById("solucao").value = "";
@@ -233,25 +231,24 @@ async function loadHistory() {
         } else {
             // Ordenar por data (mais recente primeiro)
             data.sort((a, b) => {
-                const dateA = new Date(a[3] || 0);
-                const dateB = new Date(b[3] || 0);
+                const dateA = new Date(a[0] || 0);
+                const dateB = new Date(b[0] || 0);
                 return dateB - dateA;
             });
             
             data.forEach(row => {
                 const tr = document.createElement("tr");
                 
-                // CORREÇÃO: Mapeamento correto das colunas
-                // [tipo, nome, matricula, data, equipamento, acionamento, problema, solucao, encerramento]
+                // MAPEAMENTO CORRETO - 8 COLUNAS SIMPLES
                 const colunas = [
-                    formatarData(row[3]),    // Data (coluna 4)
-                    row[1] || "",           // Nome (coluna 2)
-                    row[2] || "",           // Matrícula (coluna 3)
-                    row[4] || "",           // Equipamento (coluna 5)
-                    formatarHora(row[5]),   // Acionamento (coluna 6)
-                    row[6] || "",           // Problema (coluna 7)
-                    row[7] || "",           // Solução (coluna 8)
-                    formatarHora(row[8])    // Encerramento (coluna 9)
+                    formatarData(row[0]),    // Coluna 1: Data
+                    row[1] || "",           // Coluna 2: Operador
+                    row[2] || "",           // Coluna 3: Matrícula
+                    row[3] || "",           // Coluna 4: Equipamento
+                    formatarHora(row[4]),   // Coluna 5: Acionamento
+                    row[5] || "",           // Coluna 6: Problema
+                    row[6] || "",           // Coluna 7: Solução
+                    formatarHora(row[7])    // Coluna 8: Encerramento
                 ];
                 
                 colunas.forEach(valor => {
@@ -260,7 +257,7 @@ async function loadHistory() {
                     
                     // Limitar texto muito longo apenas para problemas e soluções
                     if ((valor && valor.length > 100) && 
-                        (valor === row[6] || valor === row[7])) {
+                        (valor === row[5] || valor === row[6])) {
                         td.title = valor;
                         td.textContent = valor.substring(0, 100) + '...';
                     } else if (valor && valor.length > 50) {
@@ -326,14 +323,19 @@ function formatarData(dataString) {
 function formatarHora(dataHora) {
     if (!dataHora) return "";
     try {
+        // Se já for apenas hora (formato HH:MM)
+        if (typeof dataHora === 'string' && dataHora.match(/^\d{1,2}:\d{2}$/)) {
+            return dataHora;
+        }
+        
         const date = new Date(dataHora);
         // Verificar se é uma data válida e não é 1899 (data padrão do Excel)
         if (isNaN(date.getTime()) || date.getFullYear() === 1899) {
-            // Se for hora apenas, retornar como está
+            // Se for hora apenas em formato de string, extrair a parte da hora
             if (typeof dataHora === 'string' && dataHora.includes(':')) {
-                return dataHora.split('T')[1]?.substring(0, 5) || dataHora;
+                return dataHora.split('T')[1]?.substring(0, 5) || dataHora.substring(11, 16);
             }
-            return "";
+            return dataHora;
         }
         return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
     } catch {
