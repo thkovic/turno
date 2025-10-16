@@ -587,7 +587,58 @@ window.debugFunctions = {
     loadHistory,
     postData
 };
+    // Adicione esta função no HTML para debug avançado
+async function debugCompleto() {
+    console.log("=== DEBUG COMPLETO ===");
+    
+    // Teste 1: Conexão básica
+    console.log("1. Testando conexão...");
+    try {
+        const conexao = await fetch(SCRIPT_URL);
+        const dados = await conexao.json();
+        console.log("✅ Conexão:", dados);
+    } catch (e) {
+        console.log("❌ Falha conexão:", e);
+    }
+    
+    // Teste 2: Histórico
+    console.log("2. Testando histórico...");
+    try {
+        const historico = await postData({ getHistory: true });
+        console.log("✅ Histórico:", historico);
+    } catch (e) {
+        console.log("❌ Falha histórico:", e);
+    }
+    
+    // Teste 3: Login
+    console.log("3. Testando login...");
+    try {
+        const login = await postData({ login: true, matricula: "81057898" });
+        console.log("✅ Login:", login);
+    } catch (e) {
+        console.log("❌ Falha login:", e);
+    }
+    
+    // Teste 4: Cadastro
+    console.log("4. Testando cadastro...");
+    try {
+        const cadastro = await postData({ 
+            cadastrar: true, 
+            nome: "Debug User", 
+            matricula: "DEBUG" + Date.now() 
+        });
+        console.log("✅ Cadastro:", cadastro);
+    } catch (e) {
+        console.log("❌ Falha cadastro:", e);
+    }
+    
+    console.log("=== FIM DEBUG ===");
+}
+
+// Adicione este botão no HTML na seção de debug:
+// <button onclick="debugCompleto()" style="background:#9c27b0;">Debug Completo</button>
 </script>
 </body>
 </html>
+
 
