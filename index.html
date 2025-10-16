@@ -1,80 +1,136 @@
+HTML
 <!DOCTYPE html>
-<html>
+<html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <title>Teste Sistema Login</title>
-    <style>
-        body { font-family: Arial; margin: 20px; }
-        button { padding: 10px; margin: 5px; }
-        .success { background: #d4edda; color: #155724; padding: 10px; margin: 10px 0; }
-        .error { background: #f8d7da; color: #721c24; padding: 10px; margin: 10px 0; }
-    </style>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Passagem de Turno</title>
+<style>
+body { font-family: Arial, sans-serif; margin:0; padding:0; background:#fff; color:#333; }
+.container { max-width:1000px; margin:40px auto; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.1); border-radius:8px; }
+h1 { color:#2d6a4f; text-align:center; margin-bottom:20px; }
+form { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+form label { display:block; font-weight:bold; margin-bottom:4px; }
+form input, form textarea { width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box; }
+form textarea { resize: vertical; min-height:60px; }
+.full-width { grid-column:1/-1; }
+button { background-color:#95d5b2; color:#fff; border:none; padding:12px 20px; font-size:16px; cursor:pointer; border-radius:4px; transition:0.3s; }
+button:hover { background-color:#74c69d; }
+.history { margin-top:40px; }
+.history table { width:100%; border-collapse:collapse; }
+.history th, .history td { border:1px solid #ddd; padding:8px; text-align:left; }
+.history th { background-color:#e9f5ef; color:#2d6a4f; }
+.history tr:nth-child(even){ background:#f9f9f9; }
+#watchdog { position:absolute; top:10px; right:10px; padding:5px 10px; background:#95d5b2; color:#fff; border-radius:4px; font-weight:bold; }
+</style>
 </head>
 <body>
-    <h1>🧪 Teste Sistema Login</h1>
-    
-    <button onclick="teste1()">1. Testar Conexão</button>
-    <button onclick="teste2()">2. Criar Usuário Teste</button>
-    <button onclick="teste3()">3. Testar Login (81057898)</button>
-    <button onclick="teste4()">4. Ver Dados Planilha</button>
-    
-    <div id="result"></div>
+<div id="watchdog">Watchdog: --</div>
+<div class="container">
+
+<h1>Login</h1>
+<div id="loginDiv">
+  <input type="text" id="matriculaLogin" placeholder="Digite sua matrícula"/>
+  <button id="btnLogin">Entrar</button>
+</div>
+
+<div id="mainDiv" style="display:none;">
+<h1>Passagem de Turno</h1>
+<form id="turnoForm">
+<div><label>Nome</label><input type="text" id="nome" required/></div>
+<div><label>Matrícula</label><input type="text" id="matricula" required/></div>
+<div><label>Data / Hora</label><input type="datetime-local" id="data" name="data"/></div>
+<div><label>Equipamento</label><input type="text" id="equipamento" required/></div>
+<div><label>Acionamento (Hora)</label><input type="time" id="acionamento" required/></div>
+<div><label>Problema</label><textarea id="problema" required></textarea></div>
+<div><label>Solução</label><textarea id="solucao" required></textarea></div>
+<div><label>Encerramento (Hora)</label><input type="time" id="encerramento" required/></div>
+<div class="full-width"><button type="submit">Registrar Turno</button></div>
+</form>
+
+<div class="history">
+<h2>Histórico</h2>
+<button id="btnLoadHistory">Mostrar Histórico</button>
+<table id="historyTable">
+<thead>
+<tr>
+<th>Tipo</th><th>Nome</th><th>Matrícula</th><th>Data</th><th>Equipamento</th><th>Acionamento</th>
+<th>Problema</th><th>Solução</th><th>Encerramento</th><th>Data/Hora Edição</th><th>Watchdog</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+</div>
+</div>
+</div>
 
 <script>
-const URL = "https://script.google.com/macros/s/AKfycbwFS6gRrIGYeWFZ9KYjSaOMLfJd_TTsrZcLNGyvdb7R0RZBcXrQUlgLUdAjNr7B58o/exec";
+const SCRIPT_URL = "COLE_SEU_SCRIPT_URL_AQUI"; // Coloque aqui
 
-async function post(dados) {
-    const resp = await fetch(URL, {
-        method: 'POST',
-        body: JSON.stringify(dados)
-    });
-    return await resp.json();
+async function postData(obj){
+  const resp = await fetch(SCRIPT_URL,{
+    method:"POST",
+    body: JSON.stringify(obj)
+  });
+  return resp.json(); // retorna sempre um objeto
 }
 
-function mostrar(texto, tipo = '') {
-    const div = document.getElementById('result');
-    const elemento = document.createElement('div');
-    elemento.className = tipo;
-    elemento.innerHTML = `<pre>${JSON.stringify(texto, null, 2)}</pre>`;
-    div.appendChild(elemento);
+async function fetchWatchdog(){
+  try{
+    const resp = await fetch(SCRIPT_URL);
+    const data = await resp.json();
+    document.getElementById("watchdog").textContent = "Watchdog: "+data.valor;
+  }catch(e){
+    document.getElementById("watchdog").textContent = "Watchdog: Erro";
+  }
 }
 
-async function teste1() {
-    const r = await fetch(URL);
-    const d = await r.json();
-    mostrar(d, d.status === 'ok' ? 'success' : 'error');
-}
+// Login
+document.getElementById("btnLogin").addEventListener("click", async()=>{
+  const matricula = document.getElementById("matriculaLogin").value.trim();
+  if(!matricula){ alert("Digite sua matrícula"); return; }
+  const resp = await postData({login:true,matricula});
+  if(resp.success){
+    document.getElementById("loginDiv").style.display="none";
+    document.getElementById("mainDiv").style.display="block";
+    document.getElementById("nome").value = resp.nome;
+    document.getElementById("matricula").value = matricula;
+  } else alert(resp.message);
+});
 
-async function teste2() {
-    const r = await post({
-        cadastrar: true,
-        nome: "Usuario Teste Novo",
-        matricula: "TESTE" + Date.now()
-    });
-    mostrar(r, r.success ? 'success' : 'error');
-}
+// Registrar Turno
+document.getElementById("turnoForm").addEventListener("submit", async(e)=>{
+  e.preventDefault();
+  const obj = {
+    nome: document.getElementById("nome").value,
+    matricula: document.getElementById("matricula").value,
+    data: document.getElementById("data").value,
+    equipamento: document.getElementById("equipamento").value,
+    acionamento: document.getElementById("acionamento").value,
+    problema: document.getElementById("problema").value,
+    solucao: document.getElementById("solucao").value,
+    encerramento: document.getElementById("encerramento").value
+  };
+  const resp = await postData(obj);
+  alert(resp.message || "Registro realizado");
+});
 
-async function teste3() {
-    const r = await post({
-        login: true,
-        matricula: "81057898"
-    });
-    mostrar(r, r.success ? 'success' : 'error');
-}
+// Histórico
+document.getElementById("btnLoadHistory").addEventListener("click", async()=>{
+  const resp = await postData({getHistory:true});
+  const data = Array.isArray(resp)? resp : [];
+  const tbody = document.querySelector("#historyTable tbody");
+  tbody.innerHTML="";
+  data.forEach(row=>{
+    const tr=document.createElement("tr");
+    row.forEach(c=>{ const td=document.createElement("td"); td.textContent=c; tr.appendChild(td); });
+    tbody.appendChild(tr);
+  });
+});
 
-async function teste4() {
-    const r = await post({
-        getHistory: true
-    });
-    if (Array.isArray(r)) {
-        mostrar({
-            registros_encontrados: r.length,
-            primeiros_3: r.slice(0, 3)
-        }, 'success');
-    } else {
-        mostrar(r, 'error');
-    }
-}
+// Atualiza Watchdog a cada 5 segundos
+setInterval(fetchWatchdog,5000);
+fetchWatchdog();
 </script>
 </body>
 </html>
