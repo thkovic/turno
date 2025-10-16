@@ -43,6 +43,7 @@ button:disabled { background-color:#ccc; cursor:not-allowed; }
 .debug-section h3 { margin-top:0; color:#6c757d; }
 .btn-admin { background:#6c757d; margin-left:5px; padding:8px 12px; font-size:12px; }
 .btn-admin:hover { background:#5a6268; }
+.debug-log { background:#1a1a1a; color:#00ff00; padding:10px; border-radius:4px; font-family:monospace; font-size:12px; max-height:200px; overflow-y:auto; margin-top:10px; }
 </style>
 </head>
 <body>
@@ -120,17 +121,25 @@ button:disabled { background-color:#ccc; cursor:not-allowed; }
         </div>
     </div>
 
-    <!-- SEÇÃO DE DEBUG -->
+    <!-- SEÇÃO DE DEBUG AVANÇADO -->
     <div class="debug-section">
-        <h3>🔧 Ferramentas Administrativas</h3>
-        <button onclick="testarConexao()" style="background:#17a2b8;">Testar Conexão</button>
-        <button onclick="cadastrarUsuario()" style="background:#ff9800;">Cadastrar Usuário</button>
-        <button onclick="cadastrarUsuarioTeste()" style="background:#2196f3;">Usuário Teste</button>
-        <button onclick="limparAlertas()" style="background:#6c757d;">Limpar Alertas</button>
+        <h3>🔧 Ferramentas de Debug</h3>
+        <div style="display:flex; flex-wrap:wrap; gap:5px; margin-bottom:10px;">
+            <button onclick="testarConexao()" style="background:#17a2b8;">Testar Conexão</button>
+            <button onclick="cadastrarUsuario()" style="background:#ff9800;">Cadastrar Usuário</button>
+            <button onclick="cadastrarUsuarioTeste()" style="background:#2196f3;">Usuário Teste</button>
+            <button onclick="testarLogin()" style="background:#4caf50;">Testar Login</button>
+            <button onclick="debugCompleto()" style="background:#9c27b0;">Debug Completo</button>
+            <button onclick="limparAlertas()" style="background:#6c757d;">Limpar Alertas</button>
+        </div>
         
         <div style="margin-top:10px;">
             <strong>Status do Sistema:</strong>
             <span id="systemStatus" style="margin-left:10px; padding:4px 8px; border-radius:4px; background:#e9ecef;">--</span>
+        </div>
+        
+        <div class="debug-log" id="debugLog">
+// Debug log aparecerá aqui...
         </div>
     </div>
 
@@ -143,19 +152,31 @@ const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwFS6gRrIGYeWFZ9KYjS
 // Estado da aplicação
 let currentUser = null;
 
+// Sistema de logging
+function addDebugLog(message, type = 'info') {
+    const logElement = document.getElementById('debugLog');
+    const timestamp = new Date().toLocaleTimeString();
+    const color = type === 'error' ? '#ff4444' : type === 'success' ? '#44ff44' : '#4488ff';
+    const logEntry = `<span style="color: ${color}">[${timestamp}] ${message}</span><br>`;
+    logElement.innerHTML = logEntry + logElement.innerHTML;
+}
+
 // Função para fazer requisições POST
 async function postData(obj){
     try {
-        console.log("📤 Enviando:", obj);
+        addDebugLog(`📤 ENVIANDO: ${JSON.stringify(obj)}`, 'info');
+        
         const resp = await fetch(SCRIPT_URL, {
             method: "POST",
             body: JSON.stringify(obj)
         });
         const data = await resp.json();
-        console.log("📥 Resposta:", data);
+        
+        addDebugLog(`📥 RESPOSTA: ${JSON.stringify(data)}`, data.success ? 'success' : 'error');
+        
         return data;
     } catch(error) {
-        console.error("❌ Erro na requisição:", error);
+        addDebugLog(`❌ ERRO REQUISIÇÃO: ${error.message}`, 'error');
         throw error;
     }
 }
@@ -201,6 +222,7 @@ document.getElementById("btnLogin").addEventListener("click", async()=>{
     btn.disabled = true;
     
     try {
+        addDebugLog(`🔐 TENTANDO LOGIN: ${matricula}`, 'info');
         const resp = await postData({login: true, matricula: matricula});
         
         if(resp.success){
@@ -224,13 +246,16 @@ document.getElementById("btnLogin").addEventListener("click", async()=>{
             document.getElementById("data").value = localDateTime;
             
             showAlert(`Login realizado com sucesso! Bem-vindo, ${resp.nome}`, "success");
+            addDebugLog(`✅ LOGIN SUCESSO: ${resp.nome}`, 'success');
             
         } else {
             showAlert("Erro: " + resp.message, "error");
+            addDebugLog(`❌ LOGIN FALHOU: ${resp.message}`, 'error');
         }
     } catch(error) {
         console.error("Erro no login:", error);
         showAlert("Erro de conexão: " + error.message, "error");
+        addDebugLog(`💥 ERRO LOGIN: ${error.message}`, 'error');
     } finally {
         btn.textContent = originalText;
         btn.disabled = false;
@@ -245,6 +270,7 @@ function logout() {
     document.getElementById("matriculaLogin").value = "";
     document.getElementById("turnoForm").reset();
     showAlert("Logout realizado com sucesso", "success");
+    addDebugLog("🚪 LOGOUT realizado", 'info');
 }
 
 // Registrar Turno (APENAS LOGADO)
@@ -287,9 +313,12 @@ document.getElementById("turnoForm").addEventListener("submit", async(e)=>{
             return;
         }
         
+        addDebugLog(`📝 REGISTRANDO TURNO: ${obj.equipamento}`, 'info');
         const resp = await postData(obj);
+        
         if(resp.success) {
             showAlert("✅ " + resp.message, "success");
+            addDebugLog(`✅ TURNO REGISTRADO: ${obj.equipamento}`, 'success');
             
             // Limpar formulário (mantém nome e matrícula)
             document.getElementById("equipamento").value = "";
@@ -310,11 +339,13 @@ document.getElementById("turnoForm").addEventListener("submit", async(e)=>{
             
         } else {
             showAlert("❌ Erro: " + resp.message, "error");
+            addDebugLog(`❌ ERRO TURNO: ${resp.message}`, 'error');
         }
         
     } catch(error) {
         console.error("Erro ao registrar:", error);
         showAlert("❌ Erro ao registrar: " + error.message, "error");
+        addDebugLog(`💥 ERRO TURNO: ${error.message}`, 'error');
     } finally {
         btn.textContent = originalText;
         btn.disabled = false;
@@ -329,6 +360,7 @@ async function loadHistory() {
     btn.disabled = true;
     
     try {
+        addDebugLog("📊 CARREGANDO HISTÓRICO...", 'info');
         const resp = await postData({getHistory: true});
         
         let data = [];
@@ -356,6 +388,7 @@ async function loadHistory() {
             tr.appendChild(td);
             tbody.appendChild(tr);
             document.getElementById("historyInfo").textContent = "Nenhum registro encontrado";
+            addDebugLog("📭 HISTÓRICO VAZIO", 'info');
         } else {
             // Ordenar por data (mais recente primeiro)
             data.sort((a, b) => {
@@ -368,7 +401,6 @@ async function loadHistory() {
                 const tr = document.createElement("tr");
                 
                 // Mapear colunas baseado na estrutura dos seus dados
-                // [Tipo, Nome, Matricula, Data, Equipamento, Acionamento, Problema, Solução, Encerramento, Editado_em, Watchdog]
                 const colunas = [
                     formatarData(row[3]),    // Data
                     row[1] || "",           // Nome
@@ -400,11 +432,13 @@ async function loadHistory() {
             });
             
             document.getElementById("historyInfo").textContent = `Mostrando ${data.length} registro(s) - Mais recentes primeiro`;
+            addDebugLog(`✅ HISTÓRICO CARREGADO: ${data.length} registros`, 'success');
         }
         
     } catch(error) {
         console.error("Erro ao carregar histórico:", error);
         showAlert("Erro ao carregar histórico: " + error.message, "error");
+        addDebugLog(`💥 ERRO HISTÓRICO: ${error.message}`, 'error');
     } finally {
         btn.textContent = originalText;
         btn.disabled = false;
@@ -454,24 +488,27 @@ function formatarHora(dataHora) {
 // Evento para carregar histórico
 document.getElementById("btnLoadHistory").addEventListener("click", loadHistory);
 
-// FUNÇÕES ADMINISTRATIVAS
+// ================= FUNÇÕES DE DEBUG AVANÇADO =================
+
 async function testarConexao() {
     try {
-        showAlert("🔗 Testando conexão com o servidor...", "info");
+        addDebugLog("🔗 TESTANDO CONEXÃO...", 'info');
         const resposta = await fetch(SCRIPT_URL);
         const dados = await resposta.json();
         
         if (dados.status === "ok") {
             showAlert(`✅ Conexão estabelecida! Sistema: ${dados.message}`, "success");
+            addDebugLog(`✅ CONEXÃO OK: ${dados.message}`, 'success');
         } else {
             showAlert(`❌ Erro: ${dados.message}`, "error");
+            addDebugLog(`❌ CONEXÃO FALHOU: ${dados.message}`, 'error');
         }
     } catch (erro) {
         showAlert(`❌ Falha na conexão: ${erro.message}`, "error");
+        addDebugLog(`💥 FALHA CONEXÃO: ${erro.message}`, 'error');
     }
 }
 
-// Substitua a função cadastrarUsuario no HTML por esta versão:
 async function cadastrarUsuario() {
     const nome = prompt("Digite o nome do usuário:");
     if (!nome) {
@@ -486,11 +523,10 @@ async function cadastrarUsuario() {
     }
     
     try {
-        showAlert("👤 Cadastrando usuário...", "info");
+        addDebugLog(`👤 TENTANDO CADASTRAR: ${nome} (${matricula})`, 'info');
         
-        // ENVIAR EXATAMENTE ASSIM - com cadastrar: true
         const resultado = await postData({
-            cadastrar: true,  // ← ESTA É A CHAVE
+            cadastrar: true,
             nome: nome,
             matricula: matricula
         });
@@ -499,54 +535,124 @@ async function cadastrarUsuario() {
         
         if (resultado.success) {
             showAlert(`✅ ${resultado.message} - ${nome} (${matricula})`, "success");
+            addDebugLog(`✅ USUÁRIO CADASTRADO: ${nome}`, 'success');
         } else {
             showAlert(`❌ ${resultado.message}`, "error");
+            addDebugLog(`❌ FALHA CADASTRO: ${resultado.message}`, 'error');
         }
     } catch (error) {
         console.error("Erro detalhado:", error);
         showAlert(`❌ Erro ao cadastrar: ${error.message}`, "error");
+        addDebugLog(`💥 ERRO CADASTRO: ${error.message}`, 'error');
     }
 }
 
-// E também a função cadastrarUsuarioTeste:
 async function cadastrarUsuarioTeste() {
     try {
-        showAlert("👤 Cadastrando usuário de teste...", "info");
+        const matriculaTeste = "TESTE" + Date.now().toString().substring(9);
+        addDebugLog(`👤 CADASTRANDO USUÁRIO TESTE: ${matriculaTeste}`, 'info');
         
         const resultado = await postData({
-            cadastrar: true,  // ← ESTA É A CHAVE
+            cadastrar: true,
             nome: "Usuario Teste",
-            matricula: "TESTE" + Date.now().toString().substring(9)
+            matricula: matriculaTeste
         });
         
         console.log("Resposta do teste:", resultado);
         
         if (resultado.success) {
             showAlert(`✅ ${resultado.message}`, "success");
+            addDebugLog(`✅ USUÁRIO TESTE CADASTRADO`, 'success');
         } else {
             showAlert(`❌ ${resultado.message}`, "error");
+            addDebugLog(`❌ FALHA USUÁRIO TESTE: ${resultado.message}`, 'error');
         }
     } catch (error) {
         console.error("Erro detalhado:", error);
         showAlert(`❌ Erro ao cadastrar: ${error.message}`, "error");
+        addDebugLog(`💥 ERRO USUÁRIO TESTE: ${error.message}`, 'error');
     }
+}
+
+async function testarLogin() {
+    const matricula = prompt("Digite a matrícula para teste:");
+    if (!matricula) return;
+    
+    try {
+        addDebugLog(`🔐 TESTANDO LOGIN: ${matricula}`, 'info');
+        const resultado = await postData({
+            login: true,
+            matricula: matricula
+        });
+        
+        if (resultado.success) {
+            showAlert(`✅ Login teste OK: ${resultado.nome}`, "success");
+            addDebugLog(`✅ LOGIN TESTE OK: ${resultado.nome}`, 'success');
+        } else {
+            showAlert(`❌ Login teste falhou: ${resultado.message}`, "error");
+            addDebugLog(`❌ LOGIN TESTE FALHOU: ${resultado.message}`, 'error');
+        }
+    } catch (error) {
+        showAlert(`❌ Erro no teste: ${error.message}`, "error");
+        addDebugLog(`💥 ERRO TESTE LOGIN: ${error.message}`, 'error');
+    }
+}
+
+async function debugCompleto() {
+    addDebugLog("=== 🚀 INICIANDO DEBUG COMPLETO ===", 'info');
+    
+    // Teste 1: Conexão básica
+    addDebugLog("1. TESTANDO CONEXÃO BÁSICA...", 'info');
+    try {
+        const conexao = await fetch(SCRIPT_URL);
+        const dados = await conexao.json();
+        addDebugLog(`✅ CONEXÃO: ${JSON.stringify(dados)}`, 'success');
+    } catch (e) {
+        addDebugLog(`❌ FALHA CONEXÃO: ${e.message}`, 'error');
+    }
+    
+    // Teste 2: Histórico
+    addDebugLog("2. TESTANDO HISTÓRICO...", 'info');
+    try {
+        const historico = await postData({ getHistory: true });
+        addDebugLog(`✅ HISTÓRICO: ${Array.isArray(historico) ? historico.length + ' registros' : JSON.stringify(historico)}`, 'success');
+    } catch (e) {
+        addDebugLog(`❌ FALHA HISTÓRICO: ${e.message}`, 'error');
+    }
+    
+    // Teste 3: Login com matrícula conhecida
+    addDebugLog("3. TESTANDO LOGIN (81057898)...", 'info');
+    try {
+        const login = await postData({ login: true, matricula: "81057898" });
+        addDebugLog(`✅ LOGIN: ${JSON.stringify(login)}`, login.success ? 'success' : 'error');
+    } catch (e) {
+        addDebugLog(`❌ FALHA LOGIN: ${e.message}`, 'error');
+    }
+    
+    // Teste 4: Cadastro
+    addDebugLog("4. TESTANDO CADASTRO...", 'info');
+    try {
+        const cadastro = await postData({ 
+            cadastrar: true, 
+            nome: "Debug User", 
+            matricula: "DEBUG" + Date.now() 
+        });
+        addDebugLog(`✅ CADASTRO: ${JSON.stringify(cadastro)}`, cadastro.success ? 'success' : 'error');
+    } catch (e) {
+        addDebugLog(`❌ FALHA CADASTRO: ${e.message}`, 'error');
+    }
+    
+    addDebugLog("=== ✅ DEBUG COMPLETO FINALIZADO ===", 'info');
 }
 
 function limparAlertas() {
     const alerts = document.querySelectorAll('.alert');
     alerts.forEach(alert => alert.remove());
+    addDebugLog("🧹 ALERTAS LIMPOS", 'info');
 }
 
 // Função para mostrar alertas
 function showAlert(message, type) {
-    // Remove alertas anteriores do mesmo tipo após 5 segundos
-    const existingAlerts = document.querySelectorAll('.alert');
-    existingAlerts.forEach(alert => {
-        if (alert.textContent.includes(message.substring(0, 20))) {
-            alert.remove();
-        }
-    });
-    
     const alert = document.createElement('div');
     alert.className = `alert alert-${type}`;
     alert.textContent = message;
@@ -578,6 +684,8 @@ window.addEventListener('load', function() {
     
     // Carregar histórico após um pequeno delay
     setTimeout(() => loadHistory(), 1000);
+    
+    addDebugLog("🔄 SISTEMA INICIALIZADO", 'success');
 });
 
 // Expor funções para debug no console
@@ -585,60 +693,9 @@ window.debugFunctions = {
     testarConexao,
     cadastrarUsuario,
     loadHistory,
-    postData
+    postData,
+    debugCompleto
 };
-    // Adicione esta função no HTML para debug avançado
-async function debugCompleto() {
-    console.log("=== DEBUG COMPLETO ===");
-    
-    // Teste 1: Conexão básica
-    console.log("1. Testando conexão...");
-    try {
-        const conexao = await fetch(SCRIPT_URL);
-        const dados = await conexao.json();
-        console.log("✅ Conexão:", dados);
-    } catch (e) {
-        console.log("❌ Falha conexão:", e);
-    }
-    
-    // Teste 2: Histórico
-    console.log("2. Testando histórico...");
-    try {
-        const historico = await postData({ getHistory: true });
-        console.log("✅ Histórico:", historico);
-    } catch (e) {
-        console.log("❌ Falha histórico:", e);
-    }
-    
-    // Teste 3: Login
-    console.log("3. Testando login...");
-    try {
-        const login = await postData({ login: true, matricula: "81057898" });
-        console.log("✅ Login:", login);
-    } catch (e) {
-        console.log("❌ Falha login:", e);
-    }
-    
-    // Teste 4: Cadastro
-    console.log("4. Testando cadastro...");
-    try {
-        const cadastro = await postData({ 
-            cadastrar: true, 
-            nome: "Debug User", 
-            matricula: "DEBUG" + Date.now() 
-        });
-        console.log("✅ Cadastro:", cadastro);
-    } catch (e) {
-        console.log("❌ Falha cadastro:", e);
-    }
-    
-    console.log("=== FIM DEBUG ===");
-}
-
-// Adicione este botão no HTML na seção de debug:
-// <button onclick="debugCompleto()" style="background:#9c27b0;">Debug Completo</button>
 </script>
 </body>
 </html>
-
-
