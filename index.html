@@ -129,7 +129,9 @@ document.getElementById("turnoForm").addEventListener("submit", async(e)=>{
     btn.disabled = true;
     
     try {
+        // CORREÇÃO: Criar objeto com estrutura correta
         const obj = {
+            tipo: "registro", // Adicionar tipo
             nome: document.getElementById("nome").value.trim(),
             matricula: document.getElementById("matricula").value.trim(),
             data: document.getElementById("data").value,
@@ -167,7 +169,7 @@ document.getElementById("turnoForm").addEventListener("submit", async(e)=>{
         if(resp.success) {
             showAlert("✅ " + resp.message, "success");
             
-            // Limpar formulário
+            // Limpar apenas campos específicos, manter nome e matrícula
             document.getElementById("equipamento").value = "";
             document.getElementById("problema").value = "";
             document.getElementById("solucao").value = "";
@@ -231,32 +233,34 @@ async function loadHistory() {
         } else {
             // Ordenar por data (mais recente primeiro)
             data.sort((a, b) => {
-                const dateA = new Date(a[3] || a[10] || 0);
-                const dateB = new Date(b[3] || b[10] || 0);
+                const dateA = new Date(a[3] || 0);
+                const dateB = new Date(b[3] || 0);
                 return dateB - dateA;
             });
             
             data.forEach(row => {
                 const tr = document.createElement("tr");
                 
-                // Mapear colunas: [Tipo, Nome, Matricula, Data, Equipamento, Acionamento, Problema, Solução, Encerramento]
+                // CORREÇÃO: Mapeamento correto das colunas
+                // [tipo, nome, matricula, data, equipamento, acionamento, problema, solucao, encerramento]
                 const colunas = [
-                    formatarData(row[3]),    // Data
-                    row[1] || "",           // Nome
-                    row[2] || "",           // Matrícula
-                    row[4] || "",           // Equipamento
-                    formatarHora(row[5]),   // Acionamento
-                    row[6] || "",           // Problema
-                    row[7] || "",           // Solução
-                    formatarHora(row[8])    // Encerramento
+                    formatarData(row[3]),    // Data (coluna 4)
+                    row[1] || "",           // Nome (coluna 2)
+                    row[2] || "",           // Matrícula (coluna 3)
+                    row[4] || "",           // Equipamento (coluna 5)
+                    formatarHora(row[5]),   // Acionamento (coluna 6)
+                    row[6] || "",           // Problema (coluna 7)
+                    row[7] || "",           // Solução (coluna 8)
+                    formatarHora(row[8])    // Encerramento (coluna 9)
                 ];
                 
                 colunas.forEach(valor => {
                     const td = document.createElement("td");
                     td.textContent = valor;
                     
-                    // Limitar texto muito longo
-                    if (valor && valor.length > 100) {
+                    // Limitar texto muito longo apenas para problemas e soluções
+                    if ((valor && valor.length > 100) && 
+                        (valor === row[6] || valor === row[7])) {
                         td.title = valor;
                         td.textContent = valor.substring(0, 100) + '...';
                     } else if (valor && valor.length > 50) {
@@ -288,8 +292,25 @@ document.getElementById("btnLoadHistory").addEventListener("click", loadHistory)
 function formatarData(dataString) {
     if (!dataString) return "";
     try {
-        const date = new Date(dataString);
-        if (isNaN(date.getTime())) return dataString;
+        // CORREÇÃO: Lidar com diferentes formatos de data
+        let date;
+        
+        if (dataString.includes('T')) {
+            // Formato ISO (2025-10-16T04:00:37.000Z)
+            date = new Date(dataString);
+        } else if (dataString.includes('/')) {
+            // Formato brasileiro (16/10/2025)
+            const [dia, mes, ano] = dataString.split('/');
+            date = new Date(ano, mes - 1, dia);
+        } else {
+            // Tentar como está
+            date = new Date(dataString);
+        }
+        
+        if (isNaN(date.getTime())) {
+            return dataString; // Retorna original se não conseguir converter
+        }
+        
         return date.toLocaleString('pt-BR', {
             day: '2-digit',
             month: '2-digit',
