@@ -88,4 +88,48 @@ async function fetchWatchdog(){
 document.getElementById("btnLogin").addEventListener("click", async()=>{
   const matricula = document.getElementById("matriculaLogin").value.trim();
   if(!matricula){ alert("Digite sua matrícula"); return; }
-  const resp = await post
+  const resp = await postData({login:true,matricula});
+  if(resp.success){
+    document.getElementById("loginDiv").style.display="none";
+    document.getElementById("mainDiv").style.display="block";
+    document.getElementById("nome").value = resp.nome;
+    document.getElementById("matricula").value = matricula;
+  } else alert(resp.message);
+});
+
+// Registrar Turno
+document.getElementById("turnoForm").addEventListener("submit", async(e)=>{
+  e.preventDefault();
+  const obj = {
+    nome: document.getElementById("nome").value,
+    matricula: document.getElementById("matricula").value,
+    data: document.getElementById("data").value,
+    equipamento: document.getElementById("equipamento").value,
+    acionamento: document.getElementById("acionamento").value,
+    problema: document.getElementById("problema").value,
+    solucao: document.getElementById("solucao").value,
+    encerramento: document.getElementById("encerramento").value
+  };
+  const resp = await postData(obj);
+  alert(resp.message || "Registro realizado");
+});
+
+// Histórico
+document.getElementById("btnLoadHistory").addEventListener("click", async()=>{
+  const resp = await postData({getHistory:true});
+  const data = Array.isArray(resp)? resp : [];
+  const tbody = document.querySelector("#historyTable tbody");
+  tbody.innerHTML="";
+  data.forEach(row=>{
+    const tr=document.createElement("tr");
+    row.forEach(c=>{ const td=document.createElement("td"); td.textContent=c; tr.appendChild(td); });
+    tbody.appendChild(tr);
+  });
+});
+
+// Atualiza Watchdog a cada 5 segundos
+setInterval(fetchWatchdog,5000);
+fetchWatchdog();
+</script>
+</body>
+</html>
