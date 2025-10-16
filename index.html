@@ -196,7 +196,7 @@ document.getElementById("turnoForm").addEventListener("submit", async(e)=>{
     }
 });
 
-// Carregar Histórico
+// Carregar Histórico - VERSÃO CORRIGIDA
 async function loadHistory() {
     const btn = document.getElementById("btnLoadHistory");
     const originalText = btn.textContent;
@@ -211,6 +211,11 @@ async function loadHistory() {
         if (Array.isArray(resp)) {
             data = resp;
             console.log(`📋 ${data.length} registros recebidos`);
+            
+            if (data.length > 0) {
+                console.log("🔍 Estrutura do primeiro registro:", data[0]);
+                console.log("📍 Número de colunas:", data[0].length);
+            }
         } else if (resp && resp.error) {
             showAlert("Erro ao carregar histórico: " + resp.error, "error");
             return;
@@ -243,7 +248,7 @@ async function loadHistory() {
             data.forEach((row, index) => {
                 const tr = document.createElement("tr");
                 
-                // MAPEAMENTO CORRETO - 8 COLUNAS
+                // CORREÇÃO: MAPEAMENTO DAS 8 COLUNAS
                 const colunas = [
                     formatarData(row[0]),    // Coluna 1: Data
                     row[1] || "",           // Coluna 2: Operador
@@ -402,3 +407,4 @@ window.addEventListener('load', function() {
 </script>
 </body>
 </html>
+
