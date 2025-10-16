@@ -34,6 +34,8 @@ button:disabled { background-color:#ccc; cursor:not-allowed; }
 .logout-btn { background:#e74c3c; margin-left:10px; padding:5px 10px; font-size:12px; }
 .logout-btn:hover { background:#c0392b; }
 .login-required { background:#fff3cd; padding:15px; border-radius:4px; border:1px solid #ffeaa7; margin-bottom:20px; }
+.debug-section { background:#f8f9fa; padding:15px; border-radius:4px; border:1px solid #dee2e6; margin-top:20px; }
+.debug-section h3 { margin-top:0; color:#6c757d; }
 </style>
 </head>
 <body>
@@ -110,10 +112,18 @@ button:disabled { background-color:#ccc; cursor:not-allowed; }
         </div>
     </div>
 
+    <!-- SEÇÃO DE DEBUG -->
+    <div class="debug-section">
+        <h3>🔧 Debug</h3>
+        <button onclick="debugPlanilha()" style="background:#6c757d;">Executar Debug</button>
+        <button onclick="limparDebug()" style="background:#dc3545;">Limpar Debug</button>
+        <div id="debugOutput" style="margin-top:10px; padding:10px; background:#fff; border-radius:4px; max-height:300px; overflow-y:auto; font-family:monospace; font-size:12px;"></div>
+    </div>
+
 </div>
 
 <script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwFS6gRrIGYeWFZ9KYjSaOMLfJd_TTsrZcLNGyvdb7R0RZBcXrQUlgLUdAjNr7B58o/exec"; // Substitua pela URL do seu Apps Script
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwFS6gRrIGYeWFZ9KYjSaOMLfJd_TTsrZcLNGyvdb7R0RZBcXrQUlgLUdAjNr7B58o/exec"; // SUBSTITUA pela sua URL
 
 // Estado da aplicação
 let currentUser = null;
@@ -325,6 +335,53 @@ async function loadHistory() {
 
 // Evento para carregar histórico
 document.getElementById("btnLoadHistory").addEventListener("click", loadHistory);
+
+// FUNÇÃO DE DEBUG
+async function debugPlanilha() {
+    const debugOutput = document.getElementById("debugOutput");
+    debugOutput.innerHTML = "<strong>=== INICIANDO DEBUG ===</strong><br>";
+    
+    try {
+        debugOutput.innerHTML += "📡 Solicitando dados da planilha...<br>";
+        const resp = await postData({getHistory:true});
+        
+        debugOutput.innerHTML += "✅ Resposta recebida:<br>";
+        debugOutput.innerHTML += "Tipo: " + (Array.isArray(resp) ? "Array" : typeof resp) + "<br>";
+        
+        if (Array.isArray(resp)) {
+            debugOutput.innerHTML += "Número de registros: " + resp.length + "<br><br>";
+            
+            if (resp.length === 0) {
+                debugOutput.innerHTML += "❌ NENHUM REGISTRO ENCONTRADO<br>";
+                debugOutput.innerHTML += "Isso significa que o backend retornou um array vazio.<br>";
+            } else {
+                debugOutput.innerHTML += "<strong>=== REGISTROS ENCONTRADOS ===</strong><br>";
+                resp.forEach((row, index) => {
+                    debugOutput.innerHTML += `<strong>Registro ${index + 1}:</strong> ${JSON.stringify(row)}<br>`;
+                    
+                    // Analisar as colunas
+                    if (row[1] && row[4]) {
+                        debugOutput.innerHTML += `✅ VÁLIDO - Nome: "${row[1]}", Equipamento: "${row[4]}"<br>`;
+                    } else {
+                        debugOutput.innerHTML += `❌ INVÁLIDO - Nome: "${row[1]}", Equipamento: "${row[4]}"<br>`;
+                    }
+                    debugOutput.innerHTML += "<br>";
+                });
+            }
+        } else {
+            debugOutput.innerHTML += "❌ Resposta não é um array:<br>";
+            debugOutput.innerHTML += JSON.stringify(resp, null, 2) + "<br>";
+        }
+        
+    } catch(error) {
+        debugOutput.innerHTML += "❌ Erro no debug: " + error.message + "<br>";
+        console.error("Erro no debug:", error);
+    }
+}
+
+function limparDebug() {
+    document.getElementById("debugOutput").innerHTML = "";
+}
 
 // Inicialização
 setInterval(fetchWatchdog, 5000);
