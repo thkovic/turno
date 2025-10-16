@@ -17,7 +17,7 @@ button { background-color:#95d5b2; color:#fff; border:none; padding:12px 20px; f
 button:hover { background-color:#74c69d; }
 button:disabled { background-color:#ccc; cursor:not-allowed; }
 .history { margin-top:40px; }
-.history table { width:100%; border-collapse:collapse; font-size:14px; }
+.history table { width:100%; border-collapse:collapse; font-size:14px; overflow-x:auto; display:block; white-space:nowrap; }
 .history th, .history td { border:1px solid #ddd; padding:8px; text-align:left; }
 .history th { background-color:#e9f5ef; color:#2d6a4f; }
 .history tr:nth-child(even){ background:#f9f9f9; }
@@ -26,9 +26,31 @@ button:disabled { background-color:#ccc; cursor:not-allowed; }
 .success { background:#d4edda; color:#155724; border:1px solid #c3e6cb; }
 .error { background:#f8d7da; color:#721c24; border:1px solid #f5c6cb; }
 .info { background:#d1ecf1; color:#0c5460; border:1px solid #bee5eb; }
-.loading { display:inline-block; width:20px; height:20px; border:3px solid #f3f3f3; border-top:3px solid #2d6a4f; border-radius:50%; animation:spin 1s linear infinite; margin-left:10px; }
-.debug-info { background:#fff3cd; color:#856404; border:1px solid #ffeaa7; padding:10px; margin:10px 0; border-radius:4px; font-size:12px; }
 .hidden { display:none; }
+
+/* 📱 Ajustes para celular */
+@media (max-width: 768px) {
+  form {
+    grid-template-columns: 1fr; /* Empilha campos */
+  }
+  .container {
+    margin: 10px;
+    padding: 15px;
+  }
+  button {
+    width: 100%;
+    margin-top: 10px;
+  }
+  #watchdog {
+    position: static;
+    margin-bottom: 10px;
+    display: block;
+    text-align: center;
+  }
+  .history table, .history th, .history td {
+    font-size: 12px;
+  }
+}
 </style>
 </head>
 <body>
@@ -37,10 +59,8 @@ button:disabled { background-color:#ccc; cursor:not-allowed; }
 
 <h1>📝 Sistema de Passagem de Turno</h1>
 
-<!-- ALERTS -->
 <div id="alertContainer"></div>
 
-<!-- LOGIN -->
 <div id="loginDiv">
 <h2>🔐 Login</h2>
 <form id="loginForm" class="full-width">
@@ -49,7 +69,6 @@ button:disabled { background-color:#ccc; cursor:not-allowed; }
 </form>
 </div>
 
-<!-- FORMULÁRIO DE REGISTRO -->
 <div id="registroDiv" class="hidden">
 <h2>Registrar Passagem de Turno</h2>
 <form id="turnoForm">
@@ -64,16 +83,13 @@ button:disabled { background-color:#ccc; cursor:not-allowed; }
 <div class="full-width">
 <button type="submit" id="btnSubmit">✅ Registrar Passagem de Turno</button>
 <button type="button" id="btnLogout" style="background:#ff6b6b; margin-left:10px;">🚪 Logout</button>
-<button type="button" id="btnLimpar" style="background:#ff6b6b; margin-left:10px;">🗑️ Limpar Planilha</button>
 </div>
 </form>
 </div>
 
-<!-- HISTÓRICO -->
 <div class="history">
 <h2>📊 Histórico de Registros</h2>
 <button id="btnLoadHistory">🔄 Atualizar Histórico</button>
-<button id="btnDebug" style="background: #ff6b6b; margin-left: 10px;">🐛 Debug</button>
 <div id="historyInfo" style="margin:10px 0; font-style:italic;"></div>
 <table id="historyTable">
 <thead>
@@ -103,123 +119,109 @@ Clique em "Atualizar Histórico" para carregar os registros
 <script>
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwFS6gRrIGYeWFZ9KYjSaOMLfJd_TTsrZcLNGyvdb7R0RZBcXrQUlgLUdAjNr7B58o/exec";
 
-// Sessão simulada
 let loggedIn = false;
 
-// Alerts
 function showAlert(msg, type="info"){
-    const container = document.getElementById("alertContainer");
-    const div = document.createElement("div");
-    div.className = `alert ${type}`;
-    div.textContent = msg;
-    container.appendChild(div);
-    setTimeout(()=>div.remove(),5000);
+  const container = document.getElementById("alertContainer");
+  const div = document.createElement("div");
+  div.className = `alert ${type}`;
+  div.textContent = msg;
+  container.appendChild(div);
+  setTimeout(()=>div.remove(),5000);
 }
 
-// Login
 document.getElementById("loginForm").addEventListener("submit", function(e){
-    e.preventDefault();
-    const matricula = document.getElementById("loginMatricula").value.trim();
-    if(!matricula){ showAlert("Informe sua matrícula","error"); return; }
-    loggedIn = true;
-    document.getElementById("registroDiv").classList.remove("hidden");
-    document.getElementById("loginDiv").classList.add("hidden");
-    document.getElementById("matricula").value = matricula;
-    document.getElementById("nome").value = ""; // Pode preencher com nome real se disponível
-    showAlert("✅ Login realizado com sucesso","success");
+  e.preventDefault();
+  const matricula = document.getElementById("loginMatricula").value.trim();
+  if(!matricula){ showAlert("Informe sua matrícula","error"); return; }
+  loggedIn = true;
+  document.getElementById("registroDiv").classList.remove("hidden");
+  document.getElementById("loginDiv").classList.add("hidden");
+  document.getElementById("matricula").value = matricula;
+  showAlert("✅ Login realizado com sucesso","success");
 });
 
-// Logout
 document.getElementById("btnLogout").addEventListener("click", ()=>{
-    loggedIn=false;
-    document.getElementById("registroDiv").classList.add("hidden");
-    document.getElementById("loginDiv").classList.remove("hidden");
-    showAlert("🔒 Logout realizado","info");
+  loggedIn=false;
+  document.getElementById("registroDiv").classList.add("hidden");
+  document.getElementById("loginDiv").classList.remove("hidden");
+  showAlert("🔒 Logout realizado","info");
 });
 
-// Fetch Watchdog
 async function fetchWatchdog(){
-    try{
-        const resp = await fetch(SCRIPT_URL);
-        const data = await resp.json();
-        document.getElementById("watchdog").textContent = "Watchdog: "+ (data.watchdog || data.valor || "--");
-    }catch(e){ document.getElementById("watchdog").textContent="Watchdog: Erro"; }
+  try{
+    const resp = await fetch(SCRIPT_URL);
+    const data = await resp.json();
+    document.getElementById("watchdog").textContent = "Watchdog: "+ (data.watchdog || data.valor || "--");
+  }catch(e){ document.getElementById("watchdog").textContent="Watchdog: Erro"; }
 }
 
-// Post data
 async function postData(obj){
-    const resp = await fetch(SCRIPT_URL,{method:"POST", body:JSON.stringify(obj)});
-    return await resp.json();
+  const resp = await fetch(SCRIPT_URL,{method:"POST", body:JSON.stringify(obj)});
+  return await resp.json();
 }
 
-// Registro de turno
 document.getElementById("turnoForm").addEventListener("submit", async(e)=>{
-    e.preventDefault();
-    if(!loggedIn){ showAlert("❌ É necessário fazer login para registrar","error"); return; }
+  e.preventDefault();
+  if(!loggedIn){ showAlert("❌ É necessário fazer login para registrar","error"); return; }
 
-    const btn = document.getElementById("btnSubmit");
-    const originalText = btn.textContent;
-    btn.textContent="Registrando..."; btn.disabled=true;
+  const btn = document.getElementById("btnSubmit");
+  const originalText = btn.textContent;
+  btn.textContent="Registrando..."; btn.disabled=true;
 
-    try{
-        const obj = {
-            nome: document.getElementById("nome").value.trim(),
-            matricula: document.getElementById("matricula").value.trim(),
-            data: document.getElementById("data").value,
-            equipamento: document.getElementById("equipamento").value.trim(),
-            acionamento: document.getElementById("acionamento").value,
-            problema: document.getElementById("problema").value.trim(),
-            solucao: document.getElementById("solucao").value.trim(),
-            encerramento: document.getElementById("encerramento").value
-        };
-        const resp = await postData(obj);
-        if(resp.success){
-            showAlert("✅ "+resp.message,"success");
-            document.getElementById("equipamento").value="";
-            document.getElementById("problema").value="";
-            document.getElementById("solucao").value="";
-            document.getElementById("acionamento").value="";
-            document.getElementById("encerramento").value="";
-            setTimeout(()=>loadHistory(),1000);
-        } else showAlert("❌ Erro: "+resp.message,"error");
-    } catch(error){ showAlert("❌ Erro: "+error.message,"error"); }
-    finally{ btn.textContent=originalText; btn.disabled=false; }
+  try{
+    const obj = {
+      nome: document.getElementById("nome").value.trim(),
+      matricula: document.getElementById("matricula").value.trim(),
+      data: document.getElementById("data").value,
+      equipamento: document.getElementById("equipamento").value.trim(),
+      acionamento: document.getElementById("acionamento").value,
+      problema: document.getElementById("problema").value.trim(),
+      solucao: document.getElementById("solucao").value.trim(),
+      encerramento: document.getElementById("encerramento").value
+    };
+    const resp = await postData(obj);
+    if(resp.success){
+      showAlert("✅ "+resp.message,"success");
+      document.getElementById("equipamento").value="";
+      document.getElementById("problema").value="";
+      document.getElementById("solucao").value="";
+      document.getElementById("acionamento").value="";
+      document.getElementById("encerramento").value="";
+      setTimeout(()=>loadHistory(),1000);
+    } else showAlert("❌ Erro: "+resp.message,"error");
+  } catch(error){ showAlert("❌ Erro: "+error.message,"error"); }
+  finally{ btn.textContent=originalText; btn.disabled=false; }
 });
 
-// Histórico
 async function getHistoryData(){ return await postData({getHistory:true}); }
 
 async function loadHistory(){
-    const data = await getHistoryData();
-    const tbody = document.querySelector("#historyTable tbody");
-    tbody.innerHTML="";
-    if(Array.isArray(data)){
-        if(data.length===0){
-            const tr=document.createElement("tr");
-            const td=document.createElement("td");
-            td.colSpan=9; td.textContent="Nenhum registro encontrado"; td.style.textAlign="center"; td.style.padding="20px";
-            tr.appendChild(td); tbody.appendChild(tr);
-        } else {
-            data.sort((a,b)=>new Date(b[1])-new Date(a[1]));
-            data.forEach(row=>{
-                const tr=document.createElement("tr");
-                const cols=[
-                    row[0]||"",
-                    row[1]||"", row[2]||"", row[3]||"", row[4]||"",
-                    row[5]||"", row[6]||"", row[7]||"", row[8]||""
-                ];
-                cols.forEach(v=>{
-                    const td=document.createElement("td");
-                    td.textContent=v;
-                    tr.appendChild(td);
-                });
-                tbody.appendChild(tr);
-            });
-        }
-    } else showAlert("Erro ao carregar histórico","error");
+  const data = await getHistoryData();
+  const tbody = document.querySelector("#historyTable tbody");
+  tbody.innerHTML="";
+  if(Array.isArray(data)){
+    if(data.length===0){
+      const tr=document.createElement("tr");
+      const td=document.createElement("td");
+      td.colSpan=9; td.textContent="Nenhum registro encontrado"; td.style.textAlign="center"; td.style.padding="20px";
+      tr.appendChild(td); tbody.appendChild(tr);
+    } else {
+      data.sort((a,b)=>new Date(b[1])-new Date(a[1]));
+      data.forEach(row=>{
+        const tr=document.createElement("tr");
+        const cols=[row[0]||"",row[1]||"",row[2]||"",row[3]||"",row[4]||"",row[5]||"",row[6]||"",row[7]||"",row[8]||""];
+        cols.forEach(v=>{
+          const td=document.createElement("td");
+          td.textContent=v;
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+    }
+  } else showAlert("Erro ao carregar histórico","error");
 }
 
-// Inicial
 loadHistory();
 setInterval(fetchWatchdog,5000);
 document.getElementById("btnLoadHistory").addEventListener("click",loadHistory);
