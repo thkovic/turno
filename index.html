@@ -2,86 +2,37 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Teste Simples</title>
-    <style>
-        body { font-family: Arial; margin: 20px; }
-        button { padding: 10px; margin: 5px; }
-        #result { margin: 20px; padding: 10px; border: 1px solid #ccc; }
-    </style>
+    <title>Teste Final</title>
 </head>
 <body>
-    <h1>Teste de Conexão</h1>
-    
-    <button onclick="testarConexao()">1. Testar Conexão</button>
-    <button onclick="testarHistorico()">2. Testar Histórico</button>
-    <button onclick="testarRegistro()">3. Testar Registro</button>
-    
+    <h1>Teste Final</h1>
+    <button onclick="testar()">Testar Tudo</button>
     <div id="result"></div>
 
 <script>
-// ⚠️ SUBSTITUA POR SUA URL REAL!
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwFS6gRrIGYeWFZ9KYjSaOMLfJd_TTsrZcLNGyvdb7R0RZBcXrQUlgLUdAjNr7B58o/exec";
+const URL = "https://script.google.com/macros/s/AKfycbwFS6gRrIGYeWFZ9KYjSaOMLfJd_TTsrZcLNGyvdb7R0RZBcXrQUlgLUdAjNr7B58o/exec";
 
-async function fazerRequisicao(dados) {
+async function testar() {
+    const result = document.getElementById('result');
+    
     try {
-        console.log("Enviando:", dados);
-        const resposta = await fetch(SCRIPT_URL, {
+        // Teste 1: Conexão básica
+        result.innerHTML = "Testando conexão...<br>";
+        const conexao = await fetch(URL);
+        const dadosConexao = await conexao.json();
+        result.innerHTML += "Conexão: " + JSON.stringify(dadosConexao) + "<br><br>";
+        
+        // Teste 2: Histórico
+        result.innerHTML += "Testando histórico...<br>";
+        const historico = await fetch(URL, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(dados)
+            body: JSON.stringify({ getHistory: true })
         });
-        const resultado = await resposta.json();
-        console.log("Resposta:", resultado);
-        return resultado;
+        const dadosHistorico = await historico.json();
+        result.innerHTML += "Histórico: " + JSON.stringify(dadosHistorico) + "<br>";
+        
     } catch (erro) {
-        console.error("Erro:", erro);
-        throw erro;
-    }
-}
-
-function mostrarResultado(texto) {
-    document.getElementById('result').innerHTML = 
-        '<pre>' + JSON.stringify(texto, null, 2) + '</pre>';
-}
-
-async function testarConexao() {
-    try {
-        mostrarResultado("Testando conexão...");
-        const resultado = await fetch(SCRIPT_URL);
-        const dados = await resultado.json();
-        mostrarResultado(dados);
-    } catch (erro) {
-        mostrarResultado("ERRO: " + erro.message);
-    }
-}
-
-async function testarHistorico() {
-    try {
-        mostrarResultado("Buscando histórico...");
-        const resultado = await fazerRequisicao({ getHistory: true });
-        mostrarResultado(resultado);
-    } catch (erro) {
-        mostrarResultado("ERRO: " + erro.message);
-    }
-}
-
-async function testarRegistro() {
-    try {
-        mostrarResultado("Registrando turno...");
-        const resultado = await fazerRequisicao({
-            equipamento: "EQUIP-TESTE",
-            nome: "João Silva",
-            matricula: "12345",
-            acionamento: "08:00",
-            problema: "Problema de teste",
-            solucao: "Solução de teste", 
-            encerramento: "09:00"
-        });
-        mostrarResultado(resultado);
-    } catch (erro) {
-        mostrarResultado("ERRO: " + erro.message);
+        result.innerHTML += "ERRO: " + erro.message;
     }
 }
 </script>
