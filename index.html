@@ -1,403 +1,68 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Passagem de Turno</title>
-<style>
-body { font-family: Arial, sans-serif; margin:0; padding:0; background:#fff; color:#333; }
-.container { max-width:1200px; margin:20px auto; padding:20px; }
-h1 { color:#2d6a4f; text-align:center; margin-bottom:20px; }
-.form-section, .history-section { 
-    margin-bottom: 30px; 
-    padding: 20px; 
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1); 
-    border-radius: 8px; 
-}
-form { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
-form label { display:block; font-weight:bold; margin-bottom:4px; }
-form input, form textarea { width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box; }
-form textarea { resize: vertical; min-height:60px; }
-.full-width { grid-column:1/-1; }
-button { background-color:#95d5b2; color:#fff; border:none; padding:12px 20px; font-size:16px; cursor:pointer; border-radius:4px; transition:0.3s; }
-button:hover { background-color:#74c69d; }
-button:disabled { background-color:#ccc; cursor:not-allowed; }
-.history table { width:100%; border-collapse:collapse; font-size:14px; margin-top:10px; }
-.history th, .history td { border:1px solid #ddd; padding:8px; text-align:left; }
-.history th { background-color:#e9f5ef; color:#2d6a4f; }
-.history tr:nth-child(even){ background:#f9f9f9; }
-#watchdog { position:fixed; top:10px; right:10px; padding:5px 10px; background:#95d5b2; color:#fff; border-radius:4px; font-weight:bold; z-index:1000; }
-.loading { display:inline-block; width:20px; height:20px; border:3px solid #f3f3f3; border-top:3px solid #2d6a4f; border-radius:50%; animation:spin 1s linear infinite; margin-left:10px; }
-@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-.hidden { display:none; }
-#userInfo { background:#e9f5ef; padding:10px; border-radius:4px; margin-bottom:20px; }
-.logout-btn { background:#e74c3c; margin-left:10px; padding:5px 10px; font-size:12px; }
-.logout-btn:hover { background:#c0392b; }
-.login-required { background:#fff3cd; padding:15px; border-radius:4px; border:1px solid #ffeaa7; margin-bottom:20px; }
-.debug-section { background:#f8f9fa; padding:15px; border-radius:4px; border:1px solid #dee2e6; margin-top:20px; }
-.debug-section h3 { margin-top:0; color:#6c757d; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Histórico</title>
 </head>
 <body>
-<div id="watchdog">Watchdog: --</div>
-<div class="container">
-
-    <!-- SEÇÃO DE HISTÓRICO (SEMPRE VISÍVEL) -->
-    <div class="history-section">
-        <h1>📊 Histórico de Passagem de Turno</h1>
-        <button id="btnLoadHistory">🔄 Atualizar Histórico</button>
-        <div id="historyInfo" style="margin:10px 0; font-style:italic;"></div>
-        <table id="historyTable">
-            <thead>
-                <tr>
-                    <th>Nome</th>
-                    <th>Matrícula</th>
-                    <th>Data</th>
-                    <th>Equipamento</th>
-                    <th>Acionamento</th>
-                    <th>Problema</th>
-                    <th>Solução</th>
-                    <th>Encerramento</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td colspan="8" style="text-align:center; padding:20px;">
-                        Clique em "Atualizar Histórico" para carregar os registros
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-
-    <!-- SEÇÃO DE LOGIN E REGISTRO (APENAS PARA USUÁRIOS LOGADOS) -->
-    <div class="form-section">
-        <h1>🔐 Área de Registro</h1>
-        
-        <!-- DIV DE LOGIN (quando não logado) -->
-        <div id="loginDiv">
-            <div class="login-required">
-                <strong>⚠️ Login necessário para registrar turnos</strong>
-                <p>Faça login com sua matrícula para adicionar novos registros.</p>
-            </div>
-            <div style="display:flex; gap:10px; align-items:center; margin-top:15px;">
-                <input type="text" id="matriculaLogin" placeholder="Digite sua matrícula" style="flex:1;"/>
-                <button id="btnLogin">Entrar</button>
-            </div>
-        </div>
-
-        <!-- DIV PRINCIPAL (quando logado) -->
-        <div id="mainDiv" class="hidden">
-            <div id="userInfo">
-                ✅ Logado como: <span id="userName"></span> (<span id="userMatricula"></span>)
-                <button class="logout-btn" onclick="logout()">Sair</button>
-            </div>
-            
-            <h2>📝 Registrar Nova Passagem de Turno</h2>
-            <form id="turnoForm">
-                <div><label>Nome</label><input type="text" id="nome" required readonly/></div>
-                <div><label>Matrícula</label><input type="text" id="matricula" required readonly/></div>
-                <div><label>Data / Hora</label><input type="datetime-local" id="data" name="data"/></div>
-                <div><label>Equipamento</label><input type="text" id="equipamento" required/></div>
-                <div><label>Acionamento (Hora)</label><input type="time" id="acionamento" required/></div>
-                <div class="full-width"><label>Problema</label><textarea id="problema" required></textarea></div>
-                <div class="full-width"><label>Solução</label><textarea id="solucao" required></textarea></div>
-                <div><label>Encerramento (Hora)</label><input type="time" id="encerramento" required/></div>
-                <div class="full-width">
-                    <button type="submit" id="btnSubmit">
-                        ✅ Registrar Turno
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- SEÇÃO DE DEBUG -->
-    <div class="debug-section">
-        <h3>🔧 Debug</h3>
-        <button onclick="debugPlanilha()" style="background:#6c757d;">Executar Debug</button>
-        <button onclick="limparDebug()" style="background:#dc3545;">Limpar Debug</button>
-        <div id="debugOutput" style="margin-top:10px; padding:10px; background:#fff; border-radius:4px; max-height:300px; overflow-y:auto; font-family:monospace; font-size:12px;"></div>
-    </div>
-
-</div>
+    <h1>Teste de Histórico</h1>
+    <button onclick="testarHistorico()">Testar Histórico</button>
+    <button onclick="testarRegistro()">Testar Registro</button>
+    <div id="resultado" style="margin-top: 20px; padding: 10px; border: 1px solid #ccc;"></div>
 
 <script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwFS6gRrIGYeWFZ9KYjSaOMLfJd_TTsrZcLNGyvdb7R0RZBcXrQUlgLUdAjNr7B58o/exec"; // SUBSTITUA pela sua URL
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwFS6gRrIGYeWFZ9KYjSaOMLfJd_TTsrZcLNGyvdb7R0RZBcXrQUlgLUdAjNr7B58o/exec"; // SUA URL AQUI
 
-// Estado da aplicação
-let currentUser = null;
-
-// Função para fazer requisições POST
-async function postData(obj){
+async function postData(obj) {
+    console.log("Enviando:", obj);
     const resp = await fetch(SCRIPT_URL, {
         method: "POST",
         body: JSON.stringify(obj)
     });
-    return resp.json();
+    const data = await resp.json();
+    console.log("Resposta:", data);
+    return data;
 }
 
-// Watchdog
-async function fetchWatchdog(){
-    try{
-        const resp = await fetch(SCRIPT_URL);
-        const data = await resp.json();
-        document.getElementById("watchdog").textContent = "Watchdog: "+data.valor;
-    }catch(e){
-        document.getElementById("watchdog").textContent = "Watchdog: Erro";
-    }
-}
-
-// Login
-document.getElementById("btnLogin").addEventListener("click", async()=>{
-    const matricula = document.getElementById("matriculaLogin").value.trim();
-    if(!matricula){ 
-        alert("Digite sua matrícula"); 
-        return; 
-    }
-    
-    const btn = document.getElementById("btnLogin");
-    const originalText = btn.textContent;
-    btn.textContent = "Entrando...";
-    btn.disabled = true;
+async function testarHistorico() {
+    const resultado = document.getElementById("resultado");
+    resultado.innerHTML = "Testando histórico...";
     
     try {
-        const resp = await postData({login:true, matricula});
-        if(resp.success){
-            currentUser = {
-                nome: resp.nome,
-                matricula: matricula
-            };
-            
-            document.getElementById("loginDiv").classList.add("hidden");
-            document.getElementById("mainDiv").classList.remove("hidden");
-            document.getElementById("nome").value = resp.nome;
-            document.getElementById("matricula").value = matricula;
-            document.getElementById("userName").textContent = resp.nome;
-            document.getElementById("userMatricula").textContent = matricula;
-            
-            // Preencher data/hora atual
-            const now = new Date();
-            const localDateTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
-                                    .toISOString()
-                                    .slice(0, 16);
-            document.getElementById("data").value = localDateTime;
-            
-        } else {
-            alert("Erro: " + resp.message);
-        }
-    } catch(error) {
-        console.error("Erro no login:", error);
-        alert("Erro de conexão: " + error.message);
-    } finally {
-        btn.textContent = originalText;
-        btn.disabled = false;
-    }
-});
-
-// Logout
-function logout() {
-    currentUser = null;
-    document.getElementById("mainDiv").classList.add("hidden");
-    document.getElementById("loginDiv").classList.remove("hidden");
-    document.getElementById("matriculaLogin").value = "";
-    document.getElementById("turnoForm").reset();
-}
-
-// Registrar Turno (APENAS LOGADO)
-document.getElementById("turnoForm").addEventListener("submit", async(e)=>{
-    e.preventDefault();
-    
-    if (!currentUser) {
-        alert("Faça login primeiro");
-        return;
-    }
-    
-    const btn = document.getElementById("btnSubmit");
-    const originalText = btn.textContent;
-    btn.textContent = "Registrando...";
-    btn.disabled = true;
-    
-    try {
-        const obj = {
-            nome: document.getElementById("nome").value,
-            matricula: document.getElementById("matricula").value,
-            data: document.getElementById("data").value,
-            equipamento: document.getElementById("equipamento").value,
-            acionamento: document.getElementById("acionamento").value,
-            problema: document.getElementById("problema").value,
-            solucao: document.getElementById("solucao").value,
-            encerramento: document.getElementById("encerramento").value
-        };
+        const data = await postData({ getHistory: true });
+        resultado.innerHTML = "<strong>Resposta do histórico:</strong><br>" + JSON.stringify(data, null, 2);
         
-        // Validação básica
-        if (!obj.equipamento.trim()) {
-            alert("Equipamento é obrigatório");
-            return;
-        }
-        
-        const resp = await postData(obj);
-        alert(resp.message || "Registro realizado com sucesso!");
-        
-        // Limpar formulário e atualizar histórico
-        document.getElementById("equipamento").value = "";
-        document.getElementById("problema").value = "";
-        document.getElementById("solucao").value = "";
-        document.getElementById("acionamento").value = "";
-        document.getElementById("encerramento").value = "";
-        
-        // Atualizar histórico automaticamente após registrar
-        loadHistory();
-        
-    } catch(error) {
-        console.error("Erro ao registrar:", error);
-        alert("Erro ao registrar: " + error.message);
-    } finally {
-        btn.textContent = originalText;
-        btn.disabled = false;
-    }
-});
-
-// Carregar Histórico (PÚBLICO - SEM LOGIN)
-async function loadHistory() {
-    const btn = document.getElementById("btnLoadHistory");
-    const originalText = btn.textContent;
-    btn.textContent = "Carregando...";
-    btn.disabled = true;
-    
-    try {
-        console.log("Solicitando histórico público...");
-        const resp = await postData({getHistory:true});
-        console.log("Resposta do histórico:", resp);
-        
-        let data = [];
-        if (Array.isArray(resp)) {
-            data = resp;
-        } else if (resp && resp.error) {
-            alert("Erro ao carregar histórico: " + resp.error);
-            return;
-        }
-        
-        console.log("Dados processados:", data.length, "registros");
-        
-        const tbody = document.querySelector("#historyTable tbody");
-        tbody.innerHTML = "";
-        
-        if (data.length === 0) {
-            const tr = document.createElement("tr");
-            const td = document.createElement("td");
-            td.colSpan = 8;
-            td.textContent = "Nenhum registro encontrado";
-            td.style.textAlign = "center";
-            td.style.padding = "20px";
-            tr.appendChild(td);
-            tbody.appendChild(tr);
-            document.getElementById("historyInfo").textContent = "Nenhum registro encontrado";
-        } else {
-            // Ordenar por data (mais recente primeiro)
-            data.sort((a, b) => new Date(b[3]) - new Date(a[3]));
-            
-            data.forEach(row => {
-                const tr = document.createElement("tr");
-                // Mostrar apenas colunas relevantes: Nome, Matrícula, Data, Equipamento, Acionamento, Problema, Solução, Encerramento
-                const colunasRelevantes = [1, 2, 3, 4, 5, 6, 7, 8]; // Índices das colunas
-                
-                colunasRelevantes.forEach(colIndex => {
-                    const td = document.createElement("td");
-                    let cellValue = row[colIndex] !== null && row[colIndex] !== undefined ? row[colIndex].toString() : "";
-                    
-                    // Formatar data se for a coluna de data
-                    if (colIndex === 3 && cellValue) {
-                        try {
-                            const date = new Date(cellValue);
-                            cellValue = date.toLocaleString('pt-BR');
-                        } catch(e) {
-                            // Mantém o valor original se não puder formatar
-                        }
-                    }
-                    
-                    td.textContent = cellValue;
-                    tr.appendChild(td);
-                });
-                tbody.appendChild(tr);
+        if (Array.isArray(data)) {
+            resultado.innerHTML += `<br><br><strong>${data.length} registros encontrados:</strong>`;
+            data.forEach((item, index) => {
+                resultado.innerHTML += `<br>${index + 1}. ${JSON.stringify(item)}`;
             });
-            document.getElementById("historyInfo").textContent = `Mostrando ${data.length} registro(s) - Mais recentes primeiro`;
         }
-        
-    } catch(error) {
-        console.error("Erro ao carregar histórico:", error);
-        alert("Erro ao carregar histórico: " + error.message);
-    } finally {
-        btn.textContent = originalText;
-        btn.disabled = false;
+    } catch (error) {
+        resultado.innerHTML = "Erro: " + error.message;
     }
 }
 
-// Evento para carregar histórico
-document.getElementById("btnLoadHistory").addEventListener("click", loadHistory);
-
-// FUNÇÃO DE DEBUG
-async function debugPlanilha() {
-    const debugOutput = document.getElementById("debugOutput");
-    debugOutput.innerHTML = "<strong>=== INICIANDO DEBUG ===</strong><br>";
+async function testarRegistro() {
+    const resultado = document.getElementById("resultado");
+    resultado.innerHTML = "Testando registro...";
     
     try {
-        debugOutput.innerHTML += "📡 Solicitando dados da planilha...<br>";
-        const resp = await postData({getHistory:true});
-        
-        debugOutput.innerHTML += "✅ Resposta recebida:<br>";
-        debugOutput.innerHTML += "Tipo: " + (Array.isArray(resp) ? "Array" : typeof resp) + "<br>";
-        
-        if (Array.isArray(resp)) {
-            debugOutput.innerHTML += "Número de registros: " + resp.length + "<br><br>";
-            
-            if (resp.length === 0) {
-                debugOutput.innerHTML += "❌ NENHUM REGISTRO ENCONTRADO<br>";
-                debugOutput.innerHTML += "Isso significa que o backend retornou um array vazio.<br>";
-            } else {
-                debugOutput.innerHTML += "<strong>=== REGISTROS ENCONTRADOS ===</strong><br>";
-                resp.forEach((row, index) => {
-                    debugOutput.innerHTML += `<strong>Registro ${index + 1}:</strong> ${JSON.stringify(row)}<br>`;
-                    
-                    // Analisar as colunas
-                    if (row[1] && row[4]) {
-                        debugOutput.innerHTML += `✅ VÁLIDO - Nome: "${row[1]}", Equipamento: "${row[4]}"<br>`;
-                    } else {
-                        debugOutput.innerHTML += `❌ INVÁLIDO - Nome: "${row[1]}", Equipamento: "${row[4]}"<br>`;
-                    }
-                    debugOutput.innerHTML += "<br>";
-                });
-            }
-        } else {
-            debugOutput.innerHTML += "❌ Resposta não é um array:<br>";
-            debugOutput.innerHTML += JSON.stringify(resp, null, 2) + "<br>";
-        }
-        
-    } catch(error) {
-        debugOutput.innerHTML += "❌ Erro no debug: " + error.message + "<br>";
-        console.error("Erro no debug:", error);
+        const data = await postData({
+            equipamento: "TESTE-EQUIP",
+            nome: "Usuario Teste",
+            matricula: "12345",
+            acionamento: "10:00",
+            problema: "Problema teste",
+            solucao: "Solução teste",
+            encerramento: "11:00"
+        });
+        resultado.innerHTML = "<strong>Resposta do registro:</strong><br>" + JSON.stringify(data, null, 2);
+    } catch (error) {
+        resultado.innerHTML = "Erro: " + error.message;
     }
 }
-
-function limparDebug() {
-    document.getElementById("debugOutput").innerHTML = "";
-}
-
-// Inicialização
-setInterval(fetchWatchdog, 5000);
-fetchWatchdog();
-
-// Carregar histórico automaticamente ao abrir a página
-window.addEventListener('load', function() {
-    loadHistory();
-    
-    // Preencher data/hora atual
-    const now = new Date();
-    const localDateTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
-                            .toISOString()
-                            .slice(0, 16);
-    document.getElementById('data').value = localDateTime;
-});
 </script>
 </body>
 </html>
