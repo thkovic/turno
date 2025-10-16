@@ -163,7 +163,7 @@ document.getElementById("turnoForm").addEventListener("submit", async(e)=>{
         
         if(resp.success) {
             showAlert("✅ " + resp.message, "success");
-            console.log("🎉 REGISTRO BEM-SUCEDIDO:", resp.debug);
+            console.log("🎉 REGISTRO BEM-SUCEDIDO:", resp);
             
             // Limpar apenas campos específicos
             document.getElementById("equipamento").value = "";
@@ -196,7 +196,7 @@ document.getElementById("turnoForm").addEventListener("submit", async(e)=>{
     }
 });
 
-// Carregar Histórico - VERSÃO CORRIGIDA
+// Carregar Histórico - VERSÃO DEFINITIVA
 async function loadHistory() {
     const btn = document.getElementById("btnLoadHistory");
     const originalText = btn.textContent;
@@ -213,8 +213,14 @@ async function loadHistory() {
             console.log(`📋 ${data.length} registros recebidos`);
             
             if (data.length > 0) {
-                console.log("🔍 Estrutura do primeiro registro:", data[0]);
+                console.log("🔍 Estrutura completa do primeiro registro:", data[0]);
                 console.log("📍 Número de colunas:", data[0].length);
+                
+                // Debug detalhado das colunas
+                console.log("🗺️ MAPEAMENTO DAS COLUNAS RECEBIDAS:");
+                data[0].forEach((valor, index) => {
+                    console.log(`  Coluna ${index}: ${typeof valor} = "${valor}"`);
+                });
             }
         } else if (resp && resp.error) {
             showAlert("Erro ao carregar histórico: " + resp.error, "error");
@@ -248,27 +254,27 @@ async function loadHistory() {
             data.forEach((row, index) => {
                 const tr = document.createElement("tr");
                 
-                // CORREÇÃO: MAPEAMENTO DAS 8 COLUNAS
+                // CORREÇÃO: MAPEAMENTO BASEADO NA ESTRUTURA REAL
+                // ['T1760626637571', '2025-10-16T14:57:17.000Z', 'Thallys Nascimento', 81057898, 'Pelotamento 410-TC-59', '1899-12-30T13:31:28.000Z', 'teste', 'teste']
                 const colunas = [
-                    formatarData(row[0]),    // Coluna 1: Data
-                    row[1] || "",           // Coluna 2: Operador
-                    row[2] || "",           // Coluna 3: Matrícula
-                    row[3] || "",           // Coluna 4: Equipamento
-                    formatarHora(row[4]),   // Coluna 5: Acionamento
-                    row[5] || "",           // Coluna 6: Problema
-                    row[6] || "",           // Coluna 7: Solução
-                    formatarHora(row[7])    // Coluna 8: Encerramento
+                    formatarData(row[0]),    // Data real (não o timestamp T...)
+                    row[1] || "",           // Operador
+                    row[2] || "",           // Matrícula
+                    row[3] || "",           // Equipamento
+                    formatarHora(row[4]),   // Acionamento
+                    row[5] || "",           // Problema
+                    row[6] || "",           // Solução
+                    formatarHora(row[7])    // Encerramento
                 ];
                 
                 if (index === 0) {
-                    console.log("🔍 PRIMEIRO REGISTRO PROCESSADO:", colunas);
+                    console.log("🎯 PRIMEIRO REGISTRO PROCESSADO:", colunas);
                 }
                 
                 colunas.forEach(valor => {
                     const td = document.createElement("td");
                     td.textContent = valor;
                     
-                    // Limitar texto muito longo
                     if (valor && valor.length > 100) {
                         td.title = valor;
                         td.textContent = valor.substring(0, 100) + '...';
@@ -350,6 +356,10 @@ function formatarHora(horaString) {
     try {
         const date = new Date(horaString);
         if (!isNaN(date.getTime())) {
+            // Verificar se é data padrão do Excel (1899)
+            if (date.getFullYear() === 1899) {
+                return "";
+            }
             return date.toLocaleTimeString('pt-BR', { 
                 hour: '2-digit', 
                 minute: '2-digit',
@@ -407,4 +417,3 @@ window.addEventListener('load', function() {
 </script>
 </body>
 </html>
-
