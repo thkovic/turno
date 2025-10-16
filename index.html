@@ -3,126 +3,393 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Sistema Passagem de Turno - Nova Versão</title>
+<title>Sistema Passagem de Turno - FUNCIONAL</title>
 <style>
-body { font-family: Arial, sans-serif; margin:20px; background:#f5f5f5; }
-.container { max-width:1000px; margin:0 auto; background:white; padding:20px; border-radius:10px; box-shadow:0 2px 10px rgba(0,0,0,0.1); }
-button { background:#2d6a4f; color:white; border:none; padding:10px 15px; margin:5px; border-radius:5px; cursor:pointer; }
-button:hover { background:#1b4332; }
-.alert { padding:10px; margin:10px 0; border-radius:5px; }
-.success { background:#d4edda; color:#155724; border:1px solid #c3e6cb; }
-.error { background:#f8d7da; color:#721c24; border:1px solid #f5c6cb; }
-.info { background:#d1ecf1; color:#0c5460; border:1px solid #bee5eb; }
+body { font-family: Arial, sans-serif; margin:0; padding:0; background:#fff; color:#333; }
+.container { max-width:1200px; margin:20px auto; padding:20px; }
+h1 { color:#2d6a4f; text-align:center; margin-bottom:20px; }
+.form-section, .history-section { 
+    margin-bottom: 30px; 
+    padding: 20px; 
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1); 
+    border-radius: 8px; 
+}
+form { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+form label { display:block; font-weight:bold; margin-bottom:4px; }
+form input, form textarea { width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box; }
+form textarea { resize: vertical; min-height:60px; }
+.full-width { grid-column:1/-1; }
+button { background-color:#95d5b2; color:#fff; border:none; padding:12px 20px; font-size:16px; cursor:pointer; border-radius:4px; transition:0.3s; }
+button:hover { background-color:#74c69d; }
+button:disabled { background-color:#ccc; cursor:not-allowed; }
+.history table { width:100%; border-collapse:collapse; font-size:14px; margin-top:10px; }
+.history th, .history td { border:1px solid #ddd; padding:8px; text-align:left; }
+.history th { background-color:#e9f5ef; color:#2d6a4f; }
+.history tr:nth-child(even){ background:#f9f9f9; }
+#watchdog { position:fixed; top:10px; right:10px; padding:5px 10px; background:#95d5b2; color:#fff; border-radius:4px; font-weight:bold; z-index:1000; }
+.loading { display:inline-block; width:20px; height:20px; border:3px solid #f3f3f3; border-top:3px solid #2d6a4f; border-radius:50%; animation:spin 1s linear infinite; margin-left:10px; }
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 .hidden { display:none; }
+#userInfo { background:#e9f5ef; padding:10px; border-radius:4px; margin-bottom:20px; }
+.logout-btn { background:#e74c3c; margin-left:10px; padding:5px 10px; font-size:12px; }
+.logout-btn:hover { background:#c0392b; }
+.login-required { background:#fff3cd; padding:15px; border-radius:4px; border:1px solid #ffeaa7; margin-bottom:20px; }
+.alert { padding:10px; border-radius:4px; margin:10px 0; }
+.alert-success { background:#d4edda; color:#155724; border:1px solid #c3e6cb; }
+.alert-error { background:#f8d7da; color:#721c24; border:1px solid #f5c6cb; }
+.alert-info { background:#d1ecf1; color:#0c5460; border:1px solid #bee5eb; }
+.debug-section { background:#f8f9fa; padding:15px; border-radius:4px; border:1px solid #dee2e6; margin-top:20px; }
 </style>
 </head>
 <body>
+<div id="watchdog">Watchdog: --</div>
 <div class="container">
-    <h1>🎯 Sistema Passagem de Turno - NOVA VERSÃO</h1>
-    
-    <div class="alert info">
-        <strong>⚠️ IMPORTANTE:</strong> Esta é a NOVA versão com comandos diferentes!
+
+    <!-- SEÇÃO DE HISTÓRICO (SEMPRE VISÍVEL) -->
+    <div class="history-section">
+        <h1>📊 Histórico de Passagem de Turno</h1>
+        <button id="btnLoadHistory">🔄 Atualizar Histórico</button>
+        <div id="historyInfo" style="margin:10px 0; font-style:italic;"></div>
+        <table id="historyTable">
+            <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>Nome</th>
+                    <th>Matrícula</th>
+                    <th>Equipamento</th>
+                    <th>Acionamento</th>
+                    <th>Problema</th>
+                    <th>Solução</th>
+                    <th>Encerramento</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td colspan="8" style="text-align:center; padding:20px;">
+                        Clique em "Atualizar Histórico" para carregar os registros
+                    </td>
+                </tr>
+            </tbody>
+        </table>
     </div>
 
-    <h2>🧪 Testes da Nova Versão</h2>
-    
-    <button onclick="testeConexao()">1. Testar Conexão</button>
-    <button onclick="testeLogin()">2. Testar Login (81057898)</button>
-    <button onclick="testeCadastro()">3. Testar Cadastro</button>
-    <button onclick="testeHistorico()">4. Testar Histórico</button>
-    <button onclick="testeTurno()">5. Testar Turno</button>
-    <button onclick="limparResultados()" style="background:#6c757d;">Limpar</button>
-    
-    <div id="resultados" style="margin-top:20px; padding:15px; background:#f8f9fa; border-radius:5px; min-height:100px;"></div>
+    <!-- SEÇÃO DE REGISTRO (SEM LOGIN - DIRETO) -->
+    <div class="form-section">
+        <h1>📝 Registrar Passagem de Turno</h1>
+        <div class="alert info">
+            <strong>💡 Sistema Simplificado:</strong> Preencha os dados diretamente abaixo.
+        </div>
+        
+        <form id="turnoForm">
+            <div><label>Nome *</label><input type="text" id="nome" required value="Operador"/></div>
+            <div><label>Matrícula *</label><input type="text" id="matricula" required value="12345"/></div>
+            <div><label>Data / Hora</label><input type="datetime-local" id="data" name="data"/></div>
+            <div><label>Equipamento *</label><input type="text" id="equipamento" required placeholder="Nome do equipamento"/></div>
+            <div><label>Acionamento (Hora) *</label><input type="time" id="acionamento" required/></div>
+            <div class="full-width"><label>Problema *</label><textarea id="problema" required placeholder="Descreva o problema encontrado"></textarea></div>
+            <div class="full-width"><label>Solução *</label><textarea id="solucao" required placeholder="Descreva a solução aplicada"></textarea></div>
+            <div><label>Encerramento (Hora) *</label><input type="time" id="encerramento" required/></div>
+            <div class="full-width">
+                <button type="submit" id="btnSubmit">
+                    ✅ Registrar Turno
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- SEÇÃO DE FERRAMENTAS -->
+    <div class="debug-section">
+        <h3>🔧 Ferramentas</h3>
+        <button onclick="testarConexao()" style="background:#17a2b8;">Testar Conexão</button>
+        <button onclick="cadastrarUsuarioRapido()" style="background:#ff9800;">Cadastrar Usuário Rápido</button>
+        <button onclick="limparAlertas()" style="background:#6c757d;">Limpar Alertas</button>
+        
+        <div style="margin-top:10px;">
+            <strong>Status:</strong>
+            <span id="systemStatus" style="margin-left:10px; padding:4px 8px; border-radius:4px; background:#e9ecef;">--</span>
+        </div>
+    </div>
+
 </div>
 
 <script>
+// ⚙️ CONFIGURAÇÃO
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwFS6gRrIGYeWFZ9KYjSaOMLfJd_TTsrZcLNGyvdb7R0RZBcXrQUlgLUdAjNr7B58o/exec";
 
-async function enviarComando(comando) {
+// Função para fazer requisições POST
+async function postData(obj){
     try {
-        console.log("📤 Enviando:", comando);
-        const resposta = await fetch(SCRIPT_URL, {
+        console.log("📤 Enviando:", obj);
+        const resp = await fetch(SCRIPT_URL, {
             method: "POST",
-            body: JSON.stringify(comando)
+            body: JSON.stringify(obj)
         });
-        const dados = await resposta.json();
-        console.log("📥 Resposta:", dados);
-        return dados;
-    } catch (erro) {
-        console.error("❌ Erro:", erro);
-        throw erro;
+        const data = await resp.json();
+        console.log("📥 Resposta:", data);
+        return data;
+    } catch(error) {
+        console.error("❌ Erro:", error);
+        throw error;
     }
 }
 
-function mostrarResultado(titulo, dados) {
-    const div = document.getElementById('resultados');
-    const resultado = document.createElement('div');
-    resultado.className = dados.sucesso !== false ? 'alert success' : 'alert error';
-    resultado.innerHTML = `<strong>${titulo}</strong><br><pre>${JSON.stringify(dados, null, 2)}</pre>`;
-    div.appendChild(resultado);
+// Watchdog
+async function fetchWatchdog(){
+    try{
+        const resp = await fetch(SCRIPT_URL);
+        const data = await resp.json();
+        document.getElementById("watchdog").textContent = "Watchdog: "+ (data.watchdog || data.valor || "--");
+        
+        // Atualizar status
+        const statusElement = document.getElementById("systemStatus");
+        if (data.status === "ok") {
+            statusElement.textContent = "ONLINE ✅";
+            statusElement.style.background = "#d4edda";
+            statusElement.style.color = "#155724";
+        } else {
+            statusElement.textContent = "ERRO ❌";
+            statusElement.style.background = "#f8d7da";
+            statusElement.style.color = "#721c24";
+        }
+    }catch(e){
+        document.getElementById("watchdog").textContent = "Watchdog: Erro";
+        document.getElementById("systemStatus").textContent = "OFFLINE ❌";
+    }
 }
 
-async function testeConexao() {
+// Registrar Turno
+document.getElementById("turnoForm").addEventListener("submit", async(e)=>{
+    e.preventDefault();
+    
+    const btn = document.getElementById("btnSubmit");
+    const originalText = btn.textContent;
+    btn.textContent = "Registrando...";
+    btn.disabled = true;
+    
+    try {
+        const obj = {
+            nome: document.getElementById("nome").value,
+            matricula: document.getElementById("matricula").value,
+            data: document.getElementById("data").value,
+            equipamento: document.getElementById("equipamento").value,
+            acionamento: document.getElementById("acionamento").value,
+            problema: document.getElementById("problema").value,
+            solucao: document.getElementById("solucao").value,
+            encerramento: document.getElementById("encerramento").value
+        };
+        
+        // Validação
+        if (!obj.equipamento.trim()) {
+            showAlert("Equipamento é obrigatório", "error");
+            return;
+        }
+        if (!obj.problema.trim()) {
+            showAlert("Problema é obrigatório", "error");
+            return;
+        }
+        if (!obj.solucao.trim()) {
+            showAlert("Solução é obrigatória", "error");
+            return;
+        }
+        
+        const resp = await postData(obj);
+        if(resp.success) {
+            showAlert("✅ " + resp.message, "success");
+            
+            // Limpar formulário (mantém nome e matrícula)
+            document.getElementById("equipamento").value = "";
+            document.getElementById("problema").value = "";
+            document.getElementById("solucao").value = "";
+            document.getElementById("acionamento").value = "";
+            document.getElementById("encerramento").value = "";
+            
+            // Atualizar data/hora
+            const now = new Date();
+            const localDateTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
+                                    .toISOString()
+                                    .slice(0, 16);
+            document.getElementById("data").value = localDateTime;
+            
+            // Atualizar histórico
+            setTimeout(() => loadHistory(), 1000);
+            
+        } else {
+            showAlert("❌ Erro: " + resp.message, "error");
+        }
+        
+    } catch(error) {
+        showAlert("❌ Erro ao registrar: " + error.message, "error");
+    } finally {
+        btn.textContent = originalText;
+        btn.disabled = false;
+    }
+});
+
+// Carregar Histórico
+async function loadHistory() {
+    const btn = document.getElementById("btnLoadHistory");
+    const originalText = btn.textContent;
+    btn.textContent = "Carregando...";
+    btn.disabled = true;
+    
+    try {
+        const resp = await postData({getHistory: true});
+        
+        let data = [];
+        if (Array.isArray(resp)) {
+            data = resp;
+        } else if (resp && resp.error) {
+            showAlert("Erro ao carregar histórico: " + resp.error, "error");
+            return;
+        }
+        
+        const tbody = document.querySelector("#historyTable tbody");
+        tbody.innerHTML = "";
+        
+        if (data.length === 0) {
+            const tr = document.createElement("tr");
+            const td = document.createElement("td");
+            td.colSpan = 8;
+            td.textContent = "Nenhum registro encontrado";
+            td.style.textAlign = "center";
+            td.style.padding = "20px";
+            tr.appendChild(td);
+            tbody.appendChild(tr);
+            document.getElementById("historyInfo").textContent = "Nenhum registro encontrado";
+        } else {
+            // Ordenar por data
+            data.sort((a, b) => {
+                const dateA = new Date(a[3] || a[10] || 0);
+                const dateB = new Date(b[3] || b[10] || 0);
+                return dateB - dateA;
+            });
+            
+            data.forEach(row => {
+                const tr = document.createElement("tr");
+                
+                const colunas = [
+                    formatarData(row[3]),    // Data
+                    row[1] || "",           // Nome
+                    row[2] || "",           // Matrícula
+                    row[4] || "",           // Equipamento
+                    formatarHora(row[5]),   // Acionamento
+                    row[6] || "",           // Problema
+                    row[7] || "",           // Solução
+                    formatarHora(row[8])    // Encerramento
+                ];
+                
+                colunas.forEach(valor => {
+                    const td = document.createElement("td");
+                    td.textContent = valor;
+                    tr.appendChild(td);
+                });
+                
+                tbody.appendChild(tr);
+            });
+            
+            document.getElementById("historyInfo").textContent = `Mostrando ${data.length} registro(s)`;
+        }
+        
+    } catch(error) {
+        showAlert("Erro ao carregar histórico: " + error.message, "error");
+    } finally {
+        btn.textContent = originalText;
+        btn.disabled = false;
+    }
+}
+
+// Evento para carregar histórico
+document.getElementById("btnLoadHistory").addEventListener("click", loadHistory);
+
+// Funções auxiliares
+function formatarData(dataString) {
+    if (!dataString) return "";
+    try {
+        const date = new Date(dataString);
+        if (isNaN(date.getTime())) return dataString;
+        return date.toLocaleString('pt-BR');
+    } catch {
+        return dataString;
+    }
+}
+
+function formatarHora(dataHora) {
+    if (!dataHora) return "";
+    try {
+        const date = new Date(dataHora);
+        if (isNaN(date.getTime()) || date.getFullYear() === 1899) {
+            if (typeof dataHora === 'string' && dataHora.includes(':')) {
+                return dataHora.split('T')[1]?.substring(0, 5) || dataHora;
+            }
+            return "";
+        }
+        return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    } catch {
+        return dataHora;
+    }
+}
+
+// Ferramentas
+async function testarConexao() {
     try {
         const resposta = await fetch(SCRIPT_URL);
         const dados = await resposta.json();
-        mostrarResultado("🔗 Teste de Conexão", dados);
+        showAlert(`✅ Conexão: ${dados.message}`, "success");
     } catch (erro) {
-        mostrarResultado("🔗 Teste de Conexão", { erro: erro.message });
+        showAlert(`❌ Falha: ${erro.message}`, "error");
     }
 }
 
-async function testeLogin() {
-    const resultado = await enviarComando({
-        acao: "login",
-        matricula: "81057898"
-    });
-    mostrarResultado("🔐 Teste de Login", resultado);
+async function cadastrarUsuarioRapido() {
+    try {
+        // Usando a estrutura antiga que funciona
+        const resultado = await postData({
+            cadastrar: true,
+            nome: "Usuario Rápido",
+            matricula: "RAPIDO" + Date.now().toString().substring(9)
+        });
+        
+        if (resultado.success) {
+            showAlert(`✅ ${resultado.message}`, "success");
+        } else {
+            showAlert(`❌ ${resultado.message}`, "error");
+        }
+    } catch (error) {
+        showAlert(`❌ Erro: ${error.message}`, "error");
+    }
 }
 
-async function testeCadastro() {
-    const resultado = await enviarComando({
-        acao: "cadastrar_usuario",
-        nome: "Usuario Teste Nova Versão",
-        matricula: "TESTE" + Date.now()
-    });
-    mostrarResultado("👤 Teste de Cadastro", resultado);
+function limparAlertas() {
+    const alerts = document.querySelectorAll('.alert');
+    alerts.forEach(alert => alert.remove());
 }
 
-async function testeHistorico() {
-    const resultado = await enviarComando({
-        acao: "buscar_historico"
-    });
-    mostrarResultado("📊 Teste de Histórico", Array.isArray(resultado) ? 
-        { registros_encontrados: resultado.length, dados: resultado.slice(0, 3) } : resultado);
+function showAlert(message, type) {
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${type}`;
+    alert.textContent = message;
+    document.querySelector('.container').insertBefore(alert, document.querySelector('.container').firstChild);
+    
+    setTimeout(() => {
+        if (alert.parentNode) alert.remove();
+    }, 5000);
 }
 
-async function testeTurno() {
-    const resultado = await enviarComando({
-        acao: "registrar_turno",
-        nome: "Testador",
-        matricula: "12345",
-        equipamento: "EQUIP-TESTE-NOVA-VERSAO",
-        acionamento: "08:00",
-        problema: "Problema de teste",
-        solucao: "Solução aplicada",
-        encerramento: "09:00"
-    });
-    mostrarResultado("📝 Teste de Turno", resultado);
-}
+// Inicialização
+setInterval(fetchWatchdog, 5000);
+fetchWatchdog();
 
-function limparResultados() {
-    document.getElementById('resultados').innerHTML = '';
-}
-
-// Teste automático
-setTimeout(() => {
-    mostrarResultado("🚀 Sistema Pronto", { 
-        mensagem: "Clique nos botões para testar a NOVA versão",
-        comandos: ["login", "cadastrar_usuario", "buscar_historico", "registrar_turno"]
-    });
-}, 1000);
+window.addEventListener('load', function() {
+    const now = new Date();
+    const localDateTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
+                            .toISOString()
+                            .slice(0, 16);
+    document.getElementById('data').value = localDateTime;
+    
+    setTimeout(() => loadHistory(), 1000);
+    
+    showAlert("🚀 Sistema carregado! Use o formulário abaixo para registrar turnos.", "success");
+});
 </script>
 </body>
 </html>
