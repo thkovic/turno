@@ -44,7 +44,7 @@ button:disabled { background-color:#ccc; cursor:not-allowed; }
     <form id="turnoForm">
         <div><label>Nome do Operador *</label><input type="text" id="nome" required placeholder="Seu nome completo"/></div>
         <div><label>Matrícula *</label><input type="text" id="matricula" required placeholder="Sua matrícula"/></div>
-        <div><label>Data / Hora</label><input type="datetime-local" id="data" name="data"/></div>
+        <div><label>Data *</label><input type="date" id="data" required/></div>
         <div><label>Equipamento *</label><input type="text" id="equipamento" required placeholder="Nome do equipamento"/></div>
         <div><label>Acionamento (Hora) *</label><input type="time" id="acionamento" required/></div>
         <div class="full-width"><label>Problema Identificado *</label><textarea id="problema" required placeholder="Descreva o problema encontrado"></textarea></div>
@@ -120,7 +120,7 @@ async function fetchWatchdog(){
     }
 }
 
-// Registrar Turno - VERSÃO DEFINITIVA
+// Registrar Turno - VERSÃO SIMPLIFICADA
 document.getElementById("turnoForm").addEventListener("submit", async(e)=>{
     e.preventDefault();
     
@@ -130,10 +130,11 @@ document.getElementById("turnoForm").addEventListener("submit", async(e)=>{
     btn.disabled = true;
     
     try {
-        // ESTRUTURA SIMPLIFICADA E CORRETA
+        // ESTRUTURA SIMPLIFICADA - DATA MANUAL
         const obj = {
             nome: document.getElementById("nome").value.trim(),
             matricula: document.getElementById("matricula").value.trim(),
+            data: document.getElementById("data").value, // DATA MANUAL
             equipamento: document.getElementById("equipamento").value.trim(),
             acionamento: document.getElementById("acionamento").value,
             problema: document.getElementById("problema").value.trim(),
@@ -147,6 +148,7 @@ document.getElementById("turnoForm").addEventListener("submit", async(e)=>{
         const validacao = [
             { campo: obj.nome, mensagem: "Nome do operador é obrigatório" },
             { campo: obj.matricula, mensagem: "Matrícula é obrigatória" },
+            { campo: obj.data, mensagem: "Data é obrigatória" },
             { campo: obj.equipamento, mensagem: "Equipamento é obrigatório" },
             { campo: obj.problema, mensagem: "Problema é obrigatório" },
             { campo: obj.solucao, mensagem: "Solução é obrigatória" }
@@ -165,19 +167,13 @@ document.getElementById("turnoForm").addEventListener("submit", async(e)=>{
             showAlert("✅ " + resp.message, "success");
             console.log("🎉 REGISTRO BEM-SUCEDIDO:", resp);
             
-            // Limpar apenas campos específicos
+            // Limpar campos do formulário (mantém nome e matrícula)
+            document.getElementById("data").value = "";
             document.getElementById("equipamento").value = "";
             document.getElementById("problema").value = "";
             document.getElementById("solucao").value = "";
             document.getElementById("acionamento").value = "";
             document.getElementById("encerramento").value = "";
-            
-            // Atualizar data/hora para agora
-            const now = new Date();
-            const localDateTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
-                                    .toISOString()
-                                    .slice(0, 16);
-            document.getElementById("data").value = localDateTime;
             
             // Atualizar histórico
             setTimeout(() => loadHistory(), 1000);
@@ -196,7 +192,7 @@ document.getElementById("turnoForm").addEventListener("submit", async(e)=>{
     }
 });
 
-// Carregar Histórico - VERSÃO DEFINITIVA
+// Carregar Histórico
 async function loadHistory() {
     const btn = document.getElementById("btnLoadHistory");
     const originalText = btn.textContent;
@@ -213,14 +209,7 @@ async function loadHistory() {
             console.log(`📋 ${data.length} registros recebidos`);
             
             if (data.length > 0) {
-                console.log("🔍 Estrutura completa do primeiro registro:", data[0]);
-                console.log("📍 Número de colunas:", data[0].length);
-                
-                // Debug detalhado das colunas
-                console.log("🗺️ MAPEAMENTO DAS COLUNAS RECEBIDAS:");
-                data[0].forEach((valor, index) => {
-                    console.log(`  Coluna ${index}: ${typeof valor} = "${valor}"`);
-                });
+                console.log("🔍 Estrutura do primeiro registro:", data[0]);
             }
         } else if (resp && resp.error) {
             showAlert("Erro ao carregar histórico: " + resp.error, "error");
@@ -254,17 +243,16 @@ async function loadHistory() {
             data.forEach((row, index) => {
                 const tr = document.createElement("tr");
                 
-                // CORREÇÃO: MAPEAMENTO BASEADO NA ESTRUTURA REAL
-                // ['T1760626637571', '2025-10-16T14:57:17.000Z', 'Thallys Nascimento', 81057898, 'Pelotamento 410-TC-59', '1899-12-30T13:31:28.000Z', 'teste', 'teste']
+                // MAPEAMENTO SIMPLES - 8 COLUNAS
                 const colunas = [
-                    formatarData(row[0]),    // Data real (não o timestamp T...)
-                    row[1] || "",           // Operador
-                    row[2] || "",           // Matrícula
-                    row[3] || "",           // Equipamento
-                    formatarHora(row[4]),   // Acionamento
-                    row[5] || "",           // Problema
-                    row[6] || "",           // Solução
-                    formatarHora(row[7])    // Encerramento
+                    formatarData(row[0]),    // Coluna 1: Data
+                    row[1] || "",           // Coluna 2: Operador
+                    row[2] || "",           // Coluna 3: Matrícula
+                    row[3] || "",           // Coluna 4: Equipamento
+                    row[4] || "",           // Coluna 5: Acionamento (HORA)
+                    row[5] || "",           // Coluna 6: Problema
+                    row[6] || "",           // Coluna 7: Solução
+                    row[7] || ""            // Coluna 8: Encerramento (HORA)
                 ];
                 
                 if (index === 0) {
@@ -306,19 +294,6 @@ document.getElementById("btnDebug").addEventListener("click", async function() {
     const estrutura = await postData({getHistory: true});
     console.log("📋 ESTRUTURA ATUAL:", estrutura);
     
-    // Testar envio de dados
-    const testeDados = {
-        nome: "TESTE DEBUG",
-        matricula: "999999",
-        equipamento: "EQUIPAMENTO TESTE",
-        acionamento: "12:00",
-        problema: "Problema de teste",
-        solucao: "Solução de teste",
-        encerramento: "13:00"
-    };
-    
-    console.log("🧪 DADOS DE TESTE:", testeDados);
-    
     showAlert("🔍 Debug executado - verifique console (F12)", "info");
 });
 
@@ -329,48 +304,22 @@ document.getElementById("btnLoadHistory").addEventListener("click", loadHistory)
 function formatarData(dataString) {
     if (!dataString) return "";
     try {
+        // Se já estiver no formato brasileiro, retornar como está
+        if (dataString.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
+            return dataString;
+        }
+        
         const date = new Date(dataString);
         if (isNaN(date.getTime())) return dataString;
         
-        return date.toLocaleString('pt-BR', {
+        return date.toLocaleDateString('pt-BR', {
             day: '2-digit',
             month: '2-digit',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
+            year: 'numeric'
         });
     } catch {
         return dataString;
     }
-}
-
-function formatarHora(horaString) {
-    if (!horaString) return "";
-    
-    // Se já for no formato HH:MM, retornar como está
-    if (typeof horaString === 'string' && horaString.match(/^\d{1,2}:\d{2}$/)) {
-        return horaString;
-    }
-    
-    // Se for uma data completa, extrair apenas a hora
-    try {
-        const date = new Date(horaString);
-        if (!isNaN(date.getTime())) {
-            // Verificar se é data padrão do Excel (1899)
-            if (date.getFullYear() === 1899) {
-                return "";
-            }
-            return date.toLocaleTimeString('pt-BR', { 
-                hour: '2-digit', 
-                minute: '2-digit',
-                hour12: false 
-            });
-        }
-    } catch {
-        // Não é uma data válida
-    }
-    
-    return horaString;
 }
 
 function showAlert(message, type) {
@@ -400,12 +349,10 @@ fetchWatchdog();
 
 // Configuração inicial
 window.addEventListener('load', function() {
-    // Preencher data/hora atual
+    // Preencher data atual
     const now = new Date();
-    const localDateTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
-                            .toISOString()
-                            .slice(0, 16);
-    document.getElementById('data').value = localDateTime;
+    const today = now.toISOString().split('T')[0];
+    document.getElementById('data').value = today;
     
     // Carregar histórico
     setTimeout(() => loadHistory(), 1000);
