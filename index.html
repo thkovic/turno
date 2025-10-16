@@ -38,6 +38,11 @@ button:disabled { background-color:#ccc; cursor:not-allowed; }
 .alert-success { background:#d4edda; color:#155724; border:1px solid #c3e6cb; }
 .alert-error { background:#f8d7da; color:#721c24; border:1px solid #f5c6cb; }
 .alert-info { background:#d1ecf1; color:#0c5460; border:1px solid #bee5eb; }
+.alert-warning { background:#fff3cd; color:#856404; border:1px solid #ffeaa7; }
+.debug-section { background:#f8f9fa; padding:15px; border-radius:4px; border:1px solid #dee2e6; margin-top:20px; }
+.debug-section h3 { margin-top:0; color:#6c757d; }
+.btn-admin { background:#6c757d; margin-left:5px; padding:8px 12px; font-size:12px; }
+.btn-admin:hover { background:#5a6268; }
 </style>
 </head>
 <body>
@@ -85,6 +90,7 @@ button:disabled { background-color:#ccc; cursor:not-allowed; }
             <div style="display:flex; gap:10px; align-items:center; margin-top:15px;">
                 <input type="text" id="matriculaLogin" placeholder="Digite sua matrícula" style="flex:1;"/>
                 <button id="btnLogin">Entrar</button>
+                <button class="btn-admin" onclick="cadastrarUsuario()" title="Cadastrar novo usuário">➕ Usuário</button>
             </div>
         </div>
 
@@ -100,17 +106,31 @@ button:disabled { background-color:#ccc; cursor:not-allowed; }
                 <div><label>Nome</label><input type="text" id="nome" required readonly/></div>
                 <div><label>Matrícula</label><input type="text" id="matricula" required readonly/></div>
                 <div><label>Data / Hora</label><input type="datetime-local" id="data" name="data"/></div>
-                <div><label>Equipamento</label><input type="text" id="equipamento" required/></div>
-                <div><label>Acionamento (Hora)</label><input type="time" id="acionamento" required/></div>
-                <div class="full-width"><label>Problema</label><textarea id="problema" required></textarea></div>
-                <div class="full-width"><label>Solução</label><textarea id="solucao" required></textarea></div>
-                <div><label>Encerramento (Hora)</label><input type="time" id="encerramento" required/></div>
+                <div><label>Equipamento *</label><input type="text" id="equipamento" required/></div>
+                <div><label>Acionamento (Hora) *</label><input type="time" id="acionamento" required/></div>
+                <div class="full-width"><label>Problema *</label><textarea id="problema" required></textarea></div>
+                <div class="full-width"><label>Solução *</label><textarea id="solucao" required></textarea></div>
+                <div><label>Encerramento (Hora) *</label><input type="time" id="encerramento" required/></div>
                 <div class="full-width">
                     <button type="submit" id="btnSubmit">
                         ✅ Registrar Turno
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- SEÇÃO DE DEBUG -->
+    <div class="debug-section">
+        <h3>🔧 Ferramentas Administrativas</h3>
+        <button onclick="testarConexao()" style="background:#17a2b8;">Testar Conexão</button>
+        <button onclick="cadastrarUsuario()" style="background:#ff9800;">Cadastrar Usuário</button>
+        <button onclick="cadastrarUsuarioTeste()" style="background:#2196f3;">Usuário Teste</button>
+        <button onclick="limparAlertas()" style="background:#6c757d;">Limpar Alertas</button>
+        
+        <div style="margin-top:10px;">
+            <strong>Status do Sistema:</strong>
+            <span id="systemStatus" style="margin-left:10px; padding:4px 8px; border-radius:4px; background:#e9ecef;">--</span>
         </div>
     </div>
 
@@ -126,13 +146,16 @@ let currentUser = null;
 // Função para fazer requisições POST
 async function postData(obj){
     try {
+        console.log("📤 Enviando:", obj);
         const resp = await fetch(SCRIPT_URL, {
             method: "POST",
             body: JSON.stringify(obj)
         });
-        return await resp.json();
+        const data = await resp.json();
+        console.log("📥 Resposta:", data);
+        return data;
     } catch(error) {
-        console.error("Erro na requisição:", error);
+        console.error("❌ Erro na requisição:", error);
         throw error;
     }
 }
@@ -142,9 +165,25 @@ async function fetchWatchdog(){
     try{
         const resp = await fetch(SCRIPT_URL);
         const data = await resp.json();
-        document.getElementById("watchdog").textContent = "Watchdog: "+ (data.watchdog || data.valor || "--");
+        const watchdogValue = data.watchdog || data.valor || "--";
+        document.getElementById("watchdog").textContent = "Watchdog: " + watchdogValue;
+        
+        // Atualizar status do sistema
+        const statusElement = document.getElementById("systemStatus");
+        if (data.status === "ok") {
+            statusElement.textContent = "ONLINE ✅";
+            statusElement.style.background = "#d4edda";
+            statusElement.style.color = "#155724";
+        } else {
+            statusElement.textContent = "ERRO ❌";
+            statusElement.style.background = "#f8d7da";
+            statusElement.style.color = "#721c24";
+        }
     }catch(e){
         document.getElementById("watchdog").textContent = "Watchdog: Erro";
+        document.getElementById("systemStatus").textContent = "OFFLINE ❌";
+        document.getElementById("systemStatus").style.background = "#f8d7da";
+        document.getElementById("systemStatus").style.color = "#721c24";
     }
 }
 
@@ -162,7 +201,8 @@ document.getElementById("btnLogin").addEventListener("click", async()=>{
     btn.disabled = true;
     
     try {
-        const resp = await postData({login:true, matricula});
+        const resp = await postData({login: true, matricula: matricula});
+        
         if(resp.success){
             currentUser = {
                 nome: resp.nome,
@@ -183,7 +223,7 @@ document.getElementById("btnLogin").addEventListener("click", async()=>{
                                     .slice(0, 16);
             document.getElementById("data").value = localDateTime;
             
-            showAlert("Login realizado com sucesso!", "success");
+            showAlert(`Login realizado com sucesso! Bem-vindo, ${resp.nome}`, "success");
             
         } else {
             showAlert("Erro: " + resp.message, "error");
@@ -204,7 +244,7 @@ function logout() {
     document.getElementById("loginDiv").classList.remove("hidden");
     document.getElementById("matriculaLogin").value = "";
     document.getElementById("turnoForm").reset();
-    showAlert("Logout realizado", "success");
+    showAlert("Logout realizado com sucesso", "success");
 }
 
 // Registrar Turno (APENAS LOGADO)
@@ -238,28 +278,43 @@ document.getElementById("turnoForm").addEventListener("submit", async(e)=>{
             showAlert("Equipamento é obrigatório", "error");
             return;
         }
+        if (!obj.problema.trim()) {
+            showAlert("Problema é obrigatório", "error");
+            return;
+        }
+        if (!obj.solucao.trim()) {
+            showAlert("Solução é obrigatória", "error");
+            return;
+        }
         
         const resp = await postData(obj);
         if(resp.success) {
-            showAlert(resp.message || "Registro realizado com sucesso!", "success");
+            showAlert("✅ " + resp.message, "success");
             
-            // Limpar formulário
+            // Limpar formulário (mantém nome e matrícula)
             document.getElementById("equipamento").value = "";
             document.getElementById("problema").value = "";
             document.getElementById("solucao").value = "";
             document.getElementById("acionamento").value = "";
             document.getElementById("encerramento").value = "";
             
+            // Atualizar data/hora para agora
+            const now = new Date();
+            const localDateTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
+                                    .toISOString()
+                                    .slice(0, 16);
+            document.getElementById("data").value = localDateTime;
+            
             // Atualizar histórico automaticamente após registrar
             setTimeout(() => loadHistory(), 1000);
             
         } else {
-            showAlert("Erro: " + resp.message, "error");
+            showAlert("❌ Erro: " + resp.message, "error");
         }
         
     } catch(error) {
         console.error("Erro ao registrar:", error);
-        showAlert("Erro ao registrar: " + error.message, "error");
+        showAlert("❌ Erro ao registrar: " + error.message, "error");
     } finally {
         btn.textContent = originalText;
         btn.disabled = false;
@@ -274,13 +329,16 @@ async function loadHistory() {
     btn.disabled = true;
     
     try {
-        const resp = await postData({getHistory:true});
+        const resp = await postData({getHistory: true});
         
         let data = [];
         if (Array.isArray(resp)) {
             data = resp;
         } else if (resp && resp.error) {
             showAlert("Erro ao carregar histórico: " + resp.error, "error");
+            return;
+        } else if (resp && resp.success === false) {
+            showAlert("Erro: " + resp.message, "error");
             return;
         }
         
@@ -294,6 +352,7 @@ async function loadHistory() {
             td.textContent = "Nenhum registro encontrado";
             td.style.textAlign = "center";
             td.style.padding = "20px";
+            td.style.color = "#6c757d";
             tr.appendChild(td);
             tbody.appendChild(tr);
             document.getElementById("historyInfo").textContent = "Nenhum registro encontrado";
@@ -309,11 +368,11 @@ async function loadHistory() {
                 const tr = document.createElement("tr");
                 
                 // Mapear colunas baseado na estrutura dos seus dados
-                // [ID, Data, Nome, Matricula, Equipamento, Acionamento, Problema, Solução, Encerramento, Status, Timestamp]
+                // [Tipo, Nome, Matricula, Data, Equipamento, Acionamento, Problema, Solução, Encerramento, Editado_em, Watchdog]
                 const colunas = [
-                    row[1] || row[3] || "", // Data
-                    row[2] || "",           // Nome
-                    row[3] || row[2] || "", // Matrícula (ajustar conforme necessidade)
+                    formatarData(row[3]),    // Data
+                    row[1] || "",           // Nome
+                    row[2] || "",           // Matrícula
                     row[4] || "",           // Equipamento
                     formatarHora(row[5]),   // Acionamento
                     row[6] || "",           // Problema
@@ -326,7 +385,10 @@ async function loadHistory() {
                     td.textContent = valor;
                     
                     // Limitar texto muito longo
-                    if (valor && valor.length > 50) {
+                    if (valor && valor.length > 100) {
+                        td.title = valor;
+                        td.textContent = valor.substring(0, 100) + '...';
+                    } else if (valor && valor.length > 50) {
                         td.title = valor;
                         td.textContent = valor.substring(0, 50) + '...';
                     }
@@ -338,7 +400,6 @@ async function loadHistory() {
             });
             
             document.getElementById("historyInfo").textContent = `Mostrando ${data.length} registro(s) - Mais recentes primeiro`;
-            showAlert(`Histórico atualizado: ${data.length} registros carregados`, "success");
         }
         
     } catch(error) {
@@ -347,6 +408,26 @@ async function loadHistory() {
     } finally {
         btn.textContent = originalText;
         btn.disabled = false;
+    }
+}
+
+// Função para formatar data
+function formatarData(dataString) {
+    if (!dataString) return "";
+    
+    try {
+        const date = new Date(dataString);
+        if (isNaN(date.getTime())) return dataString;
+        
+        return date.toLocaleString('pt-BR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    } catch {
+        return dataString;
     }
 }
 
@@ -373,11 +454,81 @@ function formatarHora(dataHora) {
 // Evento para carregar histórico
 document.getElementById("btnLoadHistory").addEventListener("click", loadHistory);
 
+// FUNÇÕES ADMINISTRATIVAS
+async function testarConexao() {
+    try {
+        showAlert("🔗 Testando conexão com o servidor...", "info");
+        const resposta = await fetch(SCRIPT_URL);
+        const dados = await resposta.json();
+        
+        if (dados.status === "ok") {
+            showAlert(`✅ Conexão estabelecida! Sistema: ${dados.message}`, "success");
+        } else {
+            showAlert(`❌ Erro: ${dados.message}`, "error");
+        }
+    } catch (erro) {
+        showAlert(`❌ Falha na conexão: ${erro.message}`, "error");
+    }
+}
+
+async function cadastrarUsuario() {
+    const nome = prompt("Digite o nome do usuário:");
+    if (!nome) return;
+    
+    const matricula = prompt("Digite a matrícula:");
+    if (!matricula) return;
+    
+    try {
+        showAlert("👤 Cadastrando usuário...", "info");
+        const resultado = await postData({
+            cadastrar: true,
+            nome: nome,
+            matricula: matricula
+        });
+        
+        if (resultado.success) {
+            showAlert(`✅ ${resultado.message} - ${nome} (${matricula})`, "success");
+        } else {
+            showAlert(`❌ ${resultado.message}`, "error");
+        }
+    } catch (error) {
+        showAlert(`❌ Erro ao cadastrar: ${error.message}`, "error");
+    }
+}
+
+async function cadastrarUsuarioTeste() {
+    try {
+        showAlert("👤 Cadastrando usuário de teste...", "info");
+        const resultado = await postData({
+            cadastrar: true,
+            nome: "Usuario Teste",
+            matricula: "TESTE" + Date.now().toString().substring(9)
+        });
+        
+        if (resultado.success) {
+            showAlert(`✅ ${resultado.message}`, "success");
+        } else {
+            showAlert(`❌ ${resultado.message}`, "error");
+        }
+    } catch (error) {
+        showAlert(`❌ Erro ao cadastrar: ${error.message}`, "error");
+    }
+}
+
+function limparAlertas() {
+    const alerts = document.querySelectorAll('.alert');
+    alerts.forEach(alert => alert.remove());
+}
+
 // Função para mostrar alertas
 function showAlert(message, type) {
-    // Remove alertas anteriores
+    // Remove alertas anteriores do mesmo tipo após 5 segundos
     const existingAlerts = document.querySelectorAll('.alert');
-    existingAlerts.forEach(alert => alert.remove());
+    existingAlerts.forEach(alert => {
+        if (alert.textContent.includes(message.substring(0, 20))) {
+            alert.remove();
+        }
+    });
     
     const alert = document.createElement('div');
     alert.className = `alert alert-${type}`;
@@ -385,12 +536,14 @@ function showAlert(message, type) {
     
     document.querySelector('.container').insertBefore(alert, document.querySelector('.container').firstChild);
     
-    // Auto-remove após 5 segundos
-    setTimeout(() => {
-        if (alert.parentNode) {
-            alert.remove();
-        }
-    }, 5000);
+    // Auto-remove após 8 segundos (exceto erros importantes)
+    if (type !== 'error' || !message.includes('obrigatório')) {
+        setTimeout(() => {
+            if (alert.parentNode) {
+                alert.remove();
+            }
+        }, 8000);
+    }
 }
 
 // Inicialização
@@ -406,9 +559,17 @@ window.addEventListener('load', function() {
                             .slice(0, 16);
     document.getElementById('data').value = localDateTime;
     
-    // Carregar histórico
+    // Carregar histórico após um pequeno delay
     setTimeout(() => loadHistory(), 1000);
 });
+
+// Expor funções para debug no console
+window.debugFunctions = {
+    testarConexao,
+    cadastrarUsuario,
+    loadHistory,
+    postData
+};
 </script>
 </body>
 </html>
