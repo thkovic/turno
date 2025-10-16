@@ -1,238 +1,261 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Passagem de Turno</title>
-<style>
-  body{font-family:Arial;margin:0;background:#f7f7f7;color:#222}
-  .container{max-width:1100px;margin:30px auto;background:#fff;padding:20px;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,0.08);position:relative}
-  h1{text-align:center;color:#2d6a4f}
-  form{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-  label{font-weight:600;font-size:14px}
-  input,textarea,select{width:100%;padding:8px;border:1px solid #ccc;border-radius:6px;box-sizing:border-box}
-  textarea{min-height:80px}
-  .full{grid-column:1/-1}
-  button{background:#2d6a4f;color:#fff;padding:10px 14px;border:none;border-radius:6px;cursor:pointer}
-  button[disabled]{opacity:.6;cursor:not-allowed}
-  table{width:100%;border-collapse:collapse;margin-top:16px;font-size:14px}
-  th,td{border:1px solid #e6e6e6;padding:8px;text-align:left}
-  th{background:#e9f5ef;color:#2d6a4f}
-  #watchdog{position:absolute;top:16px;right:16px;padding:8px 12px;border-radius:6px;background:#52b788;color:#fff;font-weight:700}
-  #backLogin{margin-left:10px;background:#888}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Registro de Turno</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f2f5;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 0 8px rgba(0,0,0,0.1);
+    }
+    label {
+      font-weight: bold;
+      margin-top: 10px;
+      display: block;
+    }
+    input, textarea, select, button {
+      width: 100%;
+      margin-top: 5px;
+      padding: 8px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+    }
+    button {
+      background: #007bff;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    #watchdog {
+      position: fixed;
+      top: 10px;
+      right: 20px;
+      background: #222;
+      color: #0f0;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-family: monospace;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+    table, th, td {
+      border: 1px solid #ddd;
+    }
+    th, td {
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background: #007bff;
+      color: white;
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
 </head>
 <body>
-  <div class="container">
-    <div id="watchdog">Watchdog: --</div>
-    <h1>Passagem de Turno</h1>
+  <div id="watchdog">Watchdog: --</div>
+  <h1>Registro de Passagem de Turno</h1>
 
-    <!-- LOGIN -->
-    <div id="loginArea">
-      <label for="loginMat">Matrícula (login)</label>
-      <input id="loginMat" placeholder="Ex: 81057898"/>
-      <div style="margin-top:10px;">
-        <button id="btnLogin">Entrar</button>
-        <button id="btnShowHistoryFromLogin" style="margin-left:8px">Ver Histórico</button>
-      </div>
-    </div>
-
-    <!-- FORMULÁRIO -->
-    <div id="formArea" style="display:none; margin-top:18px">
-      <form id="turnoForm">
-        <div><label>Tipo</label><input id="tipo" value="Turno"/></div>
-        <div><label>Nome (executante)</label><input id="nome" required/></div>
-        <div><label>Matrícula</label><input id="matricula" required/></div>
-        <div><label>Data / Hora</label><input id="data" type="datetime-local"/></div>
-        <div><label>Equipamento</label><input id="equipamento" required/></div>
-        <div><label>Acionamento (hora)</label><input id="acionamento" type="time"/></div>
-        <div class="full"><label>Problema</label><textarea id="problema" required></textarea></div>
-        <div class="full"><label>Solução</label><textarea id="solucao" required></textarea></div>
-        <div><label>Encerramento (hora)</label><input id="encerramento" type="time"/></div>
-        <div class="full" style="margin-top:8px"><button id="btnRegister">Registrar Turno</button></div>
-      </form>
-      <div style="margin-top:12px;">
-        <button id="btnHistory">Histórico</button>
-        <button id="btnLogout" id="backLogin" style="margin-left:8px;background:#888">Sair</button>
-      </div>
-    </div>
-
-    <!-- HISTÓRICO -->
-    <div id="historyArea" style="display:none; margin-top:18px">
-      <h2>Histórico</h2>
-      <div style="margin-bottom:8px">
-        <input id="filterInput" placeholder="Filtrar por texto..." style="width:300px;padding:6px;border-radius:6px;border:1px solid #ccc"/>
-        <button id="btnRefresh" style="margin-left:8px">Atualizar</button>
-        <button id="btnBack" style="margin-left:8px">Voltar</button>
-      </div>
-      <table>
-        <thead>
-          <tr>
-            <th>Tipo</th><th>Nome</th><th>Matrícula</th><th>Data</th><th>Equipamento</th><th>Acionamento</th><th>Problema</th><th>Solução</th><th>Encerramento</th><th>Data/Hora Edição</th><th>Watchdog</th>
-          </tr>
-        </thead>
-        <tbody id="historyBody">
-          <tr><td colspan="11" style="text-align:center;padding:16px;color:#666">Nenhum registro carregado</td></tr>
-        </tbody>
-      </table>
-    </div>
-
+  <div class="container" id="login-container">
+    <h3>Login</h3>
+    <label for="matricula">Matrícula:</label>
+    <input type="text" id="matricula" placeholder="Digite sua matrícula" />
+    <button id="btnLogin">Entrar</button>
+    <button id="btnHistorico">Ver Histórico</button>
+    <p id="loginMsg"></p>
   </div>
 
-<script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwFS6gRrIGYeWFZ9KYjSaOMLfJd_TTsrZcLNGyvdb7R0RZBcXrQUlgLUdAjNr7B58o/exec"; // <- substitua pela URL do seu Web App
+  <div class="container hidden" id="form-container">
+    <h3>Registrar Passagem</h3>
+    <form id="turnoForm">
+      <input type="hidden" id="nome" />
+      <input type="hidden" id="matriculaLogada" />
 
-// Util: envia form-urlencoded (evita preflight CORS)
-async function postForm(obj){
-  const body = new URLSearchParams();
-  for(const k in obj) body.append(k, obj[k]);
-  const resp = await fetch(SCRIPT_URL, { method: "POST", body });
-  return resp.json();
-}
+      <label>Equipamento:</label>
+      <input type="text" id="equipamento" required />
 
-// UTIL: fetch watchdog via GET (action=watchdog)
-async function fetchWatchdog(){
-  try{
-    const resp = await fetch(SCRIPT_URL + "?action=watchdog");
-    const j = await resp.json();
-    const v = j.valor !== undefined ? j.valor : (j.watchdog !== undefined ? j.watchdog : "--");
-    document.getElementById("watchdog").textContent = "Watchdog: " + v;
-  }catch(err){
-    document.getElementById("watchdog").textContent = "Watchdog: erro";
-  }
-}
+      <label>Acionamento:</label>
+      <input type="text" id="acionamento" required />
 
-// LOGIN
-document.getElementById("btnLogin").addEventListener("click", async ()=>{
-  const mat = document.getElementById("loginMat").value.trim();
-  if(!mat){ alert("Digite matrícula"); return; }
-  const res = await postForm({ acao:"login", matricula: mat });
-  if(res.success || res.status === "ok"){
-    // se usou retorno {success:true,nome:...} ou {status:"ok"...}
-    // se o script retorna nome, preenche
-    document.getElementById("formArea").style.display = "block";
-    document.getElementById("loginArea").style.display = "none";
-    // tenta preencher nome se retornado
-    if(res.nome) document.getElementById("nome").value = res.nome;
-    document.getElementById("matricula").value = mat;
-    // focus
-    document.getElementById("nome").focus();
-  } else {
-    alert(res.message || res);
-  }
-});
+      <label>Problema:</label>
+      <textarea id="problema" rows="2"></textarea>
 
-// LOGOUT
-document.getElementById("btnLogout").addEventListener("click", ()=>{
-  document.getElementById("formArea").style.display = "none";
-  document.getElementById("loginArea").style.display = "block";
-});
+      <label>Solução:</label>
+      <textarea id="solucao" rows="2"></textarea>
 
-// REGISTRAR
-document.getElementById("btnRegister").addEventListener("click", async (ev)=>{
-  ev.preventDefault();
-  const obj = {
-    acao: "registrar",
-    tipo: document.getElementById("tipo").value,
-    nome: document.getElementById("nome").value,
-    matricula: document.getElementById("matricula").value,
-    data: document.getElementById("data").value,
-    equipamento: document.getElementById("equipamento").value,
-    acionamento: document.getElementById("acionamento").value,
-    problema: document.getElementById("problema").value,
-    solucao: document.getElementById("solucao").value,
-    encerramento: document.getElementById("encerramento").value
-  };
-  const resp = await postForm(obj);
-  if(resp.success || resp.status === "ok"){
-    alert(resp.message || "Registrado com sucesso");
-    // limpa campos, mantém nome e matricula
-    document.getElementById("data").value = "";
-    document.getElementById("equipamento").value = "";
-    document.getElementById("acionamento").value = "";
-    document.getElementById("problema").value = "";
-    document.getElementById("solucao").value = "";
-    document.getElementById("encerramento").value = "";
-    // recarrega histórico se estiver visível
-    if(document.getElementById("historyArea").style.display === "block") loadHistory();
-  } else {
-    alert(resp.message || "Erro ao registrar");
-  }
-});
+      <label>Encerramento:</label>
+      <input type="text" id="encerramento" />
 
-// CARREGAR HISTÓRICO
-async function loadHistory(){
-  const btn = document.getElementById("btnRefresh");
-  btn.disabled = true;
-  btn.textContent = "Carregando...";
-  try{
-    const resp = await postForm({ acao: "historico" });
-    const data = Array.isArray(resp) ? resp : (resp.records || []);
-    const tbody = document.getElementById("historyBody");
-    tbody.innerHTML = "";
-    if(!Array.isArray(data) || data.length === 0){
-      tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:16px;color:#666">Nenhum registro encontrado</td></tr>';
-    } else {
-      // ordenar por data (coluna 3 index 3) — mais recente primeiro
-      data.sort((a,b)=>{
-        const da = new Date(a[3] || 0).getTime();
-        const db = new Date(b[3] || 0).getTime();
-        return db - da;
-      });
-      data.forEach(row=>{
-        // row é array com 11 colunas
-        const tr = document.createElement("tr");
-        for(let i=0;i<11;i++){
-          const td = document.createElement("td");
-          // formatar a data (col index 3)
-          if(i === 3 && row[i]){
-            const d = new Date(row[i]);
-            if(!isNaN(d.getTime())) td.textContent = d.toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
-            else td.textContent = row[i];
-          } else {
-            td.textContent = row[i] || "";
-          }
-          tr.appendChild(td);
-        }
-        tbody.appendChild(tr);
-      });
+      <button type="submit">Registrar</button>
+      <button type="button" id="voltarLogin">Sair</button>
+    </form>
+    <p id="statusMsg"></p>
+  </div>
+
+  <div class="container hidden" id="historico-container">
+    <h3>Histórico de Registros</h3>
+    <table id="tabelaHistorico">
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>Matrícula</th>
+          <th>Data</th>
+          <th>Equipamento</th>
+          <th>Problema</th>
+          <th>Solução</th>
+          <th>Encerramento</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <button id="voltarLogin2">Voltar</button>
+  </div>
+
+  <script>
+    // ======== CONFIGURAÇÃO ========
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwFS6gRrIGYeWFZ9KYjSaOMLfJd_TTsrZcLNGyvdb7R0RZBcXrQUlgLUdAjNr7B58o/exec"; // coloque aqui seu link do Apps Script publicado
+
+    // ======== WATCHDOG ========
+    async function atualizarWatchdog(){
+      try {
+        const res = await fetch(`${SCRIPT_URL}?action=watchdog`);
+        const data = await res.json();
+        document.getElementById("watchdog").textContent =
+          `Watchdog: ${data.valor} (${new Date().toLocaleTimeString()})`;
+      } catch {
+        document.getElementById("watchdog").textContent = "Watchdog: erro";
+      }
     }
-  }catch(err){
-    alert("Erro ao carregar histórico: " + err);
-  } finally {
-    btn.disabled = false;
-    btn.textContent = "Atualizar";
-  }
-}
+    atualizarWatchdog();
+    setInterval(atualizarWatchdog, 30000);
 
-// show history buttons
-document.getElementById("btnHistory").addEventListener("click", ()=>{
-  document.getElementById("formArea").style.display = "none";
-  document.getElementById("historyArea").style.display = "block";
-  loadHistory();
-});
-document.getElementById("btnShowHistoryFromLogin").addEventListener("click", ()=>{
-  document.getElementById("loginArea").style.display = "none";
-  document.getElementById("historyArea").style.display = "block";
-  loadHistory();
-});
-document.getElementById("btnBack").addEventListener("click", ()=>{
-  document.getElementById("historyArea").style.display = "none";
-  document.getElementById("loginArea").style.display = "block";
-});
+    // ======== LOGIN ========
+    document.getElementById("btnLogin").addEventListener("click", async () => {
+      const matricula = document.getElementById("matricula").value.trim();
+      if(!matricula) return alert("Informe a matrícula");
+      const body = new URLSearchParams();
+      body.append("acao", "login");
+      body.append("matricula", matricula);
 
-// filtro
-document.getElementById("filterInput").addEventListener("input", function(){
-  const q = this.value.toLowerCase();
-  document.querySelectorAll("#historyBody tr").forEach(tr=>{
-    const txt = tr.innerText.toLowerCase();
-    tr.style.display = txt.includes(q) ? "" : "none";
-  });
-});
+      try {
+        const res = await fetch(SCRIPT_URL, { method:"POST", body });
+        const data = await res.json();
+        if(data.success){
+          document.getElementById("loginMsg").textContent = `Bem-vindo, ${data.nome}`;
+          document.getElementById("nome").value = data.nome;
+          document.getElementById("matriculaLogada").value = matricula;
+          document.getElementById("login-container").classList.add("hidden");
+          document.getElementById("form-container").classList.remove("hidden");
+        } else {
+          alert(data.message || "Erro ao logar");
+        }
+      } catch(err){
+        alert("Erro na conexão com o servidor");
+      }
+    });
 
-// watchdog loop
-setInterval(fetchWatchdog, 5000);
-fetchWatchdog();
-</script>
+    // ======== HISTÓRICO ========
+    document.getElementById("btnHistorico").addEventListener("click", async () => {
+      const body = new URLSearchParams();
+      body.append("acao","historico");
+      try {
+        const res = await fetch(SCRIPT_URL, { method:"POST", body });
+        const data = await res.json();
+        if(!Array.isArray(data)) throw new Error("Formato inválido");
+
+        const tbody = document.querySelector("#tabelaHistorico tbody");
+        tbody.innerHTML = "";
+        data.forEach(l => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${l[1]||""}</td>
+            <td>${l[2]||""}</td>
+            <td>${new Date(l[3]).toLocaleString()}</td>
+            <td>${l[4]||""}</td>
+            <td>${l[6]||""}</td>
+            <td>${l[7]||""}</td>
+            <td>${l[8]||""}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+        document.getElementById("login-container").classList.add("hidden");
+        document.getElementById("historico-container").classList.remove("hidden");
+      } catch(err){
+        alert("Erro ao carregar histórico");
+      }
+    });
+
+    // ======== REGISTRAR TURNO ========
+    document.getElementById("turnoForm").addEventListener("submit", async (e)=>{
+      e.preventDefault();
+      const nome = document.getElementById("nome").value;
+      const matricula = document.getElementById("matriculaLogada").value;
+      const equipamento = document.getElementById("equipamento").value;
+      const acionamento = document.getElementById("acionamento").value;
+      const problema = document.getElementById("problema").value;
+      const solucao = document.getElementById("solucao").value;
+      const encerramento = document.getElementById("encerramento").value;
+
+      const body = new URLSearchParams();
+      body.append("acao","registrar");
+      body.append("nome",nome);
+      body.append("matricula",matricula);
+      body.append("equipamento",equipamento);
+      body.append("acionamento",acionamento);
+      body.append("problema",problema);
+      body.append("solucao",solucao);
+      body.append("encerramento",encerramento);
+
+      try {
+        const res = await fetch(SCRIPT_URL,{method:"POST", body});
+        const data = await res.json();
+        if(data.success){
+          document.getElementById("statusMsg").textContent = "Registro adicionado com sucesso!";
+          e.target.reset();
+        } else {
+          alert(data.message || "Erro ao registrar");
+        }
+      } catch {
+        alert("Erro ao conectar ao servidor");
+      }
+    });
+
+    // ======== VOLTAR ========
+    document.getElementById("voltarLogin").addEventListener("click", ()=>{
+      document.getElementById("form-container").classList.add("hidden");
+      document.getElementById("login-container").classList.remove("hidden");
+    });
+    document.getElementById("voltarLogin2").addEventListener("click", ()=>{
+      document.getElementById("historico-container").classList.add("hidden");
+      document.getElementById("login-container").classList.remove("hidden");
+    });
+  </script>
 </body>
 </html>
