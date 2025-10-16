@@ -471,20 +471,31 @@ async function testarConexao() {
     }
 }
 
+// Substitua a função cadastrarUsuario no HTML por esta versão:
 async function cadastrarUsuario() {
     const nome = prompt("Digite o nome do usuário:");
-    if (!nome) return;
+    if (!nome) {
+        showAlert("Nome é obrigatório", "error");
+        return;
+    }
     
     const matricula = prompt("Digite a matrícula:");
-    if (!matricula) return;
+    if (!matricula) {
+        showAlert("Matrícula é obrigatória", "error");
+        return;
+    }
     
     try {
         showAlert("👤 Cadastrando usuário...", "info");
+        
+        // ENVIAR EXATAMENTE ASSIM - com cadastrar: true
         const resultado = await postData({
-            cadastrar: true,
+            cadastrar: true,  // ← ESTA É A CHAVE
             nome: nome,
             matricula: matricula
         });
+        
+        console.log("Resposta do cadastro:", resultado);
         
         if (resultado.success) {
             showAlert(`✅ ${resultado.message} - ${nome} (${matricula})`, "success");
@@ -492,18 +503,23 @@ async function cadastrarUsuario() {
             showAlert(`❌ ${resultado.message}`, "error");
         }
     } catch (error) {
+        console.error("Erro detalhado:", error);
         showAlert(`❌ Erro ao cadastrar: ${error.message}`, "error");
     }
 }
 
+// E também a função cadastrarUsuarioTeste:
 async function cadastrarUsuarioTeste() {
     try {
         showAlert("👤 Cadastrando usuário de teste...", "info");
+        
         const resultado = await postData({
-            cadastrar: true,
+            cadastrar: true,  // ← ESTA É A CHAVE
             nome: "Usuario Teste",
             matricula: "TESTE" + Date.now().toString().substring(9)
         });
+        
+        console.log("Resposta do teste:", resultado);
         
         if (resultado.success) {
             showAlert(`✅ ${resultado.message}`, "success");
@@ -511,6 +527,7 @@ async function cadastrarUsuarioTeste() {
             showAlert(`❌ ${resultado.message}`, "error");
         }
     } catch (error) {
+        console.error("Erro detalhado:", error);
         showAlert(`❌ Erro ao cadastrar: ${error.message}`, "error");
     }
 }
@@ -573,3 +590,4 @@ window.debugFunctions = {
 </script>
 </body>
 </html>
+
