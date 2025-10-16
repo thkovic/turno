@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Sistema Passagem de Turno</title>
+<title>Sistema Passagem de Turno - Login</title>
 <style>
 body { font-family: Arial, sans-serif; margin:0; padding:0; background:#fff; color:#333; }
 .container { max-width:1000px; margin:40px auto; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.1); border-radius:8px; }
 h1 { color:#2d6a4f; text-align:center; margin-bottom:20px; }
-form { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+form { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px; }
 form label { display:block; font-weight:bold; margin-bottom:4px; }
 form input, form textarea { width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box; }
 form textarea { resize: vertical; min-height:60px; }
@@ -27,38 +27,46 @@ button:disabled { background-color:#ccc; cursor:not-allowed; }
 .error { background:#f8d7da; color:#721c24; border:1px solid #f5c6cb; }
 .info { background:#d1ecf1; color:#0c5460; border:1px solid #bee5eb; }
 .loading { display:inline-block; width:20px; height:20px; border:3px solid #f3f3f3; border-top:3px solid #2d6a4f; border-radius:50%; animation:spin 1s linear infinite; margin-left:10px; }
-@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 .debug-info { background:#fff3cd; color:#856404; border:1px solid #ffeaa7; padding:10px; margin:10px 0; border-radius:4px; font-size:12px; }
+.hidden { display:none; }
 </style>
 </head>
 <body>
 <div id="watchdog">Watchdog: --</div>
 <div class="container">
+
 <h1>📝 Sistema de Passagem de Turno</h1>
-<div class="alert info">
-<strong>💡 Sistema Simplificado:</strong> Preencha os dados abaixo para registrar a passagem de turno.
+
+<!-- ALERTS -->
+<div id="alertContainer"></div>
+
+<!-- LOGIN -->
+<div id="loginDiv">
+<h2>🔐 Login</h2>
+<form id="loginForm" class="full-width">
+<div class="full-width"><label>Matrícula</label><input type="text" id="loginMatricula" placeholder="Digite sua matrícula" required/></div>
+<div class="full-width"><button type="submit">Login</button></div>
+</form>
 </div>
 
 <!-- FORMULÁRIO DE REGISTRO -->
+<div id="registroDiv" class="hidden">
+<h2>Registrar Passagem de Turno</h2>
 <form id="turnoForm">
 <div><label>Nome do Operador *</label><input type="text" id="nome" required placeholder="Seu nome completo"/></div>
-<div><label>Matrícula *</label><input type="text" id="matricula" required placeholder="Sua matrícula"/></div>
+<div><label>Matrícula *</label><input type="text" id="matricula" required readonly/></div>
 <div><label>Data *</label><input type="date" id="data" required/></div>
 <div><label>Equipamento *</label><input type="text" id="equipamento" required placeholder="Nome do equipamento"/></div>
 <div><label>Acionamento (Hora) *</label><input type="time" id="acionamento" required/></div>
-<div class="full-width"><label>Problema Identificado *</label><textarea id="problema" required placeholder="Descreva o problema encontrado"></textarea></div>
-<div class="full-width"><label>Solução Aplicada *</label><textarea id="solucao" required placeholder="Descreva a solução aplicada"></textarea></div>
+<div class="full-width"><label>Problema Identificado *</label><textarea id="problema" required placeholder="Descreva o problema"></textarea></div>
+<div class="full-width"><label>Solução Aplicada *</label><textarea id="solucao" required placeholder="Descreva a solução"></textarea></div>
 <div><label>Encerramento (Hora) *</label><input type="time" id="encerramento" required/></div>
 <div class="full-width">
 <button type="submit" id="btnSubmit">✅ Registrar Passagem de Turno</button>
-<button type="button" id="btnLimpar" style="background: #ff6b6b; margin-left: 10px;">🗑️ Limpar Planilha</button>
+<button type="button" id="btnLogout" style="background:#ff6b6b; margin-left:10px;">🚪 Logout</button>
+<button type="button" id="btnLimpar" style="background:#ff6b6b; margin-left:10px;">🗑️ Limpar Planilha</button>
 </div>
 </form>
-
-<!-- DEBUG INFO -->
-<div id="debugInfo" class="debug-info hidden">
-<strong>🐛 Informações de Debug:</strong>
-<div id="debugContent"></div>
 </div>
 
 <!-- HISTÓRICO -->
@@ -93,45 +101,67 @@ Clique em "Atualizar Histórico" para carregar os registros
 </div>
 
 <script>
-// ⚙️ CONFIGURAÇÃO
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwFS6gRrIGYeWFZ9KYjSaOMLfJd_TTsrZcLNGyvdb7R0RZBcXrQUlgLUdAjNr7B58o/exec";
 
-// Função para fazer requisições POST
-async function postData(obj){
-    try {
-        const resp = await fetch(SCRIPT_URL, {
-            method: "POST",
-            body: JSON.stringify(obj)
-        });
-        return await resp.json();
-    } catch(error) { throw error; }
+// Sessão simulada
+let loggedIn = false;
+
+// Alerts
+function showAlert(msg, type="info"){
+    const container = document.getElementById("alertContainer");
+    const div = document.createElement("div");
+    div.className = `alert ${type}`;
+    div.textContent = msg;
+    container.appendChild(div);
+    setTimeout(()=>div.remove(),5000);
 }
 
-// Função para buscar histórico - USANDO POST
-async function getHistoryData(){
-    return await postData({getHistory: true});
-}
+// Login
+document.getElementById("loginForm").addEventListener("submit", function(e){
+    e.preventDefault();
+    const matricula = document.getElementById("loginMatricula").value.trim();
+    if(!matricula){ showAlert("Informe sua matrícula","error"); return; }
+    loggedIn = true;
+    document.getElementById("registroDiv").classList.remove("hidden");
+    document.getElementById("loginDiv").classList.add("hidden");
+    document.getElementById("matricula").value = matricula;
+    document.getElementById("nome").value = ""; // Pode preencher com nome real se disponível
+    showAlert("✅ Login realizado com sucesso","success");
+});
 
-// Watchdog
+// Logout
+document.getElementById("btnLogout").addEventListener("click", ()=>{
+    loggedIn=false;
+    document.getElementById("registroDiv").classList.add("hidden");
+    document.getElementById("loginDiv").classList.remove("hidden");
+    showAlert("🔒 Logout realizado","info");
+});
+
+// Fetch Watchdog
 async function fetchWatchdog(){
     try{
         const resp = await fetch(SCRIPT_URL);
         const data = await resp.json();
         document.getElementById("watchdog").textContent = "Watchdog: "+ (data.watchdog || data.valor || "--");
-    }catch(e){
-        document.getElementById("watchdog").textContent = "Watchdog: Erro";
-    }
+    }catch(e){ document.getElementById("watchdog").textContent="Watchdog: Erro"; }
 }
 
-// Registrar Turno
+// Post data
+async function postData(obj){
+    const resp = await fetch(SCRIPT_URL,{method:"POST", body:JSON.stringify(obj)});
+    return await resp.json();
+}
+
+// Registro de turno
 document.getElementById("turnoForm").addEventListener("submit", async(e)=>{
     e.preventDefault();
+    if(!loggedIn){ showAlert("❌ É necessário fazer login para registrar","error"); return; }
+
     const btn = document.getElementById("btnSubmit");
     const originalText = btn.textContent;
-    btn.textContent = "Registrando...";
-    btn.disabled = true;
+    btn.textContent="Registrando..."; btn.disabled=true;
 
-    try {
+    try{
         const obj = {
             nome: document.getElementById("nome").value.trim(),
             matricula: document.getElementById("matricula").value.trim(),
@@ -142,17 +172,6 @@ document.getElementById("turnoForm").addEventListener("submit", async(e)=>{
             solucao: document.getElementById("solucao").value.trim(),
             encerramento: document.getElementById("encerramento").value
         };
-
-        // Validação básica
-        const validacao = [
-            { campo: obj.nome, mensagem: "Nome do operador é obrigatório" },
-            { campo: obj.matricula, mensagem: "Matrícula é obrigatória" },
-            { campo: obj.equipamento, mensagem: "Equipamento é obrigatório" },
-            { campo: obj.problema, mensagem: "Problema é obrigatório" },
-            { campo: obj.solucao, mensagem: "Solução é obrigatória" }
-        ];
-        for (const valid of validacao) if (!valid.campo) { showAlert(valid.mensagem,"error"); btn.textContent = originalText; btn.disabled=false; return; }
-
         const resp = await postData(obj);
         if(resp.success){
             showAlert("✅ "+resp.message,"success");
@@ -161,86 +180,49 @@ document.getElementById("turnoForm").addEventListener("submit", async(e)=>{
             document.getElementById("solucao").value="";
             document.getElementById("acionamento").value="";
             document.getElementById("encerramento").value="";
-            setTimeout(() => loadHistory(),1000);
+            setTimeout(()=>loadHistory(),1000);
         } else showAlert("❌ Erro: "+resp.message,"error");
-
-    } catch(error){ showAlert("❌ Erro ao registrar: "+error.message,"error"); }
-    finally{ btn.textContent = originalText; btn.disabled=false; }
+    } catch(error){ showAlert("❌ Erro: "+error.message,"error"); }
+    finally{ btn.textContent=originalText; btn.disabled=false; }
 });
 
-// Carregar Histórico
+// Histórico
+async function getHistoryData(){ return await postData({getHistory:true}); }
+
 async function loadHistory(){
-    const btn = document.getElementById("btnLoadHistory");
-    const originalText = btn.textContent;
-    btn.textContent="Carregando..."; btn.disabled=true;
-
-    try{
-        const data = await getHistoryData();
-        const tbody = document.querySelector("#historyTable tbody");
-        tbody.innerHTML="";
-
-        if(Array.isArray(data)){
-            if(data.length===0){
+    const data = await getHistoryData();
+    const tbody = document.querySelector("#historyTable tbody");
+    tbody.innerHTML="";
+    if(Array.isArray(data)){
+        if(data.length===0){
+            const tr=document.createElement("tr");
+            const td=document.createElement("td");
+            td.colSpan=9; td.textContent="Nenhum registro encontrado"; td.style.textAlign="center"; td.style.padding="20px";
+            tr.appendChild(td); tbody.appendChild(tr);
+        } else {
+            data.sort((a,b)=>new Date(b[1])-new Date(a[1]));
+            data.forEach(row=>{
                 const tr=document.createElement("tr");
-                const td=document.createElement("td");
-                td.colSpan=9; td.textContent="Nenhum registro encontrado"; td.style.textAlign="center"; td.style.padding="20px"; td.style.color="#6c757d";
-                tr.appendChild(td); tbody.appendChild(tr);
-                document.getElementById("historyInfo").textContent="Nenhum registro encontrado";
-            } else {
-                data.sort((a,b)=> new Date(b[1]) - new Date(a[1]));
-                data.forEach(row=>{
-                    const tr=document.createElement("tr");
-                    const colunas = [
-                        row[0]||"", // ID
-                        formatarData(row[1]),
-                        row[2]||"", row[3]||"", row[4]||"",
-                        formatarHora(row[5]), row[6]||"", row[7]||"", formatarHora(row[8])
-                    ];
-                    colunas.forEach(valor=>{
-                        const td=document.createElement("td");
-                        td.textContent=valor;
-                        if(valor && valor.length>50){ td.title=valor; td.textContent=valor.substring(0,50)+'...'; }
-                        tr.appendChild(td);
-                    });
-                    tbody.appendChild(tr);
+                const cols=[
+                    row[0]||"",
+                    row[1]||"", row[2]||"", row[3]||"", row[4]||"",
+                    row[5]||"", row[6]||"", row[7]||"", row[8]||""
+                ];
+                cols.forEach(v=>{
+                    const td=document.createElement("td");
+                    td.textContent=v;
+                    tr.appendChild(td);
                 });
-                document.getElementById("historyInfo").textContent="Mostrando "+data.length+" registro(s) - Mais recentes primeiro";
-            }
-        } else showAlert("Erro ao carregar histórico: resposta inválida","error");
-    } catch(error){ showAlert("Erro ao carregar histórico: "+error.message,"error"); }
-    finally{ btn.textContent=originalText; btn.disabled=false; }
+                tbody.appendChild(tr);
+            });
+        }
+    } else showAlert("Erro ao carregar histórico","error");
 }
-
-// Limpar Planilha
-document.getElementById("btnLimpar").addEventListener("click", async function(){
-    if(!confirm("⚠️ Isso irá apagar TODOS os dados da planilha. Tem certeza?")) return;
-    const btn=this; const originalText=btn.textContent; btn.textContent="Limpando..."; btn.disabled=true;
-
-    try{
-        const result = await postData({acao:"limparPlanilha"});
-        if(result.success){ showAlert("✅ "+result.message,"success"); setTimeout(()=>loadHistory(),1000); }
-        else showAlert("❌ Erro: "+(result.error||result.message),"error");
-    } catch(error){ showAlert("❌ Erro ao limpar planilha: "+error.message,"error"); }
-    finally{ btn.textContent=originalText; btn.disabled=false; }
-});
-
-// Debug
-document.getElementById("btnDebug").addEventListener("click", ()=>{
-    const debugDiv = document.getElementById("debugInfo");
-    debugDiv.classList.toggle("hidden");
-    document.getElementById("debugContent").textContent=JSON.stringify(window._lastHistory||[],null,2);
-});
-
-// Formatação
-function formatarData(d){ if(!d) return ""; const dt=new Date(d); return isNaN(dt.getTime())?d:dt.toLocaleDateString('pt-BR'); }
-function formatarHora(h){ if(!h) return ""; try{ const dt=new Date(h); return isNaN(dt.getTime())?h:dt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}); } catch{return h;} }
-
-// Alertas
-function showAlert(msg,type="info"){ const div=document.createElement("div"); div.className=`alert ${type}`; div.textContent=msg; document.querySelector(".container").insertBefore(div,document.querySelector(".container").firstChild); setTimeout(()=>div.remove(),5000); }
 
 // Inicial
 loadHistory();
 setInterval(fetchWatchdog,5000);
+document.getElementById("btnLoadHistory").addEventListener("click",loadHistory);
 </script>
 </body>
 </html>
