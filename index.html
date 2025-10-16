@@ -260,8 +260,8 @@ function cancelarEdicao() {
     limparFormulario();
 }
 
-// 🗑️ SOLICITAR EXCLUSÃO
-function solicitarExclusao(id, dados) {
+// 🗑️ SOLICITAR EXCLUSÃO - FUNÇÃO CORRIGIDA
+function solicitarExcluir(id, dados) {
     registroParaExcluir = id;
     
     // Montar texto de confirmação
@@ -360,7 +360,7 @@ async function loadHistory() {
                 const btnExcluir = document.createElement("button");
                 btnExcluir.className = "btn-excluir";
                 btnExcluir.textContent = "🗑️ Excluir";
-                btnExcluir.onclick = () => solicitarExcluir(id, dados);
+                btnExcluir.onclick = () => solicitarExcluir(id, dados); // CHAMADA CORRIGIDA
                 
                 tdAcoes.appendChild(btnEditar);
                 tdAcoes.appendChild(btnExcluir);
