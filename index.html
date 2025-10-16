@@ -218,18 +218,20 @@ function editarRegistro(id, dados) {
     
     // Preencher formulário com dados do registro
     document.getElementById("registroId").value = id;
-    document.getElementById("nome").value = dados[2] || "";
-    document.getElementById("matricula").value = dados[3] || "";
-    document.getElementById("equipamento").value = dados[5] || "";
-    document.getElementById("acionamento").value = formatarHoraParaInput(dados[6]) || "";
-    document.getElementById("problema").value = dados[7] || "";
-    document.getElementById("solucao").value = dados[8] || "";
-    document.getElementById("encerramento").value = formatarHoraParaInput(dados[9]) || "";
+    document.getElementById("nome").value = dados[1] || "";        // Nome
+    document.getElementById("matricula").value = dados[2] || "";   // Matrícula
+    document.getElementById("equipamento").value = dados[4] || ""; // Equipamento
+    document.getElementById("problema").value = dados[6] || "";    // Problema
+    document.getElementById("solucao").value = dados[7] || "";     // Solução
+    
+    // Acionamento e Encerramento - tratar como string de hora pura
+    document.getElementById("acionamento").value = extrairHoraPura(dados[5]) || "";
+    document.getElementById("encerramento").value = extrairHoraPura(dados[8]) || "";
     
     // Data - converter para formato do input
-    if (dados[4]) {
+    if (dados[3]) {
         try {
-            const date = new Date(dados[4]);
+            const date = new Date(dados[3]);
             if (!isNaN(date.getTime())) {
                 const localDateTime = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
                                     .toISOString()
@@ -260,14 +262,14 @@ function cancelarEdicao() {
     limparFormulario();
 }
 
-// 🗑️ SOLICITAR EXCLUSÃO - FUNÇÃO CORRIGIDA
+// 🗑️ SOLICITAR EXCLUSÃO
 function solicitarExcluir(id, dados) {
     registroParaExcluir = id;
     
     // Montar texto de confirmação
-    const texto = `Registro do equipamento: <strong>${dados[5] || 'N/A'}</strong><br>
-                  Operador: <strong>${dados[2] || 'N/A'}</strong><br>
-                  Data: <strong>${formatarData(dados[4]) || 'N/A'}</strong>`;
+    const texto = `Registro do equipamento: <strong>${dados[4] || 'N/A'}</strong><br>
+                  Operador: <strong>${dados[1] || 'N/A'}</strong><br>
+                  Data: <strong>${formatarData(dados[3]) || 'N/A'}</strong>`;
     
     document.getElementById("textoConfirmacao").innerHTML = texto;
     document.getElementById("modalExcluir").style.display = "block";
@@ -360,22 +362,22 @@ async function loadHistory() {
                 const btnExcluir = document.createElement("button");
                 btnExcluir.className = "btn-excluir";
                 btnExcluir.textContent = "🗑️ Excluir";
-                btnExcluir.onclick = () => solicitarExcluir(id, dados); // CHAMADA CORRIGIDA
+                btnExcluir.onclick = () => solicitarExcluir(id, dados);
                 
                 tdAcoes.appendChild(btnEditar);
                 tdAcoes.appendChild(btnExcluir);
                 tr.appendChild(tdAcoes);
                 
-                // Demais colunas (pular o tipo que está em dados[0])
+                // Demais colunas - CORRIGIDO OS ÍNDICES
                 const colunas = [
-                    formatarData(dados[3]),    // Data (índice 3)
-                    dados[1] || "",           // Nome (índice 1)
-                    dados[2] || "",           // Matrícula (índice 2)
-                    dados[4] || "",           // Equipamento (índice 4)
-                    formatarHora(dados[5]),   // Acionamento (índice 5)
-                    dados[6] || "",           // Problema (índice 6)
-                    dados[7] || "",           // Solução (índice 7)
-                    formatarHora(dados[8])    // Encerramento (índice 8)
+                    formatarData(dados[3]),           // Data (índice 3)
+                    dados[1] || "",                  // Nome (índice 1)
+                    dados[2] || "",                  // Matrícula (índice 2)
+                    dados[4] || "",                  // Equipamento (índice 4)
+                    extrairHoraPura(dados[5]) || "", // Acionamento (índice 5) - CORRIGIDO
+                    dados[6] || "",                  // Problema (índice 6)
+                    dados[7] || "",                  // Solução (índice 7)
+                    extrairHoraPura(dados[8]) || ""  // Encerramento (índice 8) - CORRIGIDO
                 ];
                 
                 colunas.forEach(valor => {
@@ -408,7 +410,59 @@ async function loadHistory() {
 // Evento para carregar histórico
 document.getElementById("btnLoadHistory").addEventListener("click", loadHistory);
 
-// Funções auxiliares
+// ================= FUNÇÕES AUXILIARES CORRIGIDAS =================
+
+// Função para extrair hora pura de datas inválidas
+function extrairHoraPura(dataHora) {
+    if (!dataHora) return "";
+    
+    console.log("Processando hora:", dataHora);
+    
+    // Se já for uma string de hora no formato HH:MM
+    if (typeof dataHora === 'string' && dataHora.match(/^\d{1,2}:\d{2}$/)) {
+        return dataHora;
+    }
+    
+    // Se for uma string de data completa
+    if (typeof dataHora === 'string') {
+        // Tentar extrair hora do formato ISO
+        const matchISO = dataHora.match(/T(\d{1,2}:\d{2})/);
+        if (matchISO) {
+            return matchISO[1];
+        }
+        
+        // Tentar extrair hora de formato de data completo
+        const matchTime = dataHora.match(/(\d{1,2}:\d{2}(?::\d{2})?)/);
+        if (matchTime) {
+            return matchTime[1].substring(0, 5); // Pegar apenas HH:MM
+        }
+        
+        // Se for uma data inválida (1899), tratar como string pura
+        if (dataHora.includes('1899')) {
+            // Extrair a parte da hora da string
+            const parts = dataHora.split('T');
+            if (parts.length > 1) {
+                const timePart = parts[1].substring(0, 5);
+                if (timePart.match(/^\d{2}:\d{2}$/)) {
+                    return timePart;
+                }
+            }
+        }
+    }
+    
+    // Tentar como Date como último recurso
+    try {
+        const date = new Date(dataHora);
+        if (!isNaN(date.getTime())) {
+            return date.toTimeString().substring(0, 5);
+        }
+    } catch (e) {
+        console.log("Não foi possível converter como Date:", dataHora);
+    }
+    
+    return dataHora; // Retorna original se não conseguir processar
+}
+
 function formatarData(dataString) {
     if (!dataString) return "";
     try {
@@ -426,37 +480,8 @@ function formatarData(dataString) {
     }
 }
 
-function formatarHora(dataHora) {
-    if (!dataHora) return "";
-    try {
-        const date = new Date(dataHora);
-        if (isNaN(date.getTime()) || date.getFullYear() === 1899) {
-            if (typeof dataHora === 'string' && dataHora.includes(':')) {
-                return dataHora.split('T')[1]?.substring(0, 5) || dataHora;
-            }
-            return "";
-        }
-        return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-    } catch {
-        return dataHora;
-    }
-}
-
 function formatarHoraParaInput(dataHora) {
-    if (!dataHora) return "";
-    try {
-        const date = new Date(dataHora);
-        if (isNaN(date.getTime()) || date.getFullYear() === 1899) {
-            if (typeof dataHora === 'string' && dataHora.includes(':')) {
-                return dataHora.split('T')[1]?.substring(0, 5) || dataHora;
-            }
-            return "";
-        }
-        // Formatar como HH:MM para input time
-        return date.toTimeString().substring(0, 5);
-    } catch {
-        return dataHora;
-    }
+    return extrairHoraPura(dataHora);
 }
 
 function limparFormulario() {
