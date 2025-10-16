@@ -89,30 +89,63 @@ async function postData(obj){
 
 // GET Histórico
 async function loadHistory() {
-    const resp = await fetch(SCRIPT_URL + "?getHistory=true");
-    const data = await resp.json();
-    const tbody = document.querySelector("#historyTable tbody");
-    tbody.innerHTML = "";
+    try {
+        const resp = await fetch(SCRIPT_URL + "?getHistory=true");
+        const data = await resp.json();
+        const tbody = document.querySelector("#historyTable tbody");
+        tbody.innerHTML = "";
 
-    if (!Array.isArray(data) || data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:20px;">Nenhum registro encontrado</td></tr>';
-        document.getElementById("historyInfo").textContent = "Nenhum registro encontrado";
-        return;
-    }
+        console.log("Dados recebidos:", data); // Para debug
 
-    data.sort((a,b)=> new Date(b[0]) - new Date(a[0]));
+        if (!Array.isArray(data) || data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:20px;">Nenhum registro encontrado</td></tr>';
+            document.getElementById("historyInfo").textContent = "Nenhum registro encontrado";
+            return;
+        }
 
-    data.forEach(row=>{
-        const tr = document.createElement("tr");
-        row.slice(0,8).forEach(valor=>{
-            const td = document.createElement("td");
-            td.textContent = valor;
-            tr.appendChild(td);
+        // Ordena por data (mais recente primeiro)
+        data.sort((a,b)=> new Date(b[0]) - new Date(a[0]));
+
+        data.forEach(row=>{
+            const tr = document.createElement("tr");
+            // Pega apenas as primeiras 8 colunas
+            const campos = row.slice(0, 8);
+            
+            campos.forEach((valor, index)=>{
+                const td = document.createElement("td");
+                
+                // Formatação especial para datas/horas
+                if (index === 0 && valor) { // Data
+                    td.textContent = new Date(valor).toLocaleDateString('pt-BR');
+                } else if ((index === 4 || index === 7) && valor) { // Acionamento e Encerramento (horas)
+                    // Se for apenas hora (formato HH:MM)
+                    if (valor.includes(':')) {
+                        td.textContent = valor;
+                    } else {
+                        // Tenta formatar como data completa
+                        const dataHora = new Date(valor);
+                        if (!isNaN(dataHora)) {
+                            td.textContent = dataHora.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+                        } else {
+                            td.textContent = valor || "";
+                        }
+                    }
+                } else {
+                    td.textContent = valor || "";
+                }
+                tr.appendChild(td);
+            });
+            tbody.appendChild(tr);
         });
-        tbody.appendChild(tr);
-    });
 
-    document.getElementById("historyInfo").textContent = `Mostrando ${data.length} registro(s) - Mais recentes primeiro`;
+        document.getElementById("historyInfo").textContent = `Mostrando ${data.length} registro(s) - Mais recentes primeiro`;
+        
+    } catch (error) {
+        console.error("Erro ao carregar histórico:", error);
+        document.getElementById("historyInfo").textContent = "Erro ao carregar histórico";
+        document.querySelector("#historyTable tbody").innerHTML = 
+            '<tr><td colspan="8" style="text-align:center; padding:20px; color:red;">Erro ao carregar dados</td></tr>';
+    }
 }
 
 // Watchdog
@@ -148,6 +181,11 @@ document.getElementById("turnoForm").addEventListener("submit", async e=>{
         await postData(obj);
         alert("✅ Turno registrado!");
         document.getElementById("turnoForm").reset();
+        
+        // Restaura a data atual
+        const hoje = new Date().toISOString().split("T")[0];
+        document.getElementById("data").value = hoje;
+        
         loadHistory();
     } catch(err){
         alert("❌ Erro ao registrar: "+err);
@@ -156,6 +194,9 @@ document.getElementById("turnoForm").addEventListener("submit", async e=>{
         btn.textContent = "✅ Registrar Passagem de Turno";
     }
 });
+
+// Botão de atualizar histórico
+document.getElementById("btnLoadHistory").addEventListener("click", loadHistory);
 
 // Inicialização
 window.addEventListener("load", ()=>{
