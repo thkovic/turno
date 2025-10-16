@@ -97,355 +97,242 @@ const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwFS6gRrIGYeWFZ9KYjS
 
 // Função para fazer requisições POST
 async function postData(obj){
-try {
-console.log("📤 ENVIANDO DADOS:", obj);
-const resp = await fetch(SCRIPT_URL, {
-method: "POST",
-body: JSON.stringify(obj)
-});
-const data = await resp.json();
-console.log("📥 RESPOSTA RECEBIDA:", data);
-return data;
-} catch(error) {
-console.error("❌ ERRO NA REQUISIÇÃO:", error);
-throw error;
-}
+    try {
+        console.log("📤 ENVIANDO DADOS:", obj);
+        const resp = await fetch(SCRIPT_URL, {
+            method: "POST",
+            body: JSON.stringify(obj)
+        });
+        const data = await resp.json();
+        console.log("📥 RESPOSTA RECEBIDA:", data);
+        return data;
+    } catch(error) {
+        console.error("❌ ERRO NA REQUISIÇÃO:", error);
+        throw error;
+    }
 }
 
 // Função para buscar histórico - USANDO POST
 async function getHistoryData(){
-try {
-console.log("📤 SOLICITANDO HISTÓRICO VIA POST...");
-const resp = await postData({getHistory: true});
-console.log("📥 HISTÓRICO RECEBIDO:", resp);
-return resp;
-} catch(error) {
-console.error("❌ ERRO AO BUSCAR HISTÓRICO:", error);
-throw error;
-}
+    try {
+        console.log("📤 SOLICITANDO HISTÓRICO VIA POST...");
+        const resp = await postData({getHistory: true});
+        console.log("📥 HISTÓRICO RECEBIDO:", resp);
+        return resp;
+    } catch(error) {
+        console.error("❌ ERRO AO BUSCAR HISTÓRICO:", error);
+        throw error;
+    }
 }
 
 // Watchdog - usa GET simples
 async function fetchWatchdog(){
-try{
-const resp = await fetch(SCRIPT_URL);
-const data = await resp.json();
-document.getElementById("watchdog").textContent = "Watchdog: "+ (data.watchdog || data.valor || "--");
-}catch(e){
-document.getElementById("watchdog").textContent = "Watchdog: Erro";
-}
+    try{
+        const resp = await fetch(SCRIPT_URL);
+        const data = await resp.json();
+        document.getElementById("watchdog").textContent = "Watchdog: "+ (data.watchdog || data.valor || "--");
+    }catch(e){
+        document.getElementById("watchdog").textContent = "Watchdog: Erro";
+    }
 }
 
 // Registrar Turno
 document.getElementById("turnoForm").addEventListener("submit", async(e)=>{
-e.preventDefault();
-const btn = document.getElementById("btnSubmit");
-const originalText = btn.textContent;
-btn.textContent = "Registrando...";
-btn.disabled = true;
+    e.preventDefault();
+    const btn = document.getElementById("btnSubmit");
+    const originalText = btn.textContent;
+    btn.textContent = "Registrando...";
+    btn.disabled = true;
 
-try {
-// VALIDAR E FORMATAR DADOS ANTES DE ENVIAR
-const dataInput = document.getElementById("data").value;
-const acionamentoInput = document.getElementById("acionamento").value;
-const encerramentoInput = document.getElementById("encerramento").value;
+    try {
+        const dataInput = document.getElementById("data").value;
+        const acionamentoInput = document.getElementById("acionamento").value;
+        const encerramentoInput = document.getElementById("encerramento").value;
 
-// Validar formato das datas/horas
-if (!dataInput || !acionamentoInput || !encerramentoInput) {
-showAlert("❌ Todos os campos de data e hora são obrigatórios", "error");
-btn.textContent = originalText;
-btn.disabled = false;
-return;
-}
+        if (!dataInput || !acionamentoInput || !encerramentoInput) {
+            showAlert("❌ Todos os campos de data e hora são obrigatórios", "error");
+            btn.textContent = originalText;
+            btn.disabled = false;
+            return;
+        }
 
-const obj = {
-nome: document.getElementById("nome").value.trim(),
-matricula: document.getElementById("matricula").value.trim(),
-data: dataInput, // Data no formato YYYY-MM-DD
-equipamento: document.getElementById("equipamento").value.trim(),
-acionamento: acionamentoInput, // Hora no formato HH:MM
-problema: document.getElementById("problema").value.trim(),
-solucao: document.getElementById("solucao").value.trim(),
-encerramento: encerramentoInput // Hora no formato HH:MM
-};
+        const obj = {
+            nome: document.getElementById("nome").value.trim(),
+            matricula: document.getElementById("matricula").value.trim(),
+            data: dataInput,
+            equipamento: document.getElementById("equipamento").value.trim(),
+            acionamento: acionamentoInput,
+            problema: document.getElementById("problema").value.trim(),
+            solucao: document.getElementById("solucao").value.trim(),
+            encerramento: encerramentoInput
+        };
 
-console.log("🎯 DADOS QUE SERÃO ENVIADOS:", obj);
+        const validacao = [
+            { campo: obj.nome, mensagem: "Nome do operador é obrigatório" },
+            { campo: obj.matricula, mensagem: "Matrícula é obrigatória" },
+            { campo: obj.equipamento, mensagem: "Equipamento é obrigatório" },
+            { campo: obj.problema, mensagem: "Problema é obrigatório" },
+            { campo: obj.solucao, mensagem: "Solução é obrigatória" }
+        ];
 
-// Validação adicional
-const validacao = [
-{ campo: obj.nome, mensagem: "Nome do operador é obrigatório" },
-{ campo: obj.matricula, mensagem: "Matrícula é obrigatória" },
-{ campo: obj.equipamento, mensagem: "Equipamento é obrigatório" },
-{ campo: obj.problema, mensagem: "Problema é obrigatório" },
-{ campo: obj.solucao, mensagem: "Solução é obrigatória" }
-];
+        for (const valid of validacao) {
+            if (!valid.campo) {
+                showAlert(valid.mensagem, "error");
+                btn.textContent = originalText;
+                btn.disabled = false;
+                return;
+            }
+        }
 
-for (const valid of validacao) {
-if (!valid.campo) {
-showAlert(valid.mensagem, "error");
-btn.textContent = originalText;
-btn.disabled = false;
-return;
-}
-}
-
-const resp = await postData(obj);
-if(resp.success) {
-showAlert("✅ " + resp.message, "success");
-console.log("🎉 REGISTRO BEM-SUCEDIDO:", resp);
-
-// Limpar apenas alguns campos
-document.getElementById("equipamento").value = "";
-document.getElementById("problema").value = "";
-document.getElementById("solucao").value = "";
-document.getElementById("acionamento").value = "";
-document.getElementById("encerramento").value = "";
-
-// Atualizar histórico após 1 segundo
-setTimeout(() => loadHistory(), 1000);
-} else {
-showAlert("❌ Erro: " + resp.message, "error");
-console.error("💥 ERRO NO REGISTRO:", resp);
-}
-} catch(error) {
-showAlert("❌ Erro ao registrar: " + error.message, "error");
-console.error("💥 ERRO CRÍTICO:", error);
-} finally {
-btn.textContent = originalText;
-btn.disabled = false;
-}
+        const resp = await postData(obj);
+        if(resp.success) {
+            showAlert("✅ " + resp.message, "success");
+            document.getElementById("equipamento").value = "";
+            document.getElementById("problema").value = "";
+            document.getElementById("solucao").value = "";
+            document.getElementById("acionamento").value = "";
+            document.getElementById("encerramento").value = "";
+            setTimeout(() => loadHistory(), 1000);
+        } else {
+            showAlert("❌ Erro: " + resp.message, "error");
+        }
+    } catch(error) {
+        showAlert("❌ Erro ao registrar: " + error.message, "error");
+    } finally {
+        btn.textContent = originalText;
+        btn.disabled = false;
+    }
 });
 
 // Carregar Histórico
 async function loadHistory() {
-const btn = document.getElementById("btnLoadHistory");
-const originalText = btn.textContent;
-btn.textContent = "Carregando...";
-btn.disabled = true;
+    const btn = document.getElementById("btnLoadHistory");
+    const originalText = btn.textContent;
+    btn.textContent = "Carregando...";
+    btn.disabled = true;
 
-try {
-console.log("📊 SOLICITANDO HISTÓRICO...");
-const data = await getHistoryData();
-const tbody = document.querySelector("#historyTable tbody");
-tbody.innerHTML = "";
+    try {
+        const data = await getHistoryData();
+        const tbody = document.querySelector("#historyTable tbody");
+        tbody.innerHTML = "";
 
-// Verificar se é um array (dados do histórico) ou objeto de erro
-if (Array.isArray(data)) {
-if (data.length === 0) {
-const tr = document.createElement("tr");
-const td = document.createElement("td");
-td.colSpan = 8;
-td.textContent = "Nenhum registro encontrado";
-td.style.textAlign = "center";
-td.style.padding = "20px";
-td.style.color = "#6c757d";
-tr.appendChild(td);
-tbody.appendChild(tr);
-document.getElementById("historyInfo").textContent = "Nenhum registro encontrado";
-} else {
-// Ordenar por data (mais recente primeiro)
-data.sort((a, b) => {
-const dateA = new Date(a[0] || 0);
-const dateB = new Date(b[0] || 0);
-return dateB - dateA;
-});
-
-console.log("📝 RENDERIZANDO " + data.length + " REGISTROS...");
-data.forEach((row, index) => {
-const tr = document.createElement("tr");
-const colunas = [
-formatarDataParaExibicao(row[0]), // Data formatada
-row[1] || "",                    // Operador
-row[2] || "",                    // Matrícula
-row[3] || "",                    // Equipamento
-formatarHoraParaExibicao(row[4]), // Acionamento formatado
-row[5] || "",                    // Problema
-row[6] || "",                    // Solução
-formatarHoraParaExibicao(row[7])  // Encerramento formatado
-];
-
-colunas.forEach(valor => {
-const td = document.createElement("td");
-td.textContent = valor;
-// Truncar textos muito longos
-if (valor && valor.length > 50) {
-td.title = valor;
-td.textContent = valor.substring(0, 50) + '...';
-}
-tr.appendChild(td);
-});
-tbody.appendChild(tr);
-});
-
-document.getElementById("historyInfo").textContent = "Mostrando " + data.length + " registro(s) - Mais recentes primeiro";
-}
-} else {
-// Se não é array, é provavelmente um objeto de erro
-console.error("❌ RESPOSTA INVÁLIDA:", data);
-showAlert("Erro ao carregar histórico: Resposta inválida do servidor", "error");
-document.getElementById("historyInfo").textContent = "Erro ao carregar histórico";
-}
-} catch(error) {
-showAlert("Erro ao carregar histórico: " + error.message, "error");
-console.error("💥 ERRO NO HISTÓRICO:", error);
-} finally {
-btn.textContent = originalText;
-btn.disabled = false;
-}
+        if (Array.isArray(data)) {
+            if (data.length === 0) {
+                const tr = document.createElement("tr");
+                const td = document.createElement("td");
+                td.colSpan = 8;
+                td.textContent = "Nenhum registro encontrado";
+                td.style.textAlign = "center";
+                td.style.padding = "20px";
+                td.style.color = "#6c757d";
+                tr.appendChild(td);
+                tbody.appendChild(tr);
+                document.getElementById("historyInfo").textContent = "Nenhum registro encontrado";
+            } else {
+                data.sort((a, b) => new Date(b[0]) - new Date(a[0]));
+                data.forEach((row) => {
+                    const tr = document.createElement("tr");
+                    const colunas = [
+                        formatarDataParaExibicao(row[0]),
+                        row[1] || "",
+                        row[2] || "",
+                        row[3] || "",
+                        formatarHoraParaExibicao(row[4]),
+                        row[5] || "",
+                        row[6] || "",
+                        formatarHoraParaExibicao(row[7])
+                    ];
+                    colunas.forEach(valor => {
+                        const td = document.createElement("td");
+                        td.textContent = valor;
+                        if (valor && valor.length > 50) {
+                            td.title = valor;
+                            td.textContent = valor.substring(0, 50) + '...';
+                        }
+                        tr.appendChild(td);
+                    });
+                    tbody.appendChild(tr);
+                });
+                document.getElementById("historyInfo").textContent = "Mostrando " + data.length + " registro(s) - Mais recentes primeiro";
+            }
+        } else {
+            showAlert("Erro ao carregar histórico: Resposta inválida do servidor", "error");
+        }
+    } catch(error) {
+        showAlert("Erro ao carregar histórico: " + error.message, "error");
+    } finally {
+        btn.textContent = originalText;
+        btn.disabled = false;
+    }
 }
 
 // Botão Limpar Planilha
 document.getElementById("btnLimpar").addEventListener("click", async function() {
-if (!confirm("⚠️ ATENÇÃO: Isso irá apagar TODOS os dados da planilha. Tem certeza?")) {
-return;
-}
+    if (!confirm("⚠️ ATENÇÃO: Isso irá apagar TODOS os dados da planilha. Tem certeza?")) return;
 
-const btn = this;
-const originalText = btn.textContent;
-btn.textContent = "Limpando...";
-btn.disabled = true;
+    const btn = this;
+    const originalText = btn.textContent;
+    btn.textContent = "Limpando...";
+    btn.disabled = true;
 
-try {
-const result = await postData({acao: "limparPlanilha"});
-if (result.success) {
-showAlert("✅ " + result.message, "success");
-setTimeout(() => loadHistory(), 1000);
-} else {
-showAlert("❌ Erro: " + (result.error || result.message), "error");
-}
-} catch(error) {
-showAlert("❌ Erro ao limpar planilha: " + error.message, "error");
-} finally {
-btn.textContent = originalText;
-btn.disabled = false;
-}
+    try {
+        const result = await postData({acao: "limparPlanilha"});
+        if (result.success) {
+            showAlert("✅ " + result.message, "success");
+            setTimeout(() => loadHistory(), 1000);
+        } else {
+            showAlert("❌ Erro: " + (result.error || result.message), "error");
+        }
+    } catch(error) {
+        showAlert("❌ Erro ao limpar planilha: " + error.message, "error");
+    } finally {
+        btn.textContent = originalText;
+        btn.disabled = false;
+    }
 });
 
-// Função de Debug
-document.getElementById("btnDebug").addEventListener("click", async function() {
-console.log("🐛 INICIANDO DEBUG...");
-try {
-const data = await getHistoryData();
-console.log("📋 ESTRUTURA ATUAL:", data);
-showDebugInfo("Dados recebidos: " + JSON.stringify(data, null, 2));
-showAlert("🔍 Debug executado - verifique console (F12)", "info");
-} catch(error) {
-showAlert("❌ Erro no debug: " + error.message, "error");
-}
+// Debug
+document.getElementById("btnDebug").addEventListener("click", () => {
+    const debugDiv = document.getElementById("debugInfo");
+    debugDiv.classList.toggle("hidden");
+    document.getElementById("debugContent").textContent = JSON.stringify(window._lastHistory || [], null, 2);
 });
 
-// Evento para carregar histórico
-document.getElementById("btnLoadHistory").addEventListener("click", loadHistory);
-
-// FUNÇÕES AUXILIARES DE FORMATAÇÃO
+// Funções de formatação
 function formatarDataParaExibicao(dataString) {
-if (!dataString) return "";
-try {
-// Se já estiver no formato brasileiro, retornar como está
-if (dataString.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
-return dataString;
-}
-
-// Tentar converter para objeto Date
-const date = new Date(dataString);
-if (isNaN(date.getTime())) {
-// Se não for data válida, tentar formato YYYY-MM-DD
-if (dataString.match(/^\d{4}-\d{2}-\d{2}$/)) {
-const [ano, mes, dia] = dataString.split('-');
-return `${dia}/${mes}/${ano}`;
-}
-return dataString;
-}
-
-// Formatar como DD/MM/YYYY
-return date.toLocaleDateString('pt-BR', { 
-day: '2-digit', 
-month: '2-digit', 
-year: 'numeric' 
-});
-} catch {
-return dataString;
-}
+    if (!dataString) return "";
+    const d = new Date(dataString);
+    if (isNaN(d.getTime())) return dataString;
+    return d.toLocaleDateString('pt-BR');
 }
 
 function formatarHoraParaExibicao(horaString) {
-if (!horaString) return "";
-try {
-// Se já está no formato HH:MM, retornar como está
-if (horaString.match(/^\d{2}:\d{2}$/)) {
-return horaString;
+    if (!horaString) return "";
+    try {
+        let date = new Date(horaString);
+        if (isNaN(date.getTime())) return horaString;
+        // Se a data for 1899-12-30 (padrão Sheets para hora), exibir apenas hora
+        if (date.getFullYear() === 1899 && date.getMonth() === 11 && date.getDate() === 30) {
+            return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        }
+        return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    } catch {
+        return horaString;
+    }
 }
 
-// Se for um objeto Date, formatar apenas a hora
-if (horaString instanceof Date) {
-return horaString.toLocaleTimeString('pt-BR', { 
-hour: '2-digit', 
-minute: '2-digit' 
-});
+// Alertas
+function showAlert(msg, type="info") {
+    const div = document.createElement("div");
+    div.className = `alert ${type}`;
+    div.textContent = msg;
+    document.querySelector(".container").insertBefore(div, document.querySelector(".container").firstChild);
+    setTimeout(()=>div.remove(), 5000);
 }
 
-// Tentar converter string de data/hora
-const date = new Date(horaString);
-if (!isNaN(date.getTime())) {
-return date.toLocaleTimeString('pt-BR', { 
-hour: '2-digit', 
-minute: '2-digit' 
-});
-}
-
-return horaString; // Retornar original se não conseguir formatar
-} catch {
-return horaString;
-}
-}
-
-function showAlert(message, type) {
-const existingAlerts = document.querySelectorAll('.alert');
-existingAlerts.forEach(alert => {
-if (alert.parentNode) {
-alert.remove();
-}
-});
-
-const alert = document.createElement('div');
-alert.className = 'alert ' + type;
-alert.textContent = message;
-document.querySelector('.container').insertBefore(alert, document.querySelector('.container').firstChild);
-
-setTimeout(() => {
-if (alert.parentNode) {
-alert.remove();
-}
-}, 5000);
-}
-
-function showDebugInfo(content) {
-const debugInfo = document.getElementById('debugInfo');
-const debugContent = document.getElementById('debugContent');
-debugContent.textContent = content;
-debugInfo.classList.remove('hidden');
-}
-
-// Inicialização
+// Inicial
+loadHistory();
 setInterval(fetchWatchdog, 5000);
-fetchWatchdog();
-
-window.addEventListener('load', function() {
-// Preencher data atual
-const now = new Date();
-const today = now.toISOString().split('T')[0];
-document.getElementById('data').value = today;
-
-// Carregar histórico
-setTimeout(() => loadHistory(), 1000);
-showAlert("🚀 Sistema carregado! Preencha o formulário para registrar passagens de turno.", "info");
-console.log("🔧 SISTEMA INICIALIZADO - PRONTO PARA USO");
-});
-
-// CSS para hidden
-const style = document.createElement('style');
-style.textContent = '.hidden { display: none !important; }';
-document.head.appendChild(style);
 </script>
 </body>
 </html>
