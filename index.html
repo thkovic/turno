@@ -61,6 +61,7 @@ button:disabled { background-color:#ccc; cursor:not-allowed; }
     <div class="history">
         <h2>📊 Histórico de Registros</h2>
         <button id="btnLoadHistory">🔄 Atualizar Histórico</button>
+        <button id="btnDebug" style="background: #ff6b6b; margin-left: 10px;">🐛 Debug</button>
         <div id="historyInfo" style="margin:10px 0; font-style:italic;"></div>
         <table id="historyTable">
             <thead>
@@ -94,16 +95,16 @@ const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwFS6gRrIGYeWFZ9KYjS
 // Função para fazer requisições POST
 async function postData(obj){
     try {
-        console.log("📤 Enviando:", obj);
+        console.log("📤 ENVIANDO DADOS:", obj);
         const resp = await fetch(SCRIPT_URL, {
             method: "POST",
             body: JSON.stringify(obj)
         });
         const data = await resp.json();
-        console.log("📥 Resposta:", data);
+        console.log("📥 RESPOSTA RECEBIDA:", data);
         return data;
     } catch(error) {
-        console.error("❌ Erro:", error);
+        console.error("❌ ERRO NA REQUISIÇÃO:", error);
         throw error;
     }
 }
@@ -119,7 +120,7 @@ async function fetchWatchdog(){
     }
 }
 
-// Registrar Turno
+// Registrar Turno - VERSÃO DEFINITIVA
 document.getElementById("turnoForm").addEventListener("submit", async(e)=>{
     e.preventDefault();
     
@@ -140,32 +141,29 @@ document.getElementById("turnoForm").addEventListener("submit", async(e)=>{
             encerramento: document.getElementById("encerramento").value
         };
         
+        console.log("🎯 DADOS QUE SERÃO ENVIADOS:", obj);
+        
         // Validação
-        if (!obj.nome) {
-            showAlert("Nome do operador é obrigatório", "error");
-            return;
-        }
-        if (!obj.matricula) {
-            showAlert("Matrícula é obrigatória", "error");
-            return;
-        }
-        if (!obj.equipamento) {
-            showAlert("Equipamento é obrigatório", "error");
-            return;
-        }
-        if (!obj.problema) {
-            showAlert("Problema é obrigatório", "error");
-            return;
-        }
-        if (!obj.solucao) {
-            showAlert("Solução é obrigatória", "error");
-            return;
+        const validacao = [
+            { campo: obj.nome, mensagem: "Nome do operador é obrigatório" },
+            { campo: obj.matricula, mensagem: "Matrícula é obrigatória" },
+            { campo: obj.equipamento, mensagem: "Equipamento é obrigatório" },
+            { campo: obj.problema, mensagem: "Problema é obrigatório" },
+            { campo: obj.solucao, mensagem: "Solução é obrigatória" }
+        ];
+        
+        for (const valid of validacao) {
+            if (!valid.campo) {
+                showAlert(valid.mensagem, "error");
+                return;
+            }
         }
         
         const resp = await postData(obj);
         
         if(resp.success) {
             showAlert("✅ " + resp.message, "success");
+            console.log("🎉 REGISTRO BEM-SUCEDIDO:", resp.debug);
             
             // Limpar apenas campos específicos
             document.getElementById("equipamento").value = "";
@@ -181,15 +179,17 @@ document.getElementById("turnoForm").addEventListener("submit", async(e)=>{
                                     .slice(0, 16);
             document.getElementById("data").value = localDateTime;
             
-            // Atualizar histórico automaticamente
+            // Atualizar histórico
             setTimeout(() => loadHistory(), 1000);
             
         } else {
             showAlert("❌ Erro: " + resp.message, "error");
+            console.error("💥 ERRO NO REGISTRO:", resp);
         }
         
     } catch(error) {
         showAlert("❌ Erro ao registrar: " + error.message, "error");
+        console.error("💥 ERRO CRÍTICO:", error);
     } finally {
         btn.textContent = originalText;
         btn.disabled = false;
@@ -204,11 +204,13 @@ async function loadHistory() {
     btn.disabled = true;
     
     try {
+        console.log("📊 SOLICITANDO HISTÓRICO...");
         const resp = await postData({getHistory: true});
         
         let data = [];
         if (Array.isArray(resp)) {
             data = resp;
+            console.log(`📋 ${data.length} registros recebidos`);
         } else if (resp && resp.error) {
             showAlert("Erro ao carregar histórico: " + resp.error, "error");
             return;
@@ -236,10 +238,12 @@ async function loadHistory() {
                 return dateB - dateA;
             });
             
-            data.forEach(row => {
+            console.log("📝 RENDERIZANDO REGISTROS...");
+            
+            data.forEach((row, index) => {
                 const tr = document.createElement("tr");
                 
-                // MAPEAMENTO CORRETO - 8 COLUNAS SIMPLES
+                // MAPEAMENTO CORRETO - 8 COLUNAS
                 const colunas = [
                     formatarData(row[0]),    // Coluna 1: Data
                     row[1] || "",           // Coluna 2: Operador
@@ -251,18 +255,18 @@ async function loadHistory() {
                     formatarHora(row[7])    // Coluna 8: Encerramento
                 ];
                 
+                if (index === 0) {
+                    console.log("🔍 PRIMEIRO REGISTRO PROCESSADO:", colunas);
+                }
+                
                 colunas.forEach(valor => {
                     const td = document.createElement("td");
                     td.textContent = valor;
                     
-                    // Limitar texto muito longo apenas para problemas e soluções
-                    if ((valor && valor.length > 100) && 
-                        (valor === row[5] || valor === row[6])) {
+                    // Limitar texto muito longo
+                    if (valor && valor.length > 100) {
                         td.title = valor;
                         td.textContent = valor.substring(0, 100) + '...';
-                    } else if (valor && valor.length > 50) {
-                        td.title = valor;
-                        td.textContent = valor.substring(0, 50) + '...';
                     }
                     
                     tr.appendChild(td);
@@ -276,11 +280,36 @@ async function loadHistory() {
         
     } catch(error) {
         showAlert("Erro ao carregar histórico: " + error.message, "error");
+        console.error("💥 ERRO NO HISTÓRICO:", error);
     } finally {
         btn.textContent = originalText;
         btn.disabled = false;
     }
 }
+
+// Função de Debug
+document.getElementById("btnDebug").addEventListener("click", async function() {
+    console.log("🐛 INICIANDO DEBUG...");
+    
+    // Verificar estrutura atual
+    const estrutura = await postData({getHistory: true});
+    console.log("📋 ESTRUTURA ATUAL:", estrutura);
+    
+    // Testar envio de dados
+    const testeDados = {
+        nome: "TESTE DEBUG",
+        matricula: "999999",
+        equipamento: "EQUIPAMENTO TESTE",
+        acionamento: "12:00",
+        problema: "Problema de teste",
+        solucao: "Solução de teste",
+        encerramento: "13:00"
+    };
+    
+    console.log("🧪 DADOS DE TESTE:", testeDados);
+    
+    showAlert("🔍 Debug executado - verifique console (F12)", "info");
+});
 
 // Evento para carregar histórico
 document.getElementById("btnLoadHistory").addEventListener("click", loadHistory);
@@ -289,24 +318,8 @@ document.getElementById("btnLoadHistory").addEventListener("click", loadHistory)
 function formatarData(dataString) {
     if (!dataString) return "";
     try {
-        // CORREÇÃO: Lidar com diferentes formatos de data
-        let date;
-        
-        if (dataString.includes('T')) {
-            // Formato ISO (2025-10-16T04:00:37.000Z)
-            date = new Date(dataString);
-        } else if (dataString.includes('/')) {
-            // Formato brasileiro (16/10/2025)
-            const [dia, mes, ano] = dataString.split('/');
-            date = new Date(ano, mes - 1, dia);
-        } else {
-            // Tentar como está
-            date = new Date(dataString);
-        }
-        
-        if (isNaN(date.getTime())) {
-            return dataString; // Retorna original se não conseguir converter
-        }
+        const date = new Date(dataString);
+        if (isNaN(date.getTime())) return dataString;
         
         return date.toLocaleString('pt-BR', {
             day: '2-digit',
@@ -320,34 +333,35 @@ function formatarData(dataString) {
     }
 }
 
-function formatarHora(dataHora) {
-    if (!dataHora) return "";
-    try {
-        // Se já for apenas hora (formato HH:MM)
-        if (typeof dataHora === 'string' && dataHora.match(/^\d{1,2}:\d{2}$/)) {
-            return dataHora;
-        }
-        
-        const date = new Date(dataHora);
-        // Verificar se é uma data válida e não é 1899 (data padrão do Excel)
-        if (isNaN(date.getTime()) || date.getFullYear() === 1899) {
-            // Se for hora apenas em formato de string, extrair a parte da hora
-            if (typeof dataHora === 'string' && dataHora.includes(':')) {
-                return dataHora.split('T')[1]?.substring(0, 5) || dataHora.substring(11, 16);
-            }
-            return dataHora;
-        }
-        return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-    } catch {
-        return dataHora;
+function formatarHora(horaString) {
+    if (!horaString) return "";
+    
+    // Se já for no formato HH:MM, retornar como está
+    if (typeof horaString === 'string' && horaString.match(/^\d{1,2}:\d{2}$/)) {
+        return horaString;
     }
+    
+    // Se for uma data completa, extrair apenas a hora
+    try {
+        const date = new Date(horaString);
+        if (!isNaN(date.getTime())) {
+            return date.toLocaleTimeString('pt-BR', { 
+                hour: '2-digit', 
+                minute: '2-digit',
+                hour12: false 
+            });
+        }
+    } catch {
+        // Não é uma data válida
+    }
+    
+    return horaString;
 }
 
 function showAlert(message, type) {
-    // Remove alertas anteriores
     const existingAlerts = document.querySelectorAll('.alert');
     existingAlerts.forEach(alert => {
-        if (alert.textContent.includes(message.substring(0, 20))) {
+        if (alert.parentNode) {
             alert.remove();
         }
     });
@@ -358,7 +372,6 @@ function showAlert(message, type) {
     
     document.querySelector('.container').insertBefore(alert, document.querySelector('.container').firstChild);
     
-    // Auto-remove após 5 segundos
     setTimeout(() => {
         if (alert.parentNode) {
             alert.remove();
@@ -379,10 +392,12 @@ window.addEventListener('load', function() {
                             .slice(0, 16);
     document.getElementById('data').value = localDateTime;
     
-    // Carregar histórico após um pequeno delay
+    // Carregar histórico
     setTimeout(() => loadHistory(), 1000);
     
     showAlert("🚀 Sistema carregado! Preencha o formulário para registrar passagens de turno.", "info");
+    
+    console.log("🔧 SISTEMA INICIALIZADO - PRONTO PARA DEBUG");
 });
 </script>
 </body>
