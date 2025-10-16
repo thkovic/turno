@@ -15,12 +15,19 @@ form textarea { resize: vertical; min-height:60px; }
 .full-width { grid-column:1/-1; }
 button { background-color:#95d5b2; color:#fff; border:none; padding:12px 20px; font-size:16px; cursor:pointer; border-radius:4px; transition:0.3s; }
 button:hover { background-color:#74c69d; }
+button:disabled { background-color:#ccc; cursor:not-allowed; }
 .history { margin-top:40px; }
-.history table { width:100%; border-collapse:collapse; }
+.history table { width:100%; border-collapse:collapse; font-size:14px; }
 .history th, .history td { border:1px solid #ddd; padding:8px; text-align:left; }
 .history th { background-color:#e9f5ef; color:#2d6a4f; }
 .history tr:nth-child(even){ background:#f9f9f9; }
-#watchdog { position:absolute; top:10px; right:10px; padding:5px 10px; background:#95d5b2; color:#fff; border-radius:4px; font-weight:bold; }
+#watchdog { position:fixed; top:10px; right:10px; padding:5px 10px; background:#95d5b2; color:#fff; border-radius:4px; font-weight:bold; z-index:1000; }
+.loading { display:inline-block; width:20px; height:20px; border:3px solid #f3f3f3; border-top:3px solid #2d6a4f; border-radius:50%; animation:spin 1s linear infinite; margin-left:10px; }
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+.hidden { display:none; }
+#userInfo { background:#e9f5ef; padding:10px; border-radius:4px; margin-bottom:20px; }
+.logout-btn { background:#e74c3c; margin-left:10px; padding:5px 10px; font-size:12px; }
+.logout-btn:hover { background:#c0392b; }
 </style>
 </head>
 <body>
@@ -33,47 +40,62 @@ button:hover { background-color:#74c69d; }
   <button id="btnLogin">Entrar</button>
 </div>
 
-<div id="mainDiv" style="display:none;">
-<h1>Passagem de Turno</h1>
-<form id="turnoForm">
-<div><label>Nome</label><input type="text" id="nome" required/></div>
-<div><label>Matrícula</label><input type="text" id="matricula" required/></div>
-<div><label>Data / Hora</label><input type="datetime-local" id="data" name="data"/></div>
-<div><label>Equipamento</label><input type="text" id="equipamento" required/></div>
-<div><label>Acionamento (Hora)</label><input type="time" id="acionamento" required/></div>
-<div><label>Problema</label><textarea id="problema" required></textarea></div>
-<div><label>Solução</label><textarea id="solucao" required></textarea></div>
-<div><label>Encerramento (Hora)</label><input type="time" id="encerramento" required/></div>
-<div class="full-width"><button type="submit">Registrar Turno</button></div>
-</form>
+<div id="mainDiv" class="hidden">
+  <div id="userInfo">
+    Logado como: <span id="userName"></span> (<span id="userMatricula"></span>)
+    <button class="logout-btn" onclick="logout()">Sair</button>
+  </div>
+  
+  <h1>Passagem de Turno</h1>
+  <form id="turnoForm">
+    <div><label>Nome</label><input type="text" id="nome" required readonly/></div>
+    <div><label>Matrícula</label><input type="text" id="matricula" required readonly/></div>
+    <div><label>Data / Hora</label><input type="datetime-local" id="data" name="data"/></div>
+    <div><label>Equipamento</label><input type="text" id="equipamento" required/></div>
+    <div><label>Acionamento (Hora)</label><input type="time" id="acionamento" required/></div>
+    <div class="full-width"><label>Problema</label><textarea id="problema" required></textarea></div>
+    <div class="full-width"><label>Solução</label><textarea id="solucao" required></textarea></div>
+    <div><label>Encerramento (Hora)</label><input type="time" id="encerramento" required/></div>
+    <div class="full-width">
+      <button type="submit" id="btnSubmit">
+        Registrar Turno
+      </button>
+    </div>
+  </form>
 
-<div class="history">
-<h2>Histórico</h2>
-<button id="btnLoadHistory">Mostrar Histórico</button>
-<table id="historyTable">
-<thead>
-<tr>
-<th>Tipo</th><th>Nome</th><th>Matrícula</th><th>Data</th><th>Equipamento</th><th>Acionamento</th>
-<th>Problema</th><th>Solução</th><th>Encerramento</th><th>Data/Hora Edição</th><th>Watchdog</th>
-</tr>
-</thead>
-<tbody></tbody>
-</table>
-</div>
+  <div class="history">
+    <h2>Histórico</h2>
+    <button id="btnLoadHistory">Mostrar Histórico</button>
+    <div id="historyInfo" style="margin:10px 0; font-style:italic;"></div>
+    <table id="historyTable">
+      <thead>
+        <tr>
+          <th>Tipo</th><th>Nome</th><th>Matrícula</th><th>Data</th><th>Equipamento</th><th>Acionamento</th>
+          <th>Problema</th><th>Solução</th><th>Encerramento</th><th>Data/Hora Edição</th><th>Watchdog</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
 </div>
 </div>
 
 <script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwFS6gRrIGYeWFZ9KYjSaOMLfJd_TTsrZcLNGyvdb7R0RZBcXrQUlgLUdAjNr7B58o/exec"; // Coloque aqui
+const SCRIPT_URL = "COLE_SEU_SCRIPT_URL_AQUI"; // Substitua pela URL do seu Apps Script
 
+// Estado da aplicação
+let currentUser = null;
+
+// Função para fazer requisições POST
 async function postData(obj){
-  const resp = await fetch(SCRIPT_URL,{
-    method:"POST",
+  const resp = await fetch(SCRIPT_URL, {
+    method: "POST",
     body: JSON.stringify(obj)
   });
-  return resp.json(); // retorna sempre um objeto
+  return resp.json();
 }
 
+// Watchdog
 async function fetchWatchdog(){
   try{
     const resp = await fetch(SCRIPT_URL);
@@ -87,49 +109,181 @@ async function fetchWatchdog(){
 // Login
 document.getElementById("btnLogin").addEventListener("click", async()=>{
   const matricula = document.getElementById("matriculaLogin").value.trim();
-  if(!matricula){ alert("Digite sua matrícula"); return; }
-  const resp = await postData({login:true,matricula});
-  if(resp.success){
-    document.getElementById("loginDiv").style.display="none";
-    document.getElementById("mainDiv").style.display="block";
-    document.getElementById("nome").value = resp.nome;
-    document.getElementById("matricula").value = matricula;
-  } else alert(resp.message);
+  if(!matricula){ 
+    alert("Digite sua matrícula"); 
+    return; 
+  }
+  
+  const btn = document.getElementById("btnLogin");
+  const originalText = btn.textContent;
+  btn.textContent = "Entrando...";
+  btn.disabled = true;
+  
+  try {
+    const resp = await postData({login:true, matricula});
+    if(resp.success){
+      currentUser = {
+        nome: resp.nome,
+        matricula: matricula
+      };
+      
+      document.getElementById("loginDiv").classList.add("hidden");
+      document.getElementById("mainDiv").classList.remove("hidden");
+      document.getElementById("nome").value = resp.nome;
+      document.getElementById("matricula").value = matricula;
+      document.getElementById("userName").textContent = resp.nome;
+      document.getElementById("userMatricula").textContent = matricula;
+      
+      // Preencher data/hora atual
+      const now = new Date();
+      const localDateTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
+                              .toISOString()
+                              .slice(0, 16);
+      document.getElementById("data").value = localDateTime;
+      
+    } else {
+      alert("Erro: " + resp.message);
+    }
+  } catch(error) {
+    console.error("Erro no login:", error);
+    alert("Erro de conexão: " + error.message);
+  } finally {
+    btn.textContent = originalText;
+    btn.disabled = false;
+  }
 });
+
+// Logout
+function logout() {
+  currentUser = null;
+  document.getElementById("mainDiv").classList.add("hidden");
+  document.getElementById("loginDiv").classList.remove("hidden");
+  document.getElementById("matriculaLogin").value = "";
+  document.getElementById("turnoForm").reset();
+  document.querySelector("#historyTable tbody").innerHTML = "";
+  document.getElementById("historyInfo").textContent = "";
+}
 
 // Registrar Turno
 document.getElementById("turnoForm").addEventListener("submit", async(e)=>{
   e.preventDefault();
-  const obj = {
-    nome: document.getElementById("nome").value,
-    matricula: document.getElementById("matricula").value,
-    data: document.getElementById("data").value,
-    equipamento: document.getElementById("equipamento").value,
-    acionamento: document.getElementById("acionamento").value,
-    problema: document.getElementById("problema").value,
-    solucao: document.getElementById("solucao").value,
-    encerramento: document.getElementById("encerramento").value
-  };
-  const resp = await postData(obj);
-  alert(resp.message || "Registro realizado");
+  
+  if (!currentUser) {
+    alert("Faça login primeiro");
+    return;
+  }
+  
+  const btn = document.getElementById("btnSubmit");
+  const originalText = btn.textContent;
+  btn.textContent = "Registrando...";
+  btn.disabled = true;
+  
+  try {
+    const obj = {
+      nome: document.getElementById("nome").value,
+      matricula: document.getElementById("matricula").value,
+      data: document.getElementById("data").value,
+      equipamento: document.getElementById("equipamento").value,
+      acionamento: document.getElementById("acionamento").value,
+      problema: document.getElementById("problema").value,
+      solucao: document.getElementById("solucao").value,
+      encerramento: document.getElementById("encerramento").value
+    };
+    
+    // Validação básica
+    if (!obj.equipamento.trim()) {
+      alert("Equipamento é obrigatório");
+      return;
+    }
+    
+    const resp = await postData(obj);
+    alert(resp.message || "Registro realizado com sucesso!");
+    
+    // Limpar formulário
+    document.getElementById("equipamento").value = "";
+    document.getElementById("problema").value = "";
+    document.getElementById("solucao").value = "";
+    
+  } catch(error) {
+    console.error("Erro ao registrar:", error);
+    alert("Erro ao registrar: " + error.message);
+  } finally {
+    btn.textContent = originalText;
+    btn.disabled = false;
+  }
 });
 
-// Histórico
+// Histórico - VERSÃO CORRIGIDA
 document.getElementById("btnLoadHistory").addEventListener("click", async()=>{
-  const resp = await postData({getHistory:true});
-  const data = Array.isArray(resp)? resp : [];
-  const tbody = document.querySelector("#historyTable tbody");
-  tbody.innerHTML="";
-  data.forEach(row=>{
-    const tr=document.createElement("tr");
-    row.forEach(c=>{ const td=document.createElement("td"); td.textContent=c; tr.appendChild(td); });
-    tbody.appendChild(tr);
-  });
+  const btn = document.getElementById("btnLoadHistory");
+  const originalText = btn.textContent;
+  btn.textContent = "Carregando...";
+  btn.disabled = true;
+  
+  try {
+    console.log("Solicitando histórico...");
+    const resp = await postData({getHistory:true});
+    console.log("Resposta recebida:", resp);
+    
+    let data = [];
+    if (Array.isArray(resp)) {
+      data = resp;
+    } else if (resp && resp.error) {
+      alert("Erro: " + resp.error);
+      return;
+    }
+    
+    console.log("Dados processados:", data);
+    
+    const tbody = document.querySelector("#historyTable tbody");
+    tbody.innerHTML = "";
+    
+    if (data.length === 0) {
+      const tr = document.createElement("tr");
+      const td = document.createElement("td");
+      td.colSpan = 11;
+      td.textContent = "Nenhum registro encontrado";
+      td.style.textAlign = "center";
+      td.style.padding = "20px";
+      tr.appendChild(td);
+      tbody.appendChild(tr);
+      document.getElementById("historyInfo").textContent = "Nenhum registro encontrado";
+    } else {
+      data.forEach(row => {
+        const tr = document.createElement("tr");
+        row.forEach(cell => {
+          const td = document.createElement("td");
+          td.textContent = cell !== null && cell !== undefined ? cell.toString() : "";
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+      document.getElementById("historyInfo").textContent = `Mostrando ${data.length} registro(s)`;
+    }
+    
+    console.log("Tabela atualizada com", data.length, "registros");
+    
+  } catch(error) {
+    console.error("Erro ao carregar histórico:", error);
+    alert("Erro ao carregar histórico: " + error.message);
+  } finally {
+    btn.textContent = originalText;
+    btn.disabled = false;
+  }
 });
 
-// Atualiza Watchdog a cada 5 segundos
-setInterval(fetchWatchdog,5000);
+// Inicialização
+setInterval(fetchWatchdog, 5000);
 fetchWatchdog();
+
+// Preencher data/hora atual no carregamento
+window.addEventListener('load', function() {
+  const now = new Date();
+  const localDateTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
+                          .toISOString()
+                          .slice(0, 16);
+  document.getElementById('data').value = localDateTime;
+});
 </script>
 </body>
 </html>
