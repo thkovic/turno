@@ -73,7 +73,6 @@ button:disabled { background-color:#ccc; cursor:not-allowed; }
 <div class="history">
 <h2>📊 Histórico de Registros</h2>
 <button id="btnLoadHistory">🔄 Atualizar Histórico</button>
-<button id="btnDebug" style="background: #ff6b6b; margin-left: 10px;">🐛 Debug</button>
 <div id="historyInfo" style="margin:10px 0; font-style:italic;"></div>
 <table id="historyTable">
 <thead>
@@ -102,10 +101,8 @@ Clique em "Atualizar Histórico" para carregar os registros
 
 <script>
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwFS6gRrIGYeWFZ9KYjSaOMLfJd_TTsrZcLNGyvdb7R0RZBcXrQUlgLUdAjNr7B58o/exec";
-
 let loggedIn = false;
 
-// Alerts
 function showAlert(msg, type="info"){
     const container = document.getElementById("alertContainer");
     const div = document.createElement("div");
@@ -115,7 +112,6 @@ function showAlert(msg, type="info"){
     setTimeout(()=>div.remove(),5000);
 }
 
-// Login
 document.getElementById("loginForm").addEventListener("submit", function(e){
     e.preventDefault();
     const matricula = document.getElementById("loginMatricula").value.trim();
@@ -128,7 +124,6 @@ document.getElementById("loginForm").addEventListener("submit", function(e){
     showAlert("✅ Login realizado com sucesso","success");
 });
 
-// Logout
 document.getElementById("btnLogout").addEventListener("click", ()=>{
     loggedIn=false;
     document.getElementById("registroDiv").classList.add("hidden");
@@ -136,16 +131,14 @@ document.getElementById("btnLogout").addEventListener("click", ()=>{
     showAlert("🔒 Logout realizado","info");
 });
 
-// Fetch Watchdog
 async function fetchWatchdog(){
     try{
         const resp = await fetch(SCRIPT_URL);
         const data = await resp.json();
-        document.getElementById("watchdog").textContent = "Watchdog: "+ (data.watchdog || data.valor || "--");
+        document.getElementById("watchdog").textContent = "Watchdog: "+ (data.watchdog || "--");
     }catch(e){ document.getElementById("watchdog").textContent="Watchdog: Erro"; }
 }
 
-// Post data
 async function postData(obj){
     const resp = await fetch(SCRIPT_URL,{
         method:"POST",
@@ -154,7 +147,6 @@ async function postData(obj){
     return await resp.json();
 }
 
-// Registro de turno
 document.getElementById("turnoForm").addEventListener("submit", async(e)=>{
     e.preventDefault();
     if(!loggedIn){ showAlert("❌ É necessário fazer login para registrar","error"); return; }
@@ -164,17 +156,10 @@ document.getElementById("turnoForm").addEventListener("submit", async(e)=>{
     btn.textContent="Registrando..."; btn.disabled=true;
 
     try{
-        const dataText = document.getElementById("data").value.trim();
-        if(!dataText.match(/^\d{2}\/\d{2}\/\d{4}$/)){
-            showAlert("❌ Data inválida. Use dd/MM/yyyy","error");
-            btn.textContent=originalText; btn.disabled=false;
-            return;
-        }
-
         const obj = {
             nome: document.getElementById("nome").value.trim(),
             matricula: document.getElementById("matricula").value.trim(),
-            data: dataText, // envia já em dd/MM/yyyy
+            data: document.getElementById("data").value.trim(), // envia exatamente como texto
             equipamento: document.getElementById("equipamento").value.trim(),
             acionamento: document.getElementById("acionamento").value,
             problema: document.getElementById("problema").value.trim(),
@@ -195,7 +180,6 @@ document.getElementById("turnoForm").addEventListener("submit", async(e)=>{
     finally{ btn.textContent=originalText; btn.disabled=false; }
 });
 
-// Histórico
 async function getHistoryData(){ return await postData({getHistory:true}); }
 
 async function loadHistory(){
@@ -223,12 +207,10 @@ async function loadHistory(){
     } else showAlert("Erro ao carregar histórico","error");
 }
 
-// Inicial
 loadHistory();
 setInterval(fetchWatchdog,5000);
 document.getElementById("btnLoadHistory").addEventListener("click",loadHistory);
 
-// Limpar Planilha
 document.getElementById("btnLimpar").addEventListener("click", async()=>{
     if(!confirm("Tem certeza que deseja limpar toda a planilha?")) return;
     const resp = await postData({acao:"limparPlanilha"});
