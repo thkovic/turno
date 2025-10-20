@@ -28,7 +28,6 @@ button:disabled { background-color:#ccc; cursor:not-allowed; }
 .info { background:#d1ecf1; color:#0c5460; border:1px solid #bee5eb; }
 .loading { display:inline-block; width:20px; height:20px; border:3px solid #f3f3f3; border-top:3px solid #2d6a4f; border-radius:50%; animation:spin 1s linear infinite; margin-left:10px; }
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-.debug-info { background:#fff3cd; color:#856404; border:1px solid #ffeaa7; padding:10px; margin:10px 0; border-radius:4px; font-size:12px; }
 .search-box { background:#f8f9fa; padding:15px; border-radius:8px; margin-bottom:20px; border:1px solid #e9ecef; }
 .search-row { display:flex; gap:10px; align-items:end; flex-wrap:wrap; }
 .search-field { flex:1; min-width:150px; }
@@ -36,7 +35,6 @@ button:disabled { background-color:#ccc; cursor:not-allowed; }
 .search-field input, .search-field select { width:100%; padding:8px; border:1px solid #ced4da; border-radius:4px; }
 .search-buttons { display:flex; gap:10px; }
 .highlight { background-color: #fff3cd !important; font-weight: bold; }
-.hidden { display: none; }
 </style>
 </head>
 <body>
@@ -59,15 +57,8 @@ button:disabled { background-color:#ccc; cursor:not-allowed; }
 <div><label>Encerramento (Hora) *</label><input type="time" id="encerramento" required/></div>
 <div class="full-width">
 <button type="submit" id="btnSubmit">✅ Registrar Passagem de Turno</button>
-<button type="button" id="btnLimpar" style="background: #ff6b6b; margin-left: 10px;">🗑️ Limpar Planilha</button>
 </div>
 </form>
-
-<!-- DEBUG INFO -->
-<div id="debugInfo" class="debug-info hidden">
-<strong>🐛 Informações de Debug:</strong>
-<div id="debugContent"></div>
-</div>
 
 <!-- SISTEMA DE BUSCA -->
 <div class="search-box">
@@ -110,7 +101,6 @@ button:disabled { background-color:#ccc; cursor:not-allowed; }
 <h2>📊 Histórico de Registros</h2>
 <div style="display: flex; gap: 10px; margin-bottom: 15px;">
 <button id="btnLoadHistory">🔄 Atualizar Histórico</button>
-<button id="btnDebug" style="background: #ff6b6b;">🐛 Debug</button>
 </div>
 <div id="historyInfo" style="margin:10px 0; font-style:italic;"></div>
 <table id="historyTable">
@@ -226,7 +216,6 @@ async function loadHistory(){
 
     try{
         const data = await getHistoryData();
-        window._lastHistory = data; // Para debug
         
         if(Array.isArray(data)){
             allRegistros = data;
@@ -377,35 +366,6 @@ document.getElementById("btnClearSearch").addEventListener("click", function() {
     document.getElementById("searchType").value = "all";
     filteredRegistros = [...allRegistros];
     displayRegistros();
-});
-
-// Limpar Planilha
-document.getElementById("btnLimpar").addEventListener("click", async function(){
-    if(!confirm("⚠️ Isso irá apagar TODOS os dados da planilha. Tem certeza?")) return;
-    const btn=this; const originalText=btn.textContent; btn.textContent="Limpando..."; btn.disabled=true;
-
-    try{
-        const result = await postData({acao:"limparPlanilha"});
-        if(result.success){ 
-            showAlert("✅ "+result.message,"success"); 
-            allRegistros = [];
-            filteredRegistros = [];
-            setTimeout(()=>loadHistory(),1000); 
-        }
-        else showAlert("❌ Erro: "+(result.error||result.message),"error");
-    } catch(error){ showAlert("❌ Erro ao limpar planilha: "+error.message,"error"); }
-    finally{ btn.textContent=originalText; btn.disabled=false; }
-});
-
-// Debug
-document.getElementById("btnDebug").addEventListener("click", ()=>{
-    const debugDiv = document.getElementById("debugInfo");
-    debugDiv.classList.toggle("hidden");
-    document.getElementById("debugContent").textContent=JSON.stringify({
-        allRegistros: allRegistros.length,
-        filteredRegistros: filteredRegistros.length,
-        lastHistory: window._lastHistory || []
-    },null,2);
 });
 
 // Formatação
