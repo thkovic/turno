@@ -29,6 +29,7 @@ button:disabled { background-color:#ccc; cursor:not-allowed; }
 .loading { display:inline-block; width:20px; height:20px; border:3px solid #f3f3f3; border-top:3px solid #2d6a4f; border-radius:50%; animation:spin 1s linear infinite; margin-left:10px; }
 .debug-info { background:#fff3cd; color:#856404; border:1px solid #ffeaa7; padding:10px; margin:10px 0; border-radius:4px; font-size:12px; }
 .hidden { display:none; }
+@keyframes spin { from { transform: rotate(0deg);} to { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
@@ -37,7 +38,6 @@ button:disabled { background-color:#ccc; cursor:not-allowed; }
 
 <h1>📝 Sistema de Passagem de Turno</h1>
 
-<!-- ALERTS -->
 <div id="alertContainer"></div>
 
 <!-- LOGIN -->
@@ -125,7 +125,7 @@ document.getElementById("loginForm").addEventListener("submit", function(e){
     document.getElementById("registroDiv").classList.remove("hidden");
     document.getElementById("loginDiv").classList.add("hidden");
     document.getElementById("matricula").value = matricula;
-    document.getElementById("nome").value = ""; // Pode preencher com nome real se disponível
+    document.getElementById("nome").value = "";
     showAlert("✅ Login realizado com sucesso","success");
 });
 
@@ -148,7 +148,10 @@ async function fetchWatchdog(){
 
 // Post data
 async function postData(obj){
-    const resp = await fetch(SCRIPT_URL,{method:"POST", body:JSON.stringify(obj)});
+    const resp = await fetch(SCRIPT_URL,{
+        method:"POST",
+        body:JSON.stringify(obj)
+    });
     return await resp.json();
 }
 
