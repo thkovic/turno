@@ -55,7 +55,7 @@ button:disabled { background-color:#ccc; cursor:not-allowed; }
 <form id="turnoForm">
 <div><label>Nome do Operador *</label><input type="text" id="nome" required placeholder="Seu nome completo"/></div>
 <div><label>Matrícula *</label><input type="text" id="matricula" required readonly/></div>
-<div><label>Data *</label><input type="date" id="data" required/></div>
+<div><label>Data *</label><input type="text" id="data" required/></div>
 <div><label>Equipamento *</label><input type="text" id="equipamento" required placeholder="Nome do equipamento"/></div>
 <div><label>Acionamento (Hora) *</label><input type="time" id="acionamento" required/></div>
 <div class="full-width"><label>Problema Identificado *</label><textarea id="problema" required placeholder="Descreva o problema"></textarea></div>
@@ -259,3 +259,4 @@ document.getElementById("btnLoadHistory").addEventListener("click",loadHistory);
 </script>
 </body>
 </html>
+
