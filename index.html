@@ -163,7 +163,7 @@ async function fetchWatchdog(){
     }
 }
 
-// Registrar Turno
+// Registrar Turno - CORREÇÃO DA DATA
 document.getElementById("turnoForm").addEventListener("submit", async(e)=>{
     e.preventDefault();
     const btn = document.getElementById("btnSubmit");
@@ -172,40 +172,70 @@ document.getElementById("turnoForm").addEventListener("submit", async(e)=>{
     btn.disabled = true;
 
     try {
+        // CAPTURAR OS VALORES DIRETAMENTE DOS CAMPOS
+        const nome = document.getElementById("nome").value.trim();
+        const matricula = document.getElementById("matricula").value.trim();
+        const data = document.getElementById("data").value; // ✅ Agora pega o valor do campo
+        const equipamento = document.getElementById("equipamento").value.trim();
+        const acionamento = document.getElementById("acionamento").value;
+        const problema = document.getElementById("problema").value.trim();
+        const solucao = document.getElementById("solucao").value.trim();
+        const encerramento = document.getElementById("encerramento").value;
+
         const obj = {
-            nome: document.getElementById("nome").value.trim(),
-            matricula: document.getElementById("matricula").value.trim(),
-            data: document.getElementById("data").value,
-            equipamento: document.getElementById("equipamento").value.trim(),
-            acionamento: document.getElementById("acionamento").value,
-            problema: document.getElementById("problema").value.trim(),
-            solucao: document.getElementById("solucao").value.trim(),
-            encerramento: document.getElementById("encerramento").value
+            nome: nome,
+            matricula: matricula,
+            data: data, // ✅ Usa a data do campo input
+            equipamento: equipamento,
+            acionamento: acionamento,
+            problema: problema,
+            solucao: solucao,
+            encerramento: encerramento
         };
+
+        console.log("Dados enviados:", obj); // Para debug
 
         // Validação básica
         const validacao = [
             { campo: obj.nome, mensagem: "Nome do operador é obrigatório" },
             { campo: obj.matricula, mensagem: "Matrícula é obrigatória" },
+            { campo: obj.data, mensagem: "Data é obrigatória" },
             { campo: obj.equipamento, mensagem: "Equipamento é obrigatório" },
             { campo: obj.problema, mensagem: "Problema é obrigatório" },
             { campo: obj.solucao, mensagem: "Solução é obrigatória" }
         ];
-        for (const valid of validacao) if (!valid.campo) { showAlert(valid.mensagem,"error"); btn.textContent = originalText; btn.disabled=false; return; }
+        
+        for (const valid of validacao) {
+            if (!valid.campo) { 
+                showAlert(valid.mensagem,"error"); 
+                btn.textContent = originalText; 
+                btn.disabled = false; 
+                return; 
+            }
+        }
 
         const resp = await postData(obj);
         if(resp.success){
             showAlert("✅ "+resp.message,"success");
-            document.getElementById("equipamento").value="";
-            document.getElementById("problema").value="";
-            document.getElementById("solucao").value="";
-            document.getElementById("acionamento").value="";
-            document.getElementById("encerramento").value="";
-            setTimeout(() => loadHistory(),1000);
-        } else showAlert("❌ Erro: "+resp.message,"error");
+            // Limpar apenas alguns campos após o registro
+            document.getElementById("equipamento").value = "";
+            document.getElementById("problema").value = "";
+            document.getElementById("solucao").value = "";
+            document.getElementById("acionamento").value = "";
+            document.getElementById("encerramento").value = "";
+            // Manter nome, matrícula e data preenchidos
+            setTimeout(() => loadHistory(), 1000);
+        } else {
+            showAlert("❌ Erro: "+resp.message,"error");
+        }
 
-    } catch(error){ showAlert("❌ Erro ao registrar: "+error.message,"error"); }
-    finally{ btn.textContent = originalText; btn.disabled=false; }
+    } catch(error){ 
+        showAlert("❌ Erro ao registrar: "+error.message,"error"); 
+    }
+    finally{ 
+        btn.textContent = originalText; 
+        btn.disabled = false; 
+    }
 });
 
 // Carregar Histórico
@@ -369,8 +399,21 @@ document.getElementById("btnClearSearch").addEventListener("click", function() {
 });
 
 // Formatação
-function formatarData(d){ if(!d) return ""; const dt=new Date(d); return isNaN(dt.getTime())?d:dt.toLocaleDateString('pt-BR'); }
-function formatarHora(h){ if(!h) return ""; try{ const dt=new Date(h); return isNaN(dt.getTime())?h:dt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}); } catch{return h;} }
+function formatarData(d){ 
+    if(!d) return ""; 
+    const dt = new Date(d); 
+    return isNaN(dt.getTime()) ? d : dt.toLocaleDateString('pt-BR'); 
+}
+
+function formatarHora(h){ 
+    if(!h) return ""; 
+    try{ 
+        // Se for apenas hora (formato HH:MM)
+        if (h.match(/^\d{2}:\d{2}$/)) return h;
+        const dt = new Date(h); 
+        return isNaN(dt.getTime()) ? h : dt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}); 
+    } catch{ return h; }
+}
 
 // Alertas
 function showAlert(msg,type="info"){ 
@@ -381,9 +424,13 @@ function showAlert(msg,type="info"){
     setTimeout(()=>div.remove(),5000); 
 }
 
-// Inicialização
-loadHistory();
-setInterval(fetchWatchdog,5000);
+// Inicialização - Definir data atual como padrão
+document.addEventListener('DOMContentLoaded', function() {
+    const hoje = new Date().toISOString().split('T')[0];
+    document.getElementById('data').value = hoje;
+    loadHistory();
+    setInterval(fetchWatchdog,5000);
+});
 </script>
 </body>
 </html>
