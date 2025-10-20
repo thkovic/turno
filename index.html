@@ -188,6 +188,21 @@ document.getElementById("turnoForm").addEventListener("submit", async(e)=>{
     finally{ btn.textContent=originalText; btn.disabled=false; }
 });
 
+// Converte data yyyy-MM-dd para dd/MM/yyyy
+function formatarDataBr(dataString) {
+    if (!dataString) return "";
+    const parts = dataString.split("-");
+    if (parts.length === 3) return parts[2]+"/"+parts[1]+"/"+parts[0];
+    return dataString;
+}
+
+// Converte hora caso venha com "T" (ISO)
+function formatarHora(horaString) {
+    if (!horaString) return "";
+    if (horaString.includes("T")) return horaString.substring(11,16);
+    return horaString;
+}
+
 // Histórico
 async function getHistoryData(){ 
     return await postData({getHistory:true}); 
@@ -204,19 +219,19 @@ async function loadHistory(){
             td.colSpan=9; td.textContent="Nenhum registro encontrado"; td.style.textAlign="center"; td.style.padding="20px";
             tr.appendChild(td); tbody.appendChild(tr);
         } else {
-            data.sort((a,b)=>new Date(b[1])-new Date(a[1]));
+            data.sort((a,b)=>new Date(b[1]) - new Date(a[1]));
             data.forEach(row=>{
                 const tr=document.createElement("tr");
                 const cols=[
-                    row[0]||"",
-                    row[1]||"",
-                    row[2]||"",
-                    row[3]||"",
-                    row[4]||"",
-                    row[5]||"",
-                    row[6]||"",
-                    row[7]||"",
-                    row[8]||""
+                    row[0]||"",                     // ID
+                    formatarDataBr(row[1]||""),    // Data dd/MM/yyyy
+                    row[2]||"",                     // Operador
+                    row[3]||"",                     // Matrícula
+                    row[4]||"",                     // Equipamento
+                    formatarHora(row[5]||""),      // Acionamento HH:mm
+                    row[6]||"",                     // Problema
+                    row[7]||"",                     // Solução
+                    formatarHora(row[8]||"")       // Encerramento HH:mm
                 ];
                 cols.forEach(v=>{
                     const td=document.createElement("td");
