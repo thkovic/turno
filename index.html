@@ -163,7 +163,7 @@ async function fetchWatchdog(){
     }
 }
 
-// Registrar Turno - CORREÇÃO DA DATA
+// Registrar Turno
 document.getElementById("turnoForm").addEventListener("submit", async(e)=>{
     e.preventDefault();
     const btn = document.getElementById("btnSubmit");
@@ -175,7 +175,7 @@ document.getElementById("turnoForm").addEventListener("submit", async(e)=>{
         // CAPTURAR OS VALORES DIRETAMENTE DOS CAMPOS
         const nome = document.getElementById("nome").value.trim();
         const matricula = document.getElementById("matricula").value.trim();
-        const data = document.getElementById("data").value; // ✅ Agora pega o valor do campo
+        const data = document.getElementById("data").value; // ✅ Pega o valor do campo data
         const equipamento = document.getElementById("equipamento").value.trim();
         const acionamento = document.getElementById("acionamento").value;
         const problema = document.getElementById("problema").value.trim();
@@ -185,7 +185,7 @@ document.getElementById("turnoForm").addEventListener("submit", async(e)=>{
         const obj = {
             nome: nome,
             matricula: matricula,
-            data: data, // ✅ Usa a data do campo input
+            data: data, // ✅ Usa a data digitada pelo usuário
             equipamento: equipamento,
             acionamento: acionamento,
             problema: problema,
@@ -193,13 +193,13 @@ document.getElementById("turnoForm").addEventListener("submit", async(e)=>{
             encerramento: encerramento
         };
 
-        console.log("Dados enviados:", obj); // Para debug
+        console.log("Dados enviados:", obj); // Para verificar se a data está correta
 
         // Validação básica
         const validacao = [
             { campo: obj.nome, mensagem: "Nome do operador é obrigatório" },
             { campo: obj.matricula, mensagem: "Matrícula é obrigatória" },
-            { campo: obj.data, mensagem: "Data é obrigatória" },
+            { campo: obj.data, mensagem: "Data é obrigatória" }, // ✅ Valida que a data foi preenchida
             { campo: obj.equipamento, mensagem: "Equipamento é obrigatório" },
             { campo: obj.problema, mensagem: "Problema é obrigatório" },
             { campo: obj.solucao, mensagem: "Solução é obrigatória" }
@@ -217,13 +217,15 @@ document.getElementById("turnoForm").addEventListener("submit", async(e)=>{
         const resp = await postData(obj);
         if(resp.success){
             showAlert("✅ "+resp.message,"success");
-            // Limpar apenas alguns campos após o registro
+            // Limpar campos após o registro
             document.getElementById("equipamento").value = "";
             document.getElementById("problema").value = "";
             document.getElementById("solucao").value = "";
             document.getElementById("acionamento").value = "";
             document.getElementById("encerramento").value = "";
-            // Manter nome, matrícula e data preenchidos
+            // Manter nome e matrícula preenchidos, mas limpar a data também
+            document.getElementById("data").value = "";
+            
             setTimeout(() => loadHistory(), 1000);
         } else {
             showAlert("❌ Erro: "+resp.message,"error");
@@ -424,10 +426,9 @@ function showAlert(msg,type="info"){
     setTimeout(()=>div.remove(),5000); 
 }
 
-// Inicialização - Definir data atual como padrão
+// Inicialização - SEM data padrão
 document.addEventListener('DOMContentLoaded', function() {
-    const hoje = new Date().toISOString().split('T')[0];
-    document.getElementById('data').value = hoje;
+    // ✅ NÃO definir data automática - campo fica vazio
     loadHistory();
     setInterval(fetchWatchdog,5000);
 });
