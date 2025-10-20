@@ -103,7 +103,6 @@ Clique em "Atualizar Histórico" para carregar os registros
 <script>
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwFS6gRrIGYeWFZ9KYjSaOMLfJd_TTsrZcLNGyvdb7R0RZBcXrQUlgLUdAjNr7B58o/exec";
 
-// Sessão simulada
 let loggedIn = false;
 
 // Alerts
@@ -196,6 +195,7 @@ async function loadHistory(){
     const data = await getHistoryData();
     const tbody = document.querySelector("#historyTable tbody");
     tbody.innerHTML="";
+
     if(Array.isArray(data)){
         if(data.length===0){
             const tr=document.createElement("tr");
@@ -207,9 +207,15 @@ async function loadHistory(){
             data.forEach(row=>{
                 const tr=document.createElement("tr");
                 const cols=[
-                    row[0]||"",
-                    row[1]||"", row[2]||"", row[3]||"", row[4]||"",
-                    row[5]||"", row[6]||"", row[7]||"", row[8]||""
+                    row[0]||"",             // ID
+                    row[1]||"",             // Data
+                    row[2]||"",             // Operador
+                    row[3]||"",             // Matrícula
+                    row[4]||"",             // Equipamento
+                    row[5] ? formatHora(row[5]) : "",  // Acionamento
+                    row[6]||"",             // Problema
+                    row[7]||"",             // Solução
+                    row[8] ? formatHora(row[8]) : ""   // Encerramento
                 ];
                 cols.forEach(v=>{
                     const td=document.createElement("td");
@@ -222,10 +228,34 @@ async function loadHistory(){
     } else showAlert("Erro ao carregar histórico","error");
 }
 
+// Formata hora para HH:mm
+function formatHora(h) {
+    if (!h) return "";
+    if (h.match(/^\d{2}:\d{2}$/)) return h;
+    if (h.includes("T")) return h.substring(h.indexOf("T")+1, h.indexOf("T")+6);
+    const num = parseFloat(h);
+    if (!isNaN(num)) {
+        const totalMin = Math.round(num * 24 * 60);
+        const hh = Math.floor(totalMin / 60).toString().padStart(2,"0");
+        const mm = (totalMin % 60).toString().padStart(2,"0");
+        return `${hh}:${mm}`;
+    }
+    return h;
+}
+
+// Botões
+document.getElementById("btnLoadHistory").addEventListener("click",loadHistory);
+
+document.getElementById("btnLimpar").addEventListener("click", async()=>{
+    if(!confirm("Deseja realmente limpar a planilha?")) return;
+    const resp = await postData({acao:"limparPlanilha"});
+    if(resp.success){ showAlert(resp.message,"success"); loadHistory(); }
+    else showAlert("Erro: "+resp.error,"error");
+});
+
 // Inicial
 loadHistory();
 setInterval(fetchWatchdog,5000);
-document.getElementById("btnLoadHistory").addEventListener("click",loadHistory);
 </script>
 </body>
 </html>
