@@ -99,7 +99,7 @@ Clique em "Atualizar Histórico" para carregar os registros
 </div>
 
 <script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwFS6gRrIGYeWFZ9KYjSaOMLfJd_TTsrZcLNGyvdb7R0RZBcXrQUlgLUdAjNr7B58o/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/SEU_SCRIPT_ID/exec";
 let loggedIn = false;
 
 function showAlert(msg, type="info"){
@@ -163,12 +163,12 @@ document.getElementById("turnoForm").addEventListener("submit", async(e)=>{
         const obj = {
             nome: document.getElementById("nome").value.trim(),
             matricula: document.getElementById("matricula").value.trim(),
-            data: document.getElementById("data").value,
+            data: document.getElementById("data").value, // yyyy-MM-dd
             equipamento: document.getElementById("equipamento").value.trim(),
-            acionamento: document.getElementById("acionamento").value,
+            acionamento: document.getElementById("acionamento").value, // HH:mm
             problema: document.getElementById("problema").value.trim(),
             solucao: document.getElementById("solucao").value.trim(),
-            encerramento: document.getElementById("encerramento").value
+            encerramento: document.getElementById("encerramento").value // HH:mm
         };
         const resp = await postData(obj);
         if(resp.success){
@@ -196,12 +196,12 @@ async function loadHistory(){
             td.colSpan=9; td.textContent="Nenhum registro encontrado"; td.style.textAlign="center"; td.style.padding="20px";
             tr.appendChild(td); tbody.appendChild(tr);
         } else {
-            data.sort((a,b)=>new Date(b[1])-new Date(a[1]));
+            data.sort((a,b)=>a[1].localeCompare(b[1])); // compara yyyy-MM-dd
             data.forEach(row=>{
                 const tr=document.createElement("tr");
                 const cols=[
                     row[0]||"",
-                    formatarData(row[1]||""),  // dd/MM/yyyy
+                    row[1]||"",  // yyyy-MM-dd
                     row[2]||"",
                     row[3]||"",
                     row[4]||"",
@@ -219,15 +219,6 @@ async function loadHistory(){
             });
         }
     } else showAlert("Erro ao carregar histórico","error");
-}
-
-// Formatar data dd/MM/yyyy
-function formatarData(dataStr){
-    if(!dataStr) return "";
-    let datePart = dataStr.split("T")[0]; // yyyy-MM-dd
-    const parts = datePart.split("-");
-    if(parts.length !== 3) return dataStr;
-    return parts[2].padStart(2,"0") + "/" + parts[1].padStart(2,"0") + "/" + parts[0];
 }
 
 // Inicial
