@@ -44,6 +44,25 @@ button:disabled { background-color:#ccc; cursor:not-allowed; }
 <div id="watchdog">Watchdog: --</div>
 <div class="container">
 
+    <!-- SEÇÃO DE CADASTRO (para novos usuários) -->
+    <div id="cadastroDiv" class="form-section">
+        <h2>👤 Cadastrar Nova Matrícula</h2>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+            <div>
+                <label>Nome Completo</label>
+                <input type="text" id="cadastroNome" placeholder="Digite seu nome completo"/>
+            </div>
+            <div>
+                <label>Matrícula</label>
+                <input type="text" id="cadastroMatricula" placeholder="Digite sua matrícula"/>
+            </div>
+            <div class="full-width">
+                <button id="btnCadastrar">📝 Cadastrar Nova Matrícula</button>
+            </div>
+        </div>
+        <div id="cadastroResult" style="margin-top:10px;"></div>
+    </div>
+
     <!-- SEÇÃO DE HISTÓRICO (SEMPRE VISÍVEL) -->
     <div class="history-section">
         <h1>📊 Histórico de Passagem de Turno</h1>
@@ -136,6 +155,52 @@ async function postData(obj){
         throw error;
     }
 }
+
+// Cadastrar Nova Matrícula
+document.getElementById("btnCadastrar").addEventListener("click", async() => {
+    const nome = document.getElementById("cadastroNome").value.trim();
+    const matricula = document.getElementById("cadastroMatricula").value.trim();
+    const btn = document.getElementById("btnCadastrar");
+    const resultDiv = document.getElementById("cadastroResult");
+    
+    if (!nome || !matricula) {
+        resultDiv.innerHTML = '<div class="alert alert-error">Preencha nome e matrícula</div>';
+        return;
+    }
+    
+    const originalText = btn.textContent;
+    btn.textContent = "Cadastrando...";
+    btn.disabled = true;
+    
+    try {
+        const resp = await postData({
+            cadastrar: true,
+            nome: nome,
+            matricula: matricula
+        });
+        
+        if (resp.success) {
+            resultDiv.innerHTML = '<div class="alert alert-success">✅ Matrícula cadastrada com sucesso!</div>';
+            document.getElementById("cadastroNome").value = "";
+            document.getElementById("cadastroMatricula").value = "";
+            
+            // Auto-remove a mensagem após 3 segundos
+            setTimeout(() => {
+                resultDiv.innerHTML = "";
+            }, 3000);
+            
+        } else {
+            resultDiv.innerHTML = `<div class="alert alert-error">❌ ${resp.message}</div>`;
+        }
+        
+    } catch(error) {
+        console.error("Erro no cadastro:", error);
+        resultDiv.innerHTML = `<div class="alert alert-error">❌ Erro: ${error.message}</div>`;
+    } finally {
+        btn.textContent = originalText;
+        btn.disabled = false;
+    }
+});
 
 // Watchdog
 async function fetchWatchdog(){
