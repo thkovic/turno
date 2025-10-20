@@ -27,7 +27,6 @@ button:disabled { background-color:#ccc; cursor:not-allowed; }
 .error { background:#f8d7da; color:#721c24; border:1px solid #f5c6cb; }
 .info { background:#d1ecf1; color:#0c5460; border:1px solid #bee5eb; }
 .loading { display:inline-block; width:20px; height:20px; border:3px solid #f3f3f3; border-top:3px solid #2d6a4f; border-radius:50%; animation:spin 1s linear infinite; margin-left:10px; }
-.debug-info { background:#fff3cd; color:#856404; border:1px solid #ffeaa7; padding:10px; margin:10px 0; border-radius:4px; font-size:12px; }
 .hidden { display:none; }
 @keyframes spin { from { transform: rotate(0deg);} to { transform: rotate(360deg); } }
 </style>
@@ -73,7 +72,6 @@ button:disabled { background-color:#ccc; cursor:not-allowed; }
 <div class="history">
 <h2>📊 Histórico de Registros</h2>
 <button id="btnLoadHistory">🔄 Atualizar Histórico</button>
-<button id="btnDebug" style="background: #ff6b6b; margin-left: 10px;">🐛 Debug</button>
 <div id="historyInfo" style="margin:10px 0; font-style:italic;"></div>
 <table id="historyTable">
 <thead>
@@ -101,11 +99,9 @@ Clique em "Atualizar Histórico" para carregar os registros
 </div>
 
 <script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwFS6gRrIGYeWFZ9KYjSaOMLfJd_TTsrZcLNGyvdb7R0RZBcXrQUlgLUdAjNr7B58o/exec";
-
+const SCRIPT_URL = "https://script.google.com/macros/s/SEU_SCRIPT_ID/exec";
 let loggedIn = false;
 
-// Alerts
 function showAlert(msg, type="info"){
     const container = document.getElementById("alertContainer");
     const div = document.createElement("div");
@@ -154,7 +150,7 @@ async function postData(obj){
     return await resp.json();
 }
 
-// Registro de turno
+// Registrar turno
 document.getElementById("turnoForm").addEventListener("submit", async(e)=>{
     e.preventDefault();
     if(!loggedIn){ showAlert("❌ É necessário fazer login para registrar","error"); return; }
@@ -188,28 +184,9 @@ document.getElementById("turnoForm").addEventListener("submit", async(e)=>{
     finally{ btn.textContent=originalText; btn.disabled=false; }
 });
 
-// Converte data yyyy-MM-dd para dd/MM/yyyy
-function formatarDataBr(dataString) {
-    if (!dataString) return "";
-    const parts = dataString.split("-");
-    if (parts.length === 3) return parts[2]+"/"+parts[1]+"/"+parts[0];
-    return dataString;
-}
-
-// Converte hora caso venha com "T" (ISO)
-function formatarHora(horaString) {
-    if (!horaString) return "";
-    if (horaString.includes("T")) return horaString.substring(11,16);
-    return horaString;
-}
-
 // Histórico
-async function getHistoryData(){ 
-    return await postData({getHistory:true}); 
-}
-
 async function loadHistory(){
-    const data = await getHistoryData();
+    const data = await postData({getHistory:true});
     const tbody = document.querySelector("#historyTable tbody");
     tbody.innerHTML="";
     if(Array.isArray(data)){
@@ -219,19 +196,19 @@ async function loadHistory(){
             td.colSpan=9; td.textContent="Nenhum registro encontrado"; td.style.textAlign="center"; td.style.padding="20px";
             tr.appendChild(td); tbody.appendChild(tr);
         } else {
-            data.sort((a,b)=>new Date(b[1]) - new Date(a[1]));
+            data.sort((a,b)=>new Date(b[1])-new Date(a[1]));
             data.forEach(row=>{
                 const tr=document.createElement("tr");
                 const cols=[
-                    row[0]||"",                     // ID
-                    formatarDataBr(row[1]||""),    // Data dd/MM/yyyy
-                    row[2]||"",                     // Operador
-                    row[3]||"",                     // Matrícula
-                    row[4]||"",                     // Equipamento
-                    formatarHora(row[5]||""),      // Acionamento HH:mm
-                    row[6]||"",                     // Problema
-                    row[7]||"",                     // Solução
-                    formatarHora(row[8]||"")       // Encerramento HH:mm
+                    row[0]||"",
+                    formatarData(row[1]||""),  // dd/MM/yyyy
+                    row[2]||"",
+                    row[3]||"",
+                    row[4]||"",
+                    row[5]||"",
+                    row[6]||"",
+                    row[7]||"",
+                    row[8]||""
                 ];
                 cols.forEach(v=>{
                     const td=document.createElement("td");
@@ -244,10 +221,26 @@ async function loadHistory(){
     } else showAlert("Erro ao carregar histórico","error");
 }
 
+function formatarData(dataStr){
+    if(!dataStr) return "";
+    const d = new Date(dataStr);
+    if(isNaN(d.getTime())) return dataStr;
+    return String(d.getDate()).padStart(2,"0") + "/" + String(d.getMonth()+1).padStart(2,"0") + "/" + d.getFullYear();
+}
+
 // Inicial
 loadHistory();
 setInterval(fetchWatchdog,5000);
 document.getElementById("btnLoadHistory").addEventListener("click",loadHistory);
+
+// Limpar planilha
+document.getElementById("btnLimpar").addEventListener("click", async()=>{
+    if(confirm("Deseja realmente limpar a planilha?")) {
+        const resp = await postData({acao:"limparPlanilha"});
+        showAlert(resp.success ? "✅ "+resp.message : "❌ "+resp.error, resp.success ? "success" : "error");
+        setTimeout(()=>loadHistory(),1000);
+    }
+});
 </script>
 </body>
 </html>
