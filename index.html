@@ -144,13 +144,16 @@ const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwFS6gRrIGYeWFZ9KYjS
 // Estado da aplicação
 let currentUser = null;
 
-// Função para fazer requisições POST com debugging
+// Função para fazer requisições POST CORRIGIDA
 async function postData(obj){
     try {
         console.log("📤 Enviando dados:", obj);
         
         const resp = await fetch(SCRIPT_URL, {
             method: "POST",
+            headers: {
+                'Content-Type': 'application/json',
+            },
             body: JSON.stringify(obj)
         });
         
@@ -171,10 +174,6 @@ document.getElementById("btnCadastrar").addEventListener("click", async() => {
     const matricula = document.getElementById("cadastroMatricula").value.trim();
     const btn = document.getElementById("btnCadastrar");
     const resultDiv = document.getElementById("cadastroResult");
-    const debugDiv = document.getElementById("debugInfo");
-    
-    // Limpar debug
-    debugDiv.classList.add("hidden");
     
     if (!nome || !matricula) {
         resultDiv.innerHTML = '<div class="alert alert-error">Preencha nome e matrícula</div>';
@@ -186,32 +185,22 @@ document.getElementById("btnCadastrar").addEventListener("click", async() => {
     btn.disabled = true;
     
     try {
-        // DADOS DE CADASTRO CORRETOS
         const dadosCadastro = {
             cadastrar: true,
             matricula: matricula,
             nome: nome
         };
         
-        console.log("🚀 Iniciando cadastro:", dadosCadastro);
-        
         const resp = await postData(dadosCadastro);
-        
-        // DEBUG: Mostrar resposta completa
-        debugDiv.innerHTML = `
-            <strong>Resposta do servidor:</strong><br>
-            ${JSON.stringify(resp, null, 2)}
-        `;
-        debugDiv.classList.remove("hidden");
         
         if (resp.success) {
             resultDiv.innerHTML = '<div class="alert alert-success">✅ Matrícula cadastrada com sucesso! Fazendo login automaticamente...</div>';
             
-            // LIMPAR CAMPOS DE CADASTRO
+            // Limpar campos
             document.getElementById("cadastroNome").value = "";
             document.getElementById("cadastroMatricula").value = "";
             
-            // FAZER LOGIN AUTOMATICAMENTE APÓS CADASTRO
+            // Login automático
             setTimeout(() => {
                 fazerLoginAutomatico(matricula, nome);
             }, 1000);
@@ -229,15 +218,13 @@ document.getElementById("btnCadastrar").addEventListener("click", async() => {
     }
 });
 
-// FUNÇÃO PARA FAZER LOGIN AUTOMATICAMENTE APÓS CADASTRO
+// Login Automático após Cadastro
 async function fazerLoginAutomatico(matricula, nome) {
     try {
         console.log("🔐 Fazendo login automático para:", matricula);
         
-        // Preencher o campo de login
         document.getElementById("matriculaLogin").value = matricula;
         
-        // Fazer login
         const resp = await postData({
             login: true,
             matricula: matricula
@@ -249,7 +236,6 @@ async function fazerLoginAutomatico(matricula, nome) {
                 matricula: matricula
             };
             
-            // MOSTRAR INTERFACE LOGADA
             document.getElementById("loginDiv").classList.add("hidden");
             document.getElementById("mainDiv").classList.remove("hidden");
             document.getElementById("nome").value = resp.nome || nome;
@@ -267,12 +253,12 @@ async function fazerLoginAutomatico(matricula, nome) {
             showAlert("✅ Cadastro realizado e login automático feito com sucesso!", "success");
             
         } else {
-            showAlert("✅ Cadastro realizado! Faça login manualmente com sua matrícula.", "success");
+            showAlert("✅ Cadastro realizado! Faça login manualmente.", "success");
         }
         
     } catch (error) {
         console.error("Erro no login automático:", error);
-        showAlert("✅ Cadastro realizado! Faça login manualmente com sua matrícula.", "success");
+        showAlert("✅ Cadastro realizado! Faça login manualmente.", "success");
     }
 }
 
@@ -292,16 +278,16 @@ document.getElementById("btnLogin").addEventListener("click", async() => {
     try {
         console.log("🔐 Tentando login com matrícula:", matricula);
         
-        // DADOS CORRETOS PARA LOGIN
+        // DADOS CORRETOS PARA LOGIN - USANDO BOOLEAN TRUE
         const dadosLogin = {
-            login: true,
+            login: true,  // ← BOOLEAN TRUE, não string
             matricula: matricula
         };
         
-        console.log("📤 Enviando dados:", dadosLogin);
+        console.log("📤 Enviando dados de login:", dadosLogin);
         
         const resp = await postData(dadosLogin);
-        console.log("📥 Resposta recebida:", resp);
+        console.log("📥 Resposta do login:", resp);
         
         if(resp.success){
             currentUser = {
@@ -358,7 +344,7 @@ function logout() {
     showAlert("Logout realizado", "success");
 }
 
-// Registrar Turno (APENAS LOGADO)
+// Registrar Turno
 document.getElementById("turnoForm").addEventListener("submit", async(e)=>{
     e.preventDefault();
     
@@ -384,7 +370,6 @@ document.getElementById("turnoForm").addEventListener("submit", async(e)=>{
             encerramento: document.getElementById("encerramento").value
         };
         
-        // Validação básica
         if (!obj.equipamento.trim()) {
             showAlert("Equipamento é obrigatório", "error");
             return;
@@ -401,7 +386,7 @@ document.getElementById("turnoForm").addEventListener("submit", async(e)=>{
             document.getElementById("acionamento").value = "";
             document.getElementById("encerramento").value = "";
             
-            // Atualizar histórico automaticamente após registrar
+            // Atualizar histórico
             setTimeout(() => loadHistory(), 1000);
             
         } else {
@@ -417,7 +402,7 @@ document.getElementById("turnoForm").addEventListener("submit", async(e)=>{
     }
 });
 
-// Carregar Histórico (PÚBLICO - SEM LOGIN)
+// Carregar Histórico
 async function loadHistory() {
     const btn = document.getElementById("btnLoadHistory");
     const originalText = btn.textContent;
@@ -425,7 +410,7 @@ async function loadHistory() {
     btn.disabled = true;
     
     try {
-        const resp = await postData({getHistory:true});
+        const resp = await postData({getHistory: true});
         
         let data = [];
         if (Array.isArray(resp)) {
@@ -459,8 +444,6 @@ async function loadHistory() {
             data.forEach(row => {
                 const tr = document.createElement("tr");
                 
-                // Mapear colunas baseado na estrutura dos seus dados
-                // [Tipo, Nome, Matricula, Data, Equipamento, Acionamento, Problema, Solução, Encerramento, Editado_em, Watchdog]
                 const colunas = [
                     formatarData(row[3]),   // Data
                     row[1] || "",           // Nome
@@ -476,7 +459,6 @@ async function loadHistory() {
                     const td = document.createElement("td");
                     td.textContent = valor;
                     
-                    // Limitar texto muito longo
                     if (valor && valor.length > 50) {
                         td.title = valor;
                         td.textContent = valor.substring(0, 50) + '...';
@@ -518,15 +500,13 @@ function formatarData(dataHora) {
     }
 }
 
-// Função para formatar hora (corrigir datas 1899)
+// Função para formatar hora
 function formatarHora(dataHora) {
     if (!dataHora) return "";
     
     try {
         const date = new Date(dataHora);
-        // Verificar se é uma data válida e não é 1899 (data padrão do Excel)
         if (isNaN(date.getTime()) || date.getFullYear() === 1899) {
-            // Se for hora apenas, retornar como está
             if (typeof dataHora === 'string' && dataHora.includes(':')) {
                 return dataHora.split('T')[1]?.substring(0, 5) || dataHora;
             }
@@ -543,7 +523,6 @@ document.getElementById("btnLoadHistory").addEventListener("click", loadHistory)
 
 // Função para mostrar alertas
 function showAlert(message, type) {
-    // Remove alertas anteriores
     const existingAlerts = document.querySelectorAll('.alert');
     existingAlerts.forEach(alert => alert.remove());
     
@@ -553,7 +532,6 @@ function showAlert(message, type) {
     
     document.querySelector('.container').insertBefore(alert, document.querySelector('.container').firstChild);
     
-    // Auto-remove após 5 segundos
     setTimeout(() => {
         if (alert.parentNode) {
             alert.remove();
@@ -567,14 +545,12 @@ fetchWatchdog();
 
 // Carregar histórico automaticamente ao abrir a página
 window.addEventListener('load', function() {
-    // Preencher data/hora atual
     const now = new Date();
     const localDateTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
                             .toISOString()
                             .slice(0, 16);
     document.getElementById('data').value = localDateTime;
     
-    // Carregar histórico
     setTimeout(() => loadHistory(), 1000);
 });
 </script>
