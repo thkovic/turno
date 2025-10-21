@@ -165,7 +165,7 @@ async function postData(obj){
     }
 }
 
-// Cadastrar Nova Matrícula (VERSÃO CORRIGIDA COM LOGIN AUTOMÁTICO)
+// Cadastrar Nova Matrícula
 document.getElementById("btnCadastrar").addEventListener("click", async() => {
     const nome = document.getElementById("cadastroNome").value.trim();
     const matricula = document.getElementById("cadastroMatricula").value.trim();
@@ -276,19 +276,8 @@ async function fazerLoginAutomatico(matricula, nome) {
     }
 }
 
-// Watchdog
-async function fetchWatchdog(){
-    try{
-        const resp = await fetch(SCRIPT_URL);
-        const data = await resp.json();
-        document.getElementById("watchdog").textContent = "Watchdog: "+ (data.watchdog || data.valor || "--");
-    }catch(e){
-        document.getElementById("watchdog").textContent = "Watchdog: Erro";
-    }
-}
-
-// Login Manual
-document.getElementById("btnLogin").addEventListener("click", async()=>{
+// Login Manual - VERSÃO CORRIGIDA
+document.getElementById("btnLogin").addEventListener("click", async() => {
     const matricula = document.getElementById("matriculaLogin").value.trim();
     if(!matricula){ 
         showAlert("Digite sua matrícula", "error");
@@ -301,7 +290,19 @@ document.getElementById("btnLogin").addEventListener("click", async()=>{
     btn.disabled = true;
     
     try {
-        const resp = await postData({login:true, matricula});
+        console.log("🔐 Tentando login com matrícula:", matricula);
+        
+        // DADOS CORRETOS PARA LOGIN
+        const dadosLogin = {
+            login: true,
+            matricula: matricula
+        };
+        
+        console.log("📤 Enviando dados:", dadosLogin);
+        
+        const resp = await postData(dadosLogin);
+        console.log("📥 Resposta recebida:", resp);
+        
         if(resp.success){
             currentUser = {
                 nome: resp.nome,
@@ -335,6 +336,17 @@ document.getElementById("btnLogin").addEventListener("click", async()=>{
         btn.disabled = false;
     }
 });
+
+// Watchdog
+async function fetchWatchdog(){
+    try{
+        const resp = await fetch(SCRIPT_URL);
+        const data = await resp.json();
+        document.getElementById("watchdog").textContent = "Watchdog: "+ (data.watchdog || data.valor || "--");
+    }catch(e){
+        document.getElementById("watchdog").textContent = "Watchdog: Erro";
+    }
+}
 
 // Logout
 function logout() {
