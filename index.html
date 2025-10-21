@@ -38,6 +38,7 @@ button:disabled { background-color:#ccc; cursor:not-allowed; }
 .alert-success { background:#d4edda; color:#155724; border:1px solid #c3e6cb; }
 .alert-error { background:#f8d7da; color:#721c24; border:1px solid #f5c6cb; }
 .alert-info { background:#d1ecf1; color:#0c5460; border:1px solid #bee5eb; }
+.debug-info { background:#f8f9fa; padding:10px; border-left:4px solid #007bff; margin:10px 0; font-family:monospace; font-size:12px; }
 </style>
 </head>
 <body>
@@ -61,6 +62,7 @@ button:disabled { background-color:#ccc; cursor:not-allowed; }
             </div>
         </div>
         <div id="cadastroResult" style="margin-top:10px;"></div>
+        <div id="debugInfo" class="debug-info hidden"></div>
     </div>
 
     <!-- SEÇÃO DE HISTÓRICO (SEMPRE VISÍVEL) -->
@@ -136,32 +138,43 @@ button:disabled { background-color:#ccc; cursor:not-allowed; }
 </div>
 
 <script>
-// ⚙️ CONFIGURAÇÃO
+// ⚙️ CONFIGURAÇÃO - VERIFIQUE SE ESTÁ CORRETA!
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwFS6gRrIGYeWFZ9KYjSaOMLfJd_TTsrZcLNGyvdb7R0RZBcXrQUlgLUdAjNr7B58o/exec";
 
 // Estado da aplicação
 let currentUser = null;
 
-// Função para fazer requisições POST
+// Função para fazer requisições POST com debugging
 async function postData(obj){
     try {
+        console.log("📤 Enviando dados:", obj);
+        
         const resp = await fetch(SCRIPT_URL, {
             method: "POST",
             body: JSON.stringify(obj)
         });
-        return await resp.json();
+        
+        const data = await resp.json();
+        console.log("📥 Resposta recebida:", data);
+        
+        return data;
+        
     } catch(error) {
-        console.error("Erro na requisição:", error);
+        console.error("❌ Erro na requisição:", error);
         throw error;
     }
 }
 
-// Cadastrar Nova Matrícula
+// Cadastrar Nova Matrícula (VERSÃO CORRIGIDA COM LOGIN AUTOMÁTICO)
 document.getElementById("btnCadastrar").addEventListener("click", async() => {
     const nome = document.getElementById("cadastroNome").value.trim();
     const matricula = document.getElementById("cadastroMatricula").value.trim();
     const btn = document.getElementById("btnCadastrar");
     const resultDiv = document.getElementById("cadastroResult");
+    const debugDiv = document.getElementById("debugInfo");
+    
+    // Limpar debug
+    debugDiv.classList.add("hidden");
     
     if (!nome || !matricula) {
         resultDiv.innerHTML = '<div class="alert alert-error">Preencha nome e matrícula</div>';
@@ -173,34 +186,95 @@ document.getElementById("btnCadastrar").addEventListener("click", async() => {
     btn.disabled = true;
     
     try {
-        const resp = await postData({
+        // DADOS DE CADASTRO CORRETOS
+        const dadosCadastro = {
             cadastrar: true,
-            nome: nome,
-            matricula: matricula
-        });
+            matricula: matricula,
+            nome: nome
+        };
+        
+        console.log("🚀 Iniciando cadastro:", dadosCadastro);
+        
+        const resp = await postData(dadosCadastro);
+        
+        // DEBUG: Mostrar resposta completa
+        debugDiv.innerHTML = `
+            <strong>Resposta do servidor:</strong><br>
+            ${JSON.stringify(resp, null, 2)}
+        `;
+        debugDiv.classList.remove("hidden");
         
         if (resp.success) {
-            resultDiv.innerHTML = '<div class="alert alert-success">✅ Matrícula cadastrada com sucesso!</div>';
+            resultDiv.innerHTML = '<div class="alert alert-success">✅ Matrícula cadastrada com sucesso! Fazendo login automaticamente...</div>';
+            
+            // LIMPAR CAMPOS DE CADASTRO
             document.getElementById("cadastroNome").value = "";
             document.getElementById("cadastroMatricula").value = "";
             
-            // Auto-remove a mensagem após 3 segundos
+            // FAZER LOGIN AUTOMATICAMENTE APÓS CADASTRO
             setTimeout(() => {
-                resultDiv.innerHTML = "";
-            }, 3000);
+                fazerLoginAutomatico(matricula, nome);
+            }, 1000);
             
         } else {
-            resultDiv.innerHTML = `<div class="alert alert-error">❌ ${resp.message}</div>`;
+            resultDiv.innerHTML = `<div class="alert alert-error">❌ ${resp.message || "Erro no cadastro"}</div>`;
         }
         
     } catch(error) {
         console.error("Erro no cadastro:", error);
-        resultDiv.innerHTML = `<div class="alert alert-error">❌ Erro: ${error.message}</div>`;
+        resultDiv.innerHTML = `<div class="alert alert-error">❌ Erro de conexão: ${error.message}</div>`;
     } finally {
         btn.textContent = originalText;
         btn.disabled = false;
     }
 });
+
+// FUNÇÃO PARA FAZER LOGIN AUTOMATICAMENTE APÓS CADASTRO
+async function fazerLoginAutomatico(matricula, nome) {
+    try {
+        console.log("🔐 Fazendo login automático para:", matricula);
+        
+        // Preencher o campo de login
+        document.getElementById("matriculaLogin").value = matricula;
+        
+        // Fazer login
+        const resp = await postData({
+            login: true,
+            matricula: matricula
+        });
+        
+        if (resp.success) {
+            currentUser = {
+                nome: resp.nome || nome,
+                matricula: matricula
+            };
+            
+            // MOSTRAR INTERFACE LOGADA
+            document.getElementById("loginDiv").classList.add("hidden");
+            document.getElementById("mainDiv").classList.remove("hidden");
+            document.getElementById("nome").value = resp.nome || nome;
+            document.getElementById("matricula").value = matricula;
+            document.getElementById("userName").textContent = resp.nome || nome;
+            document.getElementById("userMatricula").textContent = matricula;
+            
+            // Preencher data/hora atual
+            const now = new Date();
+            const localDateTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
+                                    .toISOString()
+                                    .slice(0, 16);
+            document.getElementById("data").value = localDateTime;
+            
+            showAlert("✅ Cadastro realizado e login automático feito com sucesso!", "success");
+            
+        } else {
+            showAlert("✅ Cadastro realizado! Faça login manualmente com sua matrícula.", "success");
+        }
+        
+    } catch (error) {
+        console.error("Erro no login automático:", error);
+        showAlert("✅ Cadastro realizado! Faça login manualmente com sua matrícula.", "success");
+    }
+}
 
 // Watchdog
 async function fetchWatchdog(){
@@ -213,7 +287,7 @@ async function fetchWatchdog(){
     }
 }
 
-// Login
+// Login Manual
 document.getElementById("btnLogin").addEventListener("click", async()=>{
     const matricula = document.getElementById("matriculaLogin").value.trim();
     if(!matricula){ 
@@ -374,11 +448,11 @@ async function loadHistory() {
                 const tr = document.createElement("tr");
                 
                 // Mapear colunas baseado na estrutura dos seus dados
-                // [ID, Data, Nome, Matricula, Equipamento, Acionamento, Problema, Solução, Encerramento, Status, Timestamp]
+                // [Tipo, Nome, Matricula, Data, Equipamento, Acionamento, Problema, Solução, Encerramento, Editado_em, Watchdog]
                 const colunas = [
-                    row[1] || row[3] || "", // Data
-                    row[2] || "",           // Nome
-                    row[3] || row[2] || "", // Matrícula (ajustar conforme necessidade)
+                    formatarData(row[3]),   // Data
+                    row[1] || "",           // Nome
+                    row[2] || "",           // Matrícula
                     row[4] || "",           // Equipamento
                     formatarHora(row[5]),   // Acionamento
                     row[6] || "",           // Problema
@@ -412,6 +486,23 @@ async function loadHistory() {
     } finally {
         btn.textContent = originalText;
         btn.disabled = false;
+    }
+}
+
+// Função para formatar data
+function formatarData(dataHora) {
+    if (!dataHora) return "";
+    
+    try {
+        const date = new Date(dataHora);
+        if (isNaN(date.getTime())) return dataHora;
+        
+        return date.toLocaleDateString('pt-BR') + ' ' + date.toLocaleTimeString('pt-BR', { 
+            hour: '2-digit', 
+            minute: '2-digit' 
+        });
+    } catch {
+        return dataHora;
     }
 }
 
