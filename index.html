@@ -169,6 +169,7 @@ document.getElementById("turnoForm").addEventListener("submit", async(e)=>{
             matricula: document.getElementById("matricula").value.trim(),
             data: document.getElementById("data").value,
             equipamento: document.getElementById("equipamento").value.trim(),
+            // Mantém exatamente HH:mm
             acionamento: document.getElementById("acionamento").value,
             problema: document.getElementById("problema").value.trim(),
             solucao: document.getElementById("solucao").value.trim(),
@@ -212,10 +213,10 @@ async function loadHistory(){
                     row[2]||"",                          // Operador
                     row[3]||"",                          // Matrícula
                     row[4]||"",                          // Equipamento
-                    row[5] ? formatHora(row[5]) : "",    // Acionamento (HH:mm)
+                    row[5]||"",                          // Acionamento (HH:mm)
                     row[6]||"",                          // Problema
                     row[7]||"",                          // Solução
-                    row[8] ? formatHora(row[8]) : ""     // Encerramento (HH:mm)
+                    row[8]||""                           // Encerramento (HH:mm)
                 ];
                 cols.forEach(v=>{
                     const td=document.createElement("td");
@@ -240,16 +241,6 @@ function formatData(d){
         return `${yyyy}-${mm}-${dd}`;
     }
     return d;
-}
-
-// Formata hora HH:mm
-function formatHora(h){
-    if(!h) return "";
-    if(h.includes("T")) return h.substring(11,16);
-    if(h.match(/^\d{2}:\d{2}$/)) return h;
-    const date = new Date(h);
-    if(!isNaN(date.getTime())) return date.getHours().toString().padStart(2,"0")+":"+date.getMinutes().toString().padStart(2,"0");
-    return h;
 }
 
 // Inicial
