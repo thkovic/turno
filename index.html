@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Sistema Passagem de Turno - Login</title>
+<title>Histórico de Chamados - Automação</title>
 <style>
 body { font-family: Arial, sans-serif; margin:0; padding:0; background:#fff; color:#333; }
 .container { max-width:1000px; margin:40px auto; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.1); border-radius:8px; }
@@ -36,7 +36,7 @@ button:disabled { background-color:#ccc; cursor:not-allowed; }
 <div id="watchdog">Watchdog: --</div>
 <div class="container">
 
-<h1>📝 Sistema de Passagem de Turno</h1>
+<h1>📝 Histórico de Chamados - Automação</h1>
 
 <div id="alertContainer"></div>
 
@@ -53,7 +53,7 @@ button:disabled { background-color:#ccc; cursor:not-allowed; }
 <div id="registroDiv" class="hidden">
 <h2>Registrar Passagem de Turno</h2>
 <form id="turnoForm">
-<div><label>Nome do Operador *</label><input type="text" id="nome" required placeholder="Seu nome completo"/></div>
+<div><label>Nome do Executante *</label><input type="text" id="nome" required placeholder="Seu nome completo"/></div>
 <div><label>Matrícula *</label><input type="text" id="matricula" required readonly/></div>
 <div><label>Data *</label><input type="date" id="data" required/></div>
 <div><label>Equipamento *</label><input type="text" id="equipamento" required placeholder="Nome do equipamento"/></div>
@@ -80,7 +80,7 @@ button:disabled { background-color:#ccc; cursor:not-allowed; }
 <tr>
 <th>ID</th>
 <th>Data</th>
-<th>Operador</th>
+<th>Executante</th>
 <th>Matrícula</th>
 <th>Equipamento</th>
 <th>Acionamento</th>
@@ -209,7 +209,7 @@ async function loadHistory(){
                 const cols=[
                     row[0]||"",                          // ID
                     row[1] ? formatData(row[1]) : "",    // Data (yyyy-MM-dd)
-                    row[2]||"",                          // Operador
+                    row[2]||"",                          // Executante
                     row[3]||"",                          // Matrícula
                     row[4]||"",                          // Equipamento
                     row[5] ? formatHora(row[5]) : "",    // Acionamento (HH:mm)
@@ -259,3 +259,4 @@ document.getElementById("btnLoadHistory").addEventListener("click",loadHistory);
 </script>
 </body>
 </html>
+
