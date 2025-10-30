@@ -125,6 +125,9 @@ document.getElementById("loginForm").addEventListener("submit", function(e){
     document.getElementById("loginDiv").classList.add("hidden");
     document.getElementById("matricula").value = matricula;
     document.getElementById("nome").value = "";
+    // Define data atual como padrão
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById("data").value = today;
     showAlert("✅ Login realizado com sucesso","success");
 });
 
@@ -133,6 +136,7 @@ document.getElementById("btnLogout").addEventListener("click", ()=>{
     loggedIn=false;
     document.getElementById("registroDiv").classList.add("hidden");
     document.getElementById("loginDiv").classList.remove("hidden");
+    document.getElementById("loginMatricula").value = "";
     showAlert("🔒 Logout realizado","info");
 });
 
@@ -161,7 +165,8 @@ document.getElementById("turnoForm").addEventListener("submit", async(e)=>{
 
     const btn = document.getElementById("btnSubmit");
     const originalText = btn.textContent;
-    btn.textContent="Registrando..."; btn.disabled=true;
+    btn.textContent="Registrando..."; 
+    btn.disabled=true;
 
     try{
         const obj = {
@@ -169,54 +174,78 @@ document.getElementById("turnoForm").addEventListener("submit", async(e)=>{
             matricula: document.getElementById("matricula").value.trim(),
             data: document.getElementById("data").value,
             equipamento: document.getElementById("equipamento").value.trim(),
-            // Mantém exatamente HH:mm
             acionamento: document.getElementById("acionamento").value,
             problema: document.getElementById("problema").value.trim(),
             solucao: document.getElementById("solucao").value.trim(),
             encerramento: document.getElementById("encerramento").value
         };
+        
+        // Validações
+        if(!obj.nome || !obj.matricula || !obj.data || !obj.equipamento || 
+           !obj.acionamento || !obj.problema || !obj.solucao || !obj.encerramento) {
+            showAlert("❌ Todos os campos são obrigatórios","error");
+            return;
+        }
+
         const resp = await postData(obj);
         if(resp.success){
             showAlert("✅ "+resp.message,"success");
+            // Limpa apenas alguns campos
             document.getElementById("equipamento").value="";
             document.getElementById("problema").value="";
             document.getElementById("solucao").value="";
             document.getElementById("acionamento").value="";
             document.getElementById("encerramento").value="";
             setTimeout(()=>loadHistory(),1000);
-        } else showAlert("❌ Erro: "+resp.message,"error");
-    } catch(error){ showAlert("❌ Erro: "+error.message,"error"); }
-    finally{ btn.textContent=originalText; btn.disabled=false; }
+        } else {
+            showAlert("❌ Erro: "+resp.message,"error");
+        }
+    } catch(error){ 
+        showAlert("❌ Erro: "+error.message,"error"); 
+    }
+    finally{ 
+        btn.textContent=originalText; 
+        btn.disabled=false; 
+    }
 });
 
 // Histórico
-async function getHistoryData(){ return await postData({getHistory:true}); }
+async function getHistoryData(){ 
+    return await postData({getHistory:true}); 
+}
 
 async function loadHistory(){
-    const data = await getHistoryData();
-    const tbody = document.querySelector("#historyTable tbody");
-    tbody.innerHTML="";
+    try {
+        const response = await getHistoryData();
+        const data = Array.isArray(response) ? response : [];
+        const tbody = document.querySelector("#historyTable tbody");
+        tbody.innerHTML="";
 
-    if(Array.isArray(data)){
-        if(data.length===0){
+        if(data.length === 0){
             const tr=document.createElement("tr");
             const td=document.createElement("td");
-            td.colSpan=9; td.textContent="Nenhum registro encontrado"; td.style.textAlign="center"; td.style.padding="20px";
-            tr.appendChild(td); tbody.appendChild(tr);
+            td.colSpan=9; 
+            td.textContent="Nenhum registro encontrado"; 
+            td.style.textAlign="center"; 
+            td.style.padding="20px";
+            tr.appendChild(td); 
+            tbody.appendChild(tr);
         } else {
+            // Ordena por data mais recente primeiro
             data.sort((a,b)=>new Date(b[1])-new Date(a[1]));
+            
             data.forEach(row=>{
                 const tr=document.createElement("tr");
                 const cols=[
                     row[0]||"",                          // ID
-                    row[1] ? formatData(row[1]) : "",    // Data (yyyy-MM-dd)
+                    formatData(row[1]),                  // Data
                     row[2]||"",                          // Operador
                     row[3]||"",                          // Matrícula
                     row[4]||"",                          // Equipamento
-                    row[5]||"",                          // Acionamento (HH:mm)
+                    formatHora(row[5]),                  // Acionamento
                     row[6]||"",                          // Problema
                     row[7]||"",                          // Solução
-                    row[8]||""                           // Encerramento (HH:mm)
+                    formatHora(row[8])                   // Encerramento
                 ];
                 cols.forEach(v=>{
                     const td=document.createElement("td");
@@ -226,27 +255,105 @@ async function loadHistory(){
                 tbody.appendChild(tr);
             });
         }
-    } else showAlert("Erro ao carregar histórico","error");
+        
+        document.getElementById("historyInfo").textContent = `Total de registros: ${data.length}`;
+        
+    } catch (error) {
+        showAlert("❌ Erro ao carregar histórico: " + error.message, "error");
+    }
 }
 
 // Formata data yyyy-MM-dd
 function formatData(d){
     if(!d) return "";
-    if(d.includes("T")) return d.substring(0,10);
-    const date = new Date(d);
-    if(!isNaN(date.getTime())){
-        const yyyy = date.getFullYear();
-        const mm = (date.getMonth()+1).toString().padStart(2,"0");
-        const dd = date.getDate().toString().padStart(2,"0");
-        return `${yyyy}-${mm}-${dd}`;
+    try {
+        // Remove qualquer caractere não numérico exceto -
+        const dataLimpa = d.toString().replace(/[^\d-]/g, '');
+        if(dataLimpa.length >= 10) {
+            return dataLimpa.substring(0,10);
+        }
+        const date = new Date(d);
+        if(!isNaN(date.getTime())){
+            const yyyy = date.getFullYear();
+            const mm = (date.getMonth()+1).toString().padStart(2,"0");
+            const dd = date.getDate().toString().padStart(2,"0");
+            return `${yyyy}-${mm}-${dd}`;
+        }
+        return d.toString().substring(0,10);
+    } catch {
+        return d?.toString() || "";
     }
-    return d;
 }
 
-// Inicial
-loadHistory();
-setInterval(fetchWatchdog,5000);
-document.getElementById("btnLoadHistory").addEventListener("click",loadHistory);
+// Formata hora HH:mm
+function formatHora(h){
+    if(!h) return "";
+    try {
+        const horaStr = h.toString();
+        // Se já estiver no formato HH:mm, retorna como está
+        if(/^\d{1,2}:\d{2}$/.test(horaStr)) {
+            return horaStr;
+        }
+        // Se for um número (timestamp), converte
+        if(!isNaN(h)) {
+            const date = new Date(Number(h));
+            if(!isNaN(date.getTime())){
+                const hh = date.getHours().toString().padStart(2,"0");
+                const mm = date.getMinutes().toString().padStart(2,"0");
+                return `${hh}:${mm}`;
+            }
+        }
+        return horaStr.substring(0,5);
+    } catch {
+        return h?.toString() || "";
+    }
+}
+
+// Limpar Planilha
+document.getElementById("btnLimpar").addEventListener("click", async function(){
+    if(!confirm("⚠️ ATENÇÃO: Isso irá apagar TODOS os registros da planilha. Continuar?")) return;
+    
+    const btn = this;
+    const originalText = btn.textContent;
+    btn.textContent = "Limpando...";
+    btn.disabled = true;
+
+    try {
+        const resp = await postData({ limparPlanilha: true });
+        if(resp.success){
+            showAlert("✅ "+resp.message,"success");
+            setTimeout(()=>loadHistory(),1000);
+        } else {
+            showAlert("❌ Erro: "+resp.message,"error");
+        }
+    } catch(error) {
+        showAlert("❌ Erro: "+error.message,"error");
+    } finally {
+        btn.textContent = originalText;
+    }
+});
+
+// Debug function
+document.getElementById("btnDebug").addEventListener("click", async function(){
+    try {
+        const data = await getHistoryData();
+        console.log("Dados debug:", data);
+        showAlert("🔍 Verifique o console (F12) para dados de debug", "info");
+    } catch(error) {
+        showAlert("❌ Erro debug: "+error.message,"error");
+    }
+});
+
+// Inicialização
+document.addEventListener('DOMContentLoaded', function() {
+    loadHistory();
+    setInterval(fetchWatchdog, 5000);
+    document.getElementById("btnLoadHistory").addEventListener("click", loadHistory);
+    
+    // Define data atual como padrão no login
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById("data").value = today;
+});
 </script>
 </body>
 </html>
