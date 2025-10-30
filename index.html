@@ -214,6 +214,8 @@ async function getHistoryData(){
     return await postData({getHistory:true}); 
 }
 
+// No seu HTML, substitua a função loadHistory por esta versão:
+
 async function loadHistory(){
     try {
         const response = await getHistoryData();
@@ -242,10 +244,10 @@ async function loadHistory(){
                     row[2]||"",                          // Operador
                     row[3]||"",                          // Matrícula
                     row[4]||"",                          // Equipamento
-                    formatHora(row[5]),                  // Acionamento
+                    row[5]||"",                          // Acionamento (já processado pelo servidor)
                     row[6]||"",                          // Problema
                     row[7]||"",                          // Solução
-                    formatHora(row[8])                   // Encerramento
+                    row[8]||""                           // Encerramento (já processado pelo servidor)
                 ];
                 cols.forEach(v=>{
                     const td=document.createElement("td");
@@ -262,6 +264,34 @@ async function loadHistory(){
         showAlert("❌ Erro ao carregar histórico: " + error.message, "error");
     }
 }
+
+// Adicione este botão no HTML (no mesmo local dos outros botões):
+<button type="button" id="btnRecriarPlanilha" style="background:#ffa726; margin-left:10px;">🔄 Recriar Planilha</button>
+
+// E adicione este evento no JavaScript:
+document.getElementById("btnRecriarPlanilha").addEventListener("click", async function(){
+    if(!confirm("⚠️ ATENÇÃO: Isso irá APAGAR TODOS OS DADOS e recriar a planilha do zero. Continuar?")) return;
+    
+    const btn = this;
+    const originalText = btn.textContent;
+    btn.textContent = "Recriando...";
+    btn.disabled = true;
+
+    try {
+        const resp = await postData({ recriarPlanilha: true });
+        if(resp.success){
+            showAlert("✅ "+resp.message,"success");
+            setTimeout(()=>loadHistory(),2000);
+        } else {
+            showAlert("❌ Erro: "+resp.message,"error");
+        }
+    } catch(error) {
+        showAlert("❌ Erro: "+error.message,"error");
+    } finally {
+        btn.textContent = originalText;
+        btn.disabled = false;
+    }
+});
 
 // Formata data yyyy-MM-dd
 function formatData(d){
@@ -357,3 +387,4 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 </body>
 </html>
+
