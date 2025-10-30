@@ -71,34 +71,36 @@ button:disabled { background-color:#ccc; cursor:not-allowed; }
 
 <!-- HISTÓRICO -->
 <div class="history">
-<h2>📊 Histórico de Registros</h2>
-<button id="btnLoadHistory">🔄 Atualizar Histórico</button>
-<button id="btnDebug" style="background: #ff6b6b; margin-left: 10px;">🐛 Debug</button>
-<div id="historyInfo" style="margin:10px 0; font-style:italic;"></div>
-<table id="historyTable">
-<thead>
-<tr>
-<th>ID</th>
-<th>Data</th>
-<th>Executante</th>
-<th>Matrícula</th>
-<th>Equipamento</th>
-<th>Acionamento</th>
-<th>Problema</th>
-<th>Solução</th>
-<th>Encerramento</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td colspan="9" style="text-align:center; padding:20px;">
-Clique em "Atualizar Histórico" para carregar os registros
-</td>
-</tr>
-</tbody>
-</table>
+  <h2>📊 Histórico de Registros</h2>
+  <div style="display:flex; gap:10px; margin-bottom:10px;">
+    <button id="btnLoadHistory">🔄 Atualizar Histórico</button>
+    <input type="text" id="searchInput" placeholder="🔍 Buscar por nome, matrícula, equipamento ou data" style="flex:1; padding:8px; border:1px solid #ccc; border-radius:4px;" />
+  </div>
+  <div id="historyInfo" style="margin:10px 0; font-style:italic;"></div>
+  <table id="historyTable">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Data</th>
+        <th>Executante</th>
+        <th>Matrícula</th>
+        <th>Equipamento</th>
+        <th>Acionamento</th>
+        <th>Problema</th>
+        <th>Solução</th>
+        <th>Encerramento</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td colspan="9" style="text-align:center; padding:20px;">
+          Clique em "Atualizar Histórico" para carregar os registros
+        </td>
+      </tr>
+    </tbody>
+  </table>
 </div>
-</div>
+
 
 <script>
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwFS6gRrIGYeWFZ9KYjSaOMLfJd_TTsrZcLNGyvdb7R0RZBcXrQUlgLUdAjNr7B58o/exec";
@@ -253,10 +255,69 @@ function formatHora(h){
 }
 
 // Inicial
-loadHistory();
-setInterval(fetchWatchdog,5000);
-document.getElementById("btnLoadHistory").addEventListener("click",loadHistory);
+let fullHistoryData = [];
+
+async function loadHistory() {
+  const data = await getHistoryData();
+  fullHistoryData = Array.isArray(data) ? data : [];
+  renderHistory(fullHistoryData);
+}
+
+function renderHistory(dataArray) {
+  const tbody = document.querySelector("#historyTable tbody");
+  tbody.innerHTML = "";
+
+  if (dataArray.length === 0) {
+    const tr = document.createElement("tr");
+    const td = document.createElement("td");
+    td.colSpan = 9;
+    td.textContent = "Nenhum registro encontrado";
+    td.style.textAlign = "center";
+    td.style.padding = "20px";
+    tr.appendChild(td);
+    tbody.appendChild(tr);
+    return;
+  }
+
+  dataArray.sort((a, b) => new Date(b[1]) - new Date(a[1]));
+
+  dataArray.forEach(row => {
+    const tr = document.createElement("tr");
+    const cols = [
+      row[0] || "",
+      row[1] ? formatData(row[1]) : "",
+      row[2] || "",
+      row[3] || "",
+      row[4] || "",
+      row[5] ? formatHora(row[5]) : "",
+      row[6] || "",
+      row[7] || "",
+      row[8] ? formatHora(row[8]) : ""
+    ];
+    cols.forEach(v => {
+      const td = document.createElement("td");
+      td.textContent = v;
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  });
+}
+
+// Filtro de busca
+document.getElementById("searchInput").addEventListener("input", function () {
+  const term = this.value.toLowerCase();
+  const filtered = fullHistoryData.filter(row => {
+    return row.some((val, idx) => {
+      if (idx === 1) val = formatData(val); // Data
+      if (idx === 5 || idx === 8) val = formatHora(val); // Horas
+      return val && val.toString().toLowerCase().includes(term);
+    });
+  });
+  renderHistory(filtered);
+});
+
 </script>
 </body>
 </html>
+
 
