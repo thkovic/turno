@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Escala 3x3">
+<link rel="apple-touch-icon" href="icon.png">
+  <meta charset="UTF-8">
+  <title>Escala 3x3 Automática</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 10px; }
+    h1 { font-size: 1.4em; text-align: center; }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 10px;
+      justify-content: center;
+    }
+    .controls label { font-size: 0.9em; }
+    .controls input, .controls select, .controls button {
+      padding: 6px;
+      font-size: 0.9em;
+    }
+
+    table { border-collapse: collapse; width: 100%; margin-top: 10px; font-size: 0.85em; }
+    th, td { border: 1px solid #ccc; padding: 6px; text-align: center; }
+    th { background-color: #f5f5f5; }
+
+    #resultado { margin-top: 10px; font-weight: bold; text-align: center; }
+
+    /* Cores da escala */
+    .work { background: #fff9e6; }   /* leve amarelo para trabalho */
+    .off  { background: #eaffea; }   /* leve verde para folga */
+    .highlight { background: #ffff99 !important; } /* amarelo forte para folga em dia Sim */
+    .past { color: #888; text-decoration: line-through; } /* cinza e riscado para dias passados */
+    .today { background: #99ccff !important; font-weight: bold; } /* azul para o dia atual */
+
+    /* Responsividade */
+    @media (max-width: 600px) {
+      table, thead, tbody, th, td, tr {
+        display: block;
+      }
+      thead tr {
+        display: none; /* esconde cabeçalho em telas pequenas */
+      }
+      tr {
+        margin-bottom: 10px;
+        border: 1px solid #ccc;
+        padding: 6px;
+        border-radius: 6px;
+      }
+      td {
+        border: none;
+        text-align: left;
+        padding: 4px;
+      }
+      td::before {
+        font-weight: bold;
+        display: inline-block;
+        width: 120px;
+      }
+      td:nth-child(1)::before { content: "Data: "; }
+      td:nth-child(2)::before { content: "Dia da semana: "; }
+      td:nth-child(3)::before { content: "Status: "; }
+      td:nth-child(4)::before { content: "Sim/Não: "; }
+    }
+  </style>
+</head>
+<body>
+  <h1>Escala de Trabalho/Folga 3x3</h1>
+
+  <div class="controls">
+    <label for="ano"><strong>Ano:</strong></label>
+    <select id="ano" onchange="atualizarTabela()">
+      <option value="2025">2025</option>
+      <option value="2026" selected>2026</option>
+      <option value="2027">2027</option>
+      <option value="2028">2028</option>
+    </select>
+
+    <label for="pesquisa"><strong>Pesquisar:</strong></label>
+    <input type="text" id="pesquisa" placeholder="dd/mm/aaaa">
+    <button onclick="pesquisar()">Buscar</button>
+  </div>
+
+  <div id="resultado"></div>
+
+  <table id="agenda">
+    <thead>
+      <tr>
+        <th>Data</th>
+        <th>Dia da semana</th>
+        <th>Trabalho/Folga</th>
+        <th>Sim/Não</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    const BASE_INICIO = new Date(2025, 10, 22); // 22/11/2025
+
+    function formatarData(d) {
+      const dia = String(d.getDate()).padStart(2, '0');
+      const mes = String(d.getMonth() + 1).padStart(2, '0');
+      const ano = d.getFullYear();
+      return `${dia}/${mes}/${ano}`;
+    }
+
+    function diaSemanaLabel(idx) {
+      const nomes = ["Domingo","Segunda-feira","Terça-feira","Quarta-feira","Quinta-feira","Sexta-feira","Sábado"];
+      return nomes[idx];
+    }
+
+    function statusPorRotacao(data) {
+      const msPorDia = 24 * 60 * 60 * 1000;
+      const diffDias = Math.floor((data - BASE_INICIO) / msPorDia);
+      const mod6 = ((diffDias % 6) + 6) % 6;
+      return mod6 <= 2 ? "Trabalho" : "Folga";
+    }
+
+    function simOuNao(data) {
+      const dw = data.getDay();
+      return (dw === 0 || dw === 6) ? "Sim" : "Não";
+    }
+
+    function gerarTabela(ano) {
+      const tbody = document.querySelector("#agenda tbody");
+      tbody.innerHTML = "";
+
+      for (let mes = 0; mes < 12; mes++) {
+        const ultimoDia = new Date(ano, mes + 1, 0).getDate();
+        for (let dia = 1; dia <= ultimoDia; dia++) {
+          const data = new Date(ano, mes, dia);
+          const labelSemana = diaSemanaLabel(data.getDay());
+          const dataFmt = formatarData(data);
+
+          const status = statusPorRotacao(data);
+          const simnao = simOuNao(data);
+
+          let classe = status === "Trabalho" ? "work" : "off";
+          if (status === "Folga" && simnao === "Sim") {
+            classe = "highlight";
+          }
+
+          const linha = document.createElement("tr");
+          linha.className = classe;
+          linha.innerHTML = `
+            <td>${dataFmt}</td>
+            <td>${labelSemana}</td>
+            <td>${status}</td>
+            <td>${simnao}</td>
+          `;
+          tbody.appendChild(linha);
+        }
+      }
+    }
+
+    function marcarDiasPassados() {
+      const hoje = new Date();
+      hoje.setHours(0,0,0,0);
+      const linhas = document.querySelectorAll("#agenda tbody tr");
+      let linhaHoje = null;
+
+      linhas.forEach(linha => {
+        const dataTexto = linha.cells[0].textContent;
+        const [dia, mes, ano] = dataTexto.split("/");
+        const dataLinha = new Date(ano, mes - 1, dia);
+        dataLinha.setHours(0,0,0,0);
+
+        if (dataLinha < hoje) {
+          linha.classList.add("past");
+        } else if (dataLinha.getTime() === hoje.getTime()) {
+          linha.classList.add("today");
+          linha.cells[2].textContent += " (Dia atual)";
+          linhaHoje = linha;
+        }
+      });
+
+      if (linhaHoje) {
+        linhaHoje.scrollIntoView({behavior: "smooth", block: "center"});
+      }
+    }
+
+    function atualizarTabela() {
+      const anoSelecionado = parseInt(document.getElementById("ano").value, 10);
+      gerarTabela(anoSelecionado);
+      marcarDiasPassados();
+      document.getElementById("resultado").textContent = "";
+    }
+
+    function pesquisar() {
+      const input = document.getElementById("pesquisa").value.trim();
+      const linhas = document.querySelectorAll("#agenda tbody tr");
+      let encontrado = false;
+
+      for (const linha of linhas) {
+        const data = linha.cells[0].textContent;
+        if (data === input) {
+          const dia = linha.cells[1].textContent;
+          const status = linha.cells[2].textContent;
+          const simnao = linha.cells[3].textContent;
+          document.getElementById("resultado").textContent =
+            `📅 ${data} (${dia}) → ${status}, Sim/Não: ${simnao}`;
+          encontrado = true;
+          break;
+        }
+      }
+
+      if (!encontrado) {
+        document.getElementById("resultado").textContent = "Data não encontrada na tabela do ano atual.";
+      }
+    }
+
+    atualizarTabela();
+  </script>
+</body>
+</html>
+<script>
+  function inicializarAno() {
+    const hoje = new Date();
+    const anoAtual = hoje.getFullYear();
+    const seletor = document.getElementById("ano");
+
+    // Se já passou de 2025, remove 2025 do seletor
+    if (anoAtual > 2025) {
+      for (let i = 0; i < seletor.options.length; i++) {
+        if (seletor.options[i].value === "2025") {
+          seletor.remove(i);
+          break;
+        }
+      }
+      seletor.value = anoAtual; // abre direto no ano atual (ex: 2026)
+    } else {
+      seletor.value = 2025; // força abrir em 2025
+    }
+
+    atualizarTabela();
+  }
+
+  // Chame essa função em vez de atualizarTabela direto
+  inicializarAno();
+</script>
+<script>
+  const BASE_INICIO = new Date(2025, 10, 22); // 22/11/2025
+
+  // ... todas as funções (formatarData, gerarTabela, marcarDiasPassados, etc.)
+
+  function inicializarAno() {
+    const hoje = new Date();
+    const anoAtual = hoje.getFullYear();
+    const seletor = document.getElementById("ano");
+
+    if (anoAtual > 2025) {
+      for (let i = 0; i < seletor.options.length; i++) {
+        if (seletor.options[i].value === "2025") {
+          seletor.remove(i);
+          break;
+        }
+      }
+      seletor.value = anoAtual; 
+    } else {
+      seletor.value = "2025"; 
+    }
+
+    atualizarTabela();
+  }
+
+  // Executa só depois que o HTML estiver pronto
+  document.addEventListener("DOMContentLoaded", inicializarAno);
+</script>
