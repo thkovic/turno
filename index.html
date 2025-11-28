@@ -1,392 +1,169 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Sistema Passagem de Turno - Login</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistema Passagem de Turno</title>
+
 <style>
-body { font-family: Arial, sans-serif; margin:0; padding:0; background:#fff; color:#333; }
-.container { max-width:1000px; margin:40px auto; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.1); border-radius:8px; }
-h1 { color:#2d6a4f; text-align:center; margin-bottom:20px; }
-form { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px; }
-form label { display:block; font-weight:bold; margin-bottom:4px; }
-form input, form textarea { width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box; }
-form textarea { resize: vertical; min-height:60px; }
-.full-width { grid-column:1/-1; }
-button { background-color:#95d5b2; color:#fff; border:none; padding:12px 20px; font-size:16px; cursor:pointer; border-radius:4px; transition:0.3s; }
-button:hover { background-color:#74c69d; }
-button:disabled { background-color:#ccc; cursor:not-allowed; }
-.history { margin-top:40px; }
-.history table { width:100%; border-collapse:collapse; font-size:14px; }
-.history th, .history td { border:1px solid #ddd; padding:8px; text-align:left; }
-.history th { background-color:#e9f5ef; color:#2d6a4f; }
-.history tr:nth-child(even){ background:#f9f9f9; }
-#watchdog { position:absolute; top:10px; right:10px; padding:5px 10px; background:#95d5b2; color:#fff; border-radius:4px; font-weight:bold; }
-.alert { padding:10px; margin:10px 0; border-radius:4px; }
-.success { background:#d4edda; color:#155724; border:1px solid #c3e6cb; }
-.error { background:#f8d7da; color:#721c24; border:1px solid #f5c6cb; }
-.info { background:#d1ecf1; color:#0c5460; border:1px solid #bee5eb; }
-.loading { display:inline-block; width:20px; height:20px; border:3px solid #f3f3f3; border-top:3px solid #2d6a4f; border-radius:50%; animation:spin 1s linear infinite; margin-left:10px; }
-.debug-info { background:#fff3cd; color:#856404; border:1px solid #ffeaa7; padding:10px; margin:10px 0; border-radius:4px; font-size:12px; }
-.hidden { display:none; }
-@keyframes spin { from { transform: rotate(0deg);} to { transform: rotate(360deg); } }
+    body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f4f4f4; }
+    .container { max-width: 900px; margin: auto; background: white; padding: 20px; border-radius: 8px; }
+    button { cursor: pointer; background: #4caf50; border: none; padding: 10px; color: white; border-radius: 6px; }
 </style>
 </head>
+
 <body>
-<div id="watchdog">Watchdog: --</div>
 <div class="container">
 
-<h1>📝 Sistema de Passagem de Turno</h1>
+<h2>Sistema de Passagem de Turno</h2>
 
-<div id="alertContainer"></div>
-
-<!-- LOGIN -->
-<div id="loginDiv">
-<h2>🔐 Login</h2>
-<form id="loginForm" class="full-width">
-<div class="full-width"><label>Matrícula</label><input type="text" id="loginMatricula" placeholder="Digite sua matrícula" required/></div>
-<div class="full-width"><button type="submit">Login</button></div>
-</form>
-</div>
-
-<!-- FORMULÁRIO DE REGISTRO -->
-<div id="registroDiv" class="hidden">
-<h2>Registrar Passagem de Turno</h2>
 <form id="turnoForm">
-<div><label>Nome do Operador *</label><input type="text" id="nome" required placeholder="Seu nome completo"/></div>
-<div><label>Matrícula *</label><input type="text" id="matricula" required readonly/></div>
-<div><label>Data *</label><input type="date" id="data" required/></div>
-<div><label>Equipamento *</label><input type="text" id="equipamento" required placeholder="Nome do equipamento"/></div>
-<div><label>Acionamento (Hora) *</label><input type="time" id="acionamento" required/></div>
-<div class="full-width"><label>Problema Identificado *</label><textarea id="problema" required placeholder="Descreva o problema"></textarea></div>
-<div class="full-width"><label>Solução Aplicada *</label><textarea id="solucao" required placeholder="Descreva a solução"></textarea></div>
-<div><label>Encerramento (Hora) *</label><input type="time" id="encerramento" required/></div>
-<div class="full-width">
-<button type="submit" id="btnSubmit">✅ Registrar Passagem de Turno</button>
-<button type="button" id="btnLogout" style="background:#ff6b6b; margin-left:10px;">🚪 Logout</button>
-<button type="button" id="btnLimpar" style="background:#ff6b6b; margin-left:10px;">🗑️ Limpar Planilha</button>
-</div>
-</form>
-</div>
 
-<!-- HISTÓRICO -->
-<div class="history">
-<h2>📊 Histórico de Registros</h2>
-<button id="btnLoadHistory">🔄 Atualizar Histórico</button>
-<button id="btnDebug" style="background: #ff6b6b; margin-left: 10px;">🐛 Debug</button>
-<div id="historyInfo" style="margin:10px 0; font-style:italic;"></div>
-<table id="historyTable">
-<thead>
-<tr>
-<th>ID</th>
-<th>Data</th>
-<th>Operador</th>
-<th>Matrícula</th>
-<th>Equipamento</th>
-<th>Acionamento</th>
-<th>Problema</th>
-<th>Solução</th>
-<th>Encerramento</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td colspan="9" style="text-align:center; padding:20px;">
-Clique em "Atualizar Histórico" para carregar os registros
-</td>
-</tr>
-</tbody>
-</table>
-</div>
+    <label>ID</label>
+    <input type="text" id="id" readonly><br><br>
+
+    <label>Data da Ocorrência</label>
+    <input type="text" id="dataOcorrencia"><br><br>
+
+    <label>Operador</label>
+    <input type="text" id="operador"><br><br>
+
+    <label>Matrícula</label>
+    <input type="text" id="matricula"><br><br>
+
+    <label>Equipamento</label>
+    <input type="text" id="equipamento"><br><br>
+
+    <label>Acionamento</label>
+    <input type="text" id="acionamento"><br><br>
+
+    <label>Problema</label>
+    <textarea id="problema"></textarea><br><br>
+
+    <label>Solução</label>
+    <textarea id="solucao"></textarea><br><br>
+
+    <label>Encerramento</label>
+    <input type="text" id="encerramento"><br><br>
+
+    <!-- BOTÕES -->
+    <button type="submit" id="btnSubmit">✅ Registrar Passagem de Turno</button>
+    <button type="button" id="btnLogout" style="background:#ff5959;">🚪 Logout</button>
+    <button type="button" id="btnLimpar" style="background:#ff9800;">🗑️ Limpar Planilha</button>
+    <button type="button" id="btnRecriarPlanilha" style="background:#ffa726;">🔄 Recriar Planilha</button>
+
+</form>
+
+<br><hr><br>
+
+<h3>Histórico</h3>
+<div id="history"></div>
+
 </div>
 
 <script>
+/* ========================
+      CONFIGURAÇÕES
+======================== */
+
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzeJq9-6myS9yGKlZA7e2fLDAcMSgXEN_uK70g-DeA2xqaITIdNwDRKZ9040luMPGpf/exec";
 
-let loggedIn = false;
+/* ========================
+      FUNÇÃO POST
+======================== */
 
-// Alerts
-function showAlert(msg, type="info"){
-    const container = document.getElementById("alertContainer");
-    const div = document.createElement("div");
-    div.className = `alert ${type}`;
-    div.textContent = msg;
-    container.appendChild(div);
-    setTimeout(()=>div.remove(),5000);
-}
-
-// Login
-document.getElementById("loginForm").addEventListener("submit", function(e){
-    e.preventDefault();
-    const matricula = document.getElementById("loginMatricula").value.trim();
-    if(!matricula){ showAlert("Informe sua matrícula","error"); return; }
-    loggedIn = true;
-    document.getElementById("registroDiv").classList.remove("hidden");
-    document.getElementById("loginDiv").classList.add("hidden");
-    document.getElementById("matricula").value = matricula;
-    document.getElementById("nome").value = "";
-    // Define data atual como padrão
-    const today = new Date().toISOString().split('T')[0];
-    document.getElementById("data").value = today;
-    showAlert("✅ Login realizado com sucesso","success");
-});
-
-// Logout
-document.getElementById("btnLogout").addEventListener("click", ()=>{
-    loggedIn=false;
-    document.getElementById("registroDiv").classList.add("hidden");
-    document.getElementById("loginDiv").classList.remove("hidden");
-    document.getElementById("loginMatricula").value = "";
-    showAlert("🔒 Logout realizado","info");
-});
-
-// Fetch Watchdog
-async function fetchWatchdog(){
-    try{
-        const resp = await fetch(SCRIPT_URL);
-        const data = await resp.json();
-        document.getElementById("watchdog").textContent = "Watchdog: "+ (data.watchdog || data.valor || "--");
-    }catch(e){ document.getElementById("watchdog").textContent="Watchdog: Erro"; }
-}
-
-// Post data
-async function postData(obj){
-    const resp = await fetch(SCRIPT_URL,{
-        method:"POST",
-        body:JSON.stringify(obj)
+async function postData(dados) {
+    const response = await fetch(SCRIPT_URL, {
+        method: "POST",
+        mode: "cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(dados)
     });
-    return await resp.json();
+
+    const text = await response.text();
+
+    try {
+        return JSON.parse(text);
+    } catch(e) {
+        console.error("Resposta retornou HTML:", text);
+        throw new Error("O servidor retornou conteúdo inválido (HTML).");
+    }
 }
 
-// Registro de turno
-document.getElementById("turnoForm").addEventListener("submit", async(e)=>{
+/* ========================
+      EVENTOS DO SISTEMA
+======================== */
+
+// Registrar passagem de turno
+document.getElementById("turnoForm").addEventListener("submit", async function(e){
     e.preventDefault();
-    if(!loggedIn){ showAlert("❌ É necessário fazer login para registrar","error"); return; }
 
-    const btn = document.getElementById("btnSubmit");
-    const originalText = btn.textContent;
-    btn.textContent="Registrando..."; 
-    btn.disabled=true;
+    const dados = {
+        id: document.getElementById("id").value,
+        dataOcorrencia: document.getElementById("dataOcorrencia").value,
+        operador: document.getElementById("operador").value,
+        matricula: document.getElementById("matricula").value,
+        equipamento: document.getElementById("equipamento").value,
+        acionamento: document.getElementById("acionamento").value,
+        problema: document.getElementById("problema").value,
+        solucao: document.getElementById("solucao").value,
+        encerramento: document.getElementById("encerramento").value
+    };
 
-    try{
-        const obj = {
-            nome: document.getElementById("nome").value.trim(),
-            matricula: document.getElementById("matricula").value.trim(),
-            data: document.getElementById("data").value,
-            equipamento: document.getElementById("equipamento").value.trim(),
-            acionamento: document.getElementById("acionamento").value,
-            problema: document.getElementById("problema").value.trim(),
-            solucao: document.getElementById("solucao").value.trim(),
-            encerramento: document.getElementById("encerramento").value
-        };
-        
-        // Validações
-        if(!obj.nome || !obj.matricula || !obj.data || !obj.equipamento || 
-           !obj.acionamento || !obj.problema || !obj.solucao || !obj.encerramento) {
-            showAlert("❌ Todos os campos são obrigatórios","error");
-            return;
-        }
+    const resp = await postData(dados);
 
-        const resp = await postData(obj);
-        if(resp.success){
-            showAlert("✅ "+resp.message,"success");
-            // Limpa apenas alguns campos
-            document.getElementById("equipamento").value="";
-            document.getElementById("problema").value="";
-            document.getElementById("solucao").value="";
-            document.getElementById("acionamento").value="";
-            document.getElementById("encerramento").value="";
-            setTimeout(()=>loadHistory(),1000);
-        } else {
-            showAlert("❌ Erro: "+resp.message,"error");
-        }
-    } catch(error){ 
-        showAlert("❌ Erro: "+error.message,"error"); 
-    }
-    finally{ 
-        btn.textContent=originalText; 
-        btn.disabled=false; 
-    }
+    alert("Registrado com sucesso!");
 });
 
-// Histórico
-async function getHistoryData(){ 
-    return await postData({getHistory:true}); 
+// LIMPAR PLANILHA
+document.getElementById("btnLimpar").addEventListener("click", async () => {
+    if (!confirm("Deseja realmente apagar TODOS os registros?")) return;
+
+    const resp = await postData({ limpar: true });
+
+    alert(resp.message);
+});
+
+// RECRIAR PLANILHA
+document.getElementById("btnRecriarPlanilha").addEventListener("click", async () => {
+    if (!confirm("⚠️ Isso vai APAGAR TUDO e recriar a planilha!")) return;
+
+    const resp = await postData({ recriarPlanilha: true });
+
+    alert(resp.message);
+});
+
+// LOGOUT
+document.getElementById("btnLogout").addEventListener("click", () => {
+    alert("Logout efetuado.");
+});
+
+/* ========================
+      CARREGAR HISTÓRICO
+======================== */
+
+async function loadHistory() {
+    const resp = await postData({ history: true });
+
+    let html = "<table border='1' width='100%'><tr>";
+
+    resp.data.forEach(col => html += `<th>${col}</th>`);
+    html += "</tr>";
+
+    resp.rows.forEach(row => {
+        html += "<tr>";
+        row.forEach(c => html += `<td>${c}</td>`);
+        html += "</tr>";
+    });
+
+    html += "</table>";
+
+    document.getElementById("history").innerHTML = html;
 }
 
-// No seu HTML, substitua a função loadHistory por esta versão:
+loadHistory();
 
-async function loadHistory(){
-    try {
-        const response = await getHistoryData();
-        const data = Array.isArray(response) ? response : [];
-        const tbody = document.querySelector("#historyTable tbody");
-        tbody.innerHTML="";
-
-        if(data.length === 0){
-            const tr=document.createElement("tr");
-            const td=document.createElement("td");
-            td.colSpan=9; 
-            td.textContent="Nenhum registro encontrado"; 
-            td.style.textAlign="center"; 
-            td.style.padding="20px";
-            tr.appendChild(td); 
-            tbody.appendChild(tr);
-        } else {
-            // Ordena por data mais recente primeiro
-            data.sort((a,b)=>new Date(b[1])-new Date(a[1]));
-            
-            data.forEach(row=>{
-                const tr=document.createElement("tr");
-                const cols=[
-                    row[0]||"",                          // ID
-                    formatData(row[1]),                  // Data
-                    row[2]||"",                          // Operador
-                    row[3]||"",                          // Matrícula
-                    row[4]||"",                          // Equipamento
-                    row[5]||"",                          // Acionamento (já processado pelo servidor)
-                    row[6]||"",                          // Problema
-                    row[7]||"",                          // Solução
-                    row[8]||""                           // Encerramento (já processado pelo servidor)
-                ];
-                cols.forEach(v=>{
-                    const td=document.createElement("td");
-                    td.textContent=v;
-                    tr.appendChild(td);
-                });
-                tbody.appendChild(tr);
-            });
-        }
-        
-        document.getElementById("historyInfo").textContent = `Total de registros: ${data.length}`;
-        
-    } catch (error) {
-        showAlert("❌ Erro ao carregar histórico: " + error.message, "error");
-    }
-}
-
-// Adicione este botão no HTML (no mesmo local dos outros botões):
-<button type="button" id="btnRecriarPlanilha" style="background:#ffa726; margin-left:10px;">🔄 Recriar Planilha</button>
-
-// E adicione este evento no JavaScript:
-document.getElementById("btnRecriarPlanilha").addEventListener("click", async function(){
-    if(!confirm("⚠️ ATENÇÃO: Isso irá APAGAR TODOS OS DADOS e recriar a planilha do zero. Continuar?")) return;
-    
-    const btn = this;
-    const originalText = btn.textContent;
-    btn.textContent = "Recriando...";
-    btn.disabled = true;
-
-    try {
-        const resp = await postData({ recriarPlanilha: true });
-        if(resp.success){
-            showAlert("✅ "+resp.message,"success");
-            setTimeout(()=>loadHistory(),2000);
-        } else {
-            showAlert("❌ Erro: "+resp.message,"error");
-        }
-    } catch(error) {
-        showAlert("❌ Erro: "+error.message,"error");
-    } finally {
-        btn.textContent = originalText;
-        btn.disabled = false;
-    }
-});
-
-// Formata data yyyy-MM-dd
-function formatData(d){
-    if(!d) return "";
-    try {
-        // Remove qualquer caractere não numérico exceto -
-        const dataLimpa = d.toString().replace(/[^\d-]/g, '');
-        if(dataLimpa.length >= 10) {
-            return dataLimpa.substring(0,10);
-        }
-        const date = new Date(d);
-        if(!isNaN(date.getTime())){
-            const yyyy = date.getFullYear();
-            const mm = (date.getMonth()+1).toString().padStart(2,"0");
-            const dd = date.getDate().toString().padStart(2,"0");
-            return `${yyyy}-${mm}-${dd}`;
-        }
-        return d.toString().substring(0,10);
-    } catch {
-        return d?.toString() || "";
-    }
-}
-
-// Formata hora HH:mm
-function formatHora(h){
-    if(!h) return "";
-    try {
-        const horaStr = h.toString();
-        // Se já estiver no formato HH:mm, retorna como está
-        if(/^\d{1,2}:\d{2}$/.test(horaStr)) {
-            return horaStr;
-        }
-        // Se for um número (timestamp), converte
-        if(!isNaN(h)) {
-            const date = new Date(Number(h));
-            if(!isNaN(date.getTime())){
-                const hh = date.getHours().toString().padStart(2,"0");
-                const mm = date.getMinutes().toString().padStart(2,"0");
-                return `${hh}:${mm}`;
-            }
-        }
-        return horaStr.substring(0,5);
-    } catch {
-        return h?.toString() || "";
-    }
-}
-
-// Limpar Planilha
-document.getElementById("btnLimpar").addEventListener("click", async function(){
-    if(!confirm("⚠️ ATENÇÃO: Isso irá apagar TODOS os registros da planilha. Continuar?")) return;
-    
-    const btn = this;
-    const originalText = btn.textContent;
-    btn.textContent = "Limpando...";
-    btn.disabled = true;
-
-    try {
-        const resp = await postData({ limparPlanilha: true });
-        if(resp.success){
-            showAlert("✅ "+resp.message,"success");
-            setTimeout(()=>loadHistory(),1000);
-        } else {
-            showAlert("❌ Erro: "+resp.message,"error");
-        }
-    } catch(error) {
-        showAlert("❌ Erro: "+error.message,"error");
-    } finally {
-        btn.textContent = originalText;
-    }
-});
-
-// Debug function
-document.getElementById("btnDebug").addEventListener("click", async function(){
-    try {
-        const data = await getHistoryData();
-        console.log("Dados debug:", data);
-        showAlert("🔍 Verifique o console (F12) para dados de debug", "info");
-    } catch(error) {
-        showAlert("❌ Erro debug: "+error.message,"error");
-    }
-});
-
-// Inicialização
-document.addEventListener('DOMContentLoaded', function() {
-    loadHistory();
-    setInterval(fetchWatchdog, 5000);
-    document.getElementById("btnLoadHistory").addEventListener("click", loadHistory);
-    
-    // Define data atual como padrão no login
-    const today = new Date().toISOString().split('T')[0];
-    document.getElementById("data").value = today;
-});
 </script>
+
 </body>
 </html>
-
-
-
