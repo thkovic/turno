@@ -208,3 +208,4 @@ btnPDF.onclick = async ()=>{
 
 /* INICIALIZA */
 loadHistory();
+console.log("script.js carregado corretamente");
