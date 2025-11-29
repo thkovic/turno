@@ -73,7 +73,7 @@ button:hover{opacity:.95}
     </form>
   </div>
 
-  <!-- BOTÃO DE LOG -->
+  <!-- BOTÃO DE LOG (aparece só para matrícula 991631240) -->
   <div id="logDiv" style="display:none; margin-top:15px;">
     <button id="btnLog" style="background:#1d3557;">📜 Sistema de Log</button>
   </div>
@@ -112,27 +112,27 @@ button:hover{opacity:.95}
 </div>
 
 <script>
-/* =============================
-      CONFIGURAÇÃO DO BACKEND
-   ============================= */
-const API = "https://script.google.com/macros/s/AKfycbyjN_7typwQ8yFu-4CW6uRV9U4U6z1386BcGz3YAl_-di_KXedC2FFg3NEAIDjuL4ir/exec";   
-// Exemplo Apps Script Web API:
-// const API = "https://script.google.com/macros/s/AKfycbxxxxx/exec";
+/* === SUBSTITUA AQUI PELA URL DO SEU DEPLOY (Web App) === */
+const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbyjN_7typwQ8yFu-4CW6uRV9U4U6z1386BcGz3YAl_-di_KXedC2FFg3NEAIDjuL4ir/exec";
 
-
-/* ========== FUNÇÃO FETCH PADRÃO ========== */
-async function api(endpoint, data = {}) {
-  const r = await fetch(API + endpoint, {
-    method: "POST",
-    headers: {"Content-Type":"application/json"},
-    body: JSON.stringify(data)
-  });
-  return r.json();
+/* Helper para chamar a API (doPost JSON) */
+async function apiPost(action, payload = {}) {
+  try {
+    const body = JSON.stringify(Object.assign({ action }, payload));
+    const res = await fetch(WEBAPP_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body
+    });
+    const json = await res.json();
+    return json;
+  } catch (err) {
+    console.error("API error:", err);
+    throw err;
+  }
 }
 
-/* =============================
-      VARIÁVEIS DO DOM
-   ============================= */
+/* DOM */
 const loginForm = document.getElementById("loginForm");
 const loginDiv = document.getElementById("loginDiv");
 const registroDiv = document.getElementById("registroDiv");
@@ -151,47 +151,67 @@ let fullHistory = [];
 let registroSelecionado = null;
 
 /* LOGIN */
-loginForm.onsubmit = async e =>{
+loginForm.onsubmit = async e => {
   e.preventDefault();
   const mat = document.getElementById("loginMatricula").value;
-
-  loginDiv.style.display="none";
-  registroDiv.style.display="block";
+  loginDiv.style.display = "none";
+  registroDiv.style.display = "block";
   matricula.value = mat;
+  await loadHistory(mat);
 
-  loadHistory(mat);
+  // Mostra botão de Log se matrícula for a específica
+  if (mat === "991631240") {
+    logDiv.style.display = "block";
+    // tenta registrar log (backend atual pode não ter rota específica)
+    apiPost("registrarLog", { matricula: mat, acao: "Login" }).catch(()=>{});
+  } else {
+    logDiv.style.display = "none";
+    apiPost("registrarLog", { matricula: mat, acao: "Login" }).catch(()=>{});
+  }
 };
 
 /* LOGOUT */
-btnLogout.onclick = ()=>{
+async function logout(){
+  try {
+    await apiPost("registrarLog", { matricula: matricula.value, acao: "Logout" }).catch(()=>{});
+  } catch(e){}
   registroDiv.style.display = "none";
   loginDiv.style.display = "block";
   turnoForm.reset();
   matricula.value = "";
   loadHistory();
-};
+  logDiv.style.display = "none";
+}
+document.getElementById("btnLogout").onclick = logout;
 
 /* CARREGAR HISTÓRICO */
-async function loadHistory(mat=null){
-  const d = await api("/getHistorico",{matricula:mat});
-  fullHistory = d || [];
-  renderHistory(fullHistory);
+async function loadHistory(matriculaFiltro = null){
+  try {
+    const res = await apiPost("historico", { matricula: matriculaFiltro });
+    // seu doPost retorna o array diretamente para "historico"
+    fullHistory = Array.isArray(res) ? res : (res.data || res.result || []);
+    renderHistory(fullHistory);
+  } catch (e) {
+    console.error(e);
+    fullHistory = [];
+    renderHistory(fullHistory);
+  }
 }
 
 function renderHistory(data){
   const t = document.querySelector("#historyTable tbody");
   const m = document.getElementById("mobileHistory");
   t.innerHTML=""; m.innerHTML="";
-
-  if(!data.length){
-      t.innerHTML='<tr><td colspan="9">Sem registros</td></tr>';
-      m.innerHTML='<p style="text-align:center;color:#888;">Sem registros</p>';
-      return;
+  if(!data || !data.length){
+    t.innerHTML='<tr><td colspan="9">Sem registros</td></tr>';
+    m.innerHTML='<p style="text-align:center;color:#888;">Sem registros</p>';
+    return;
   }
 
-  const searchTerm = searchInput.value.toLowerCase();
-  data.filter(r=>r.some(c=>c.toString().toLowerCase().includes(searchTerm)))
+  const searchTerm = (searchInput.value || "").toLowerCase();
+  data.filter(r => r && r.some && r.some(c => String(c).toLowerCase().includes(searchTerm)))
     .forEach(r=>{
+      // Desktop
       let tr = document.createElement("tr");
       tr.onclick = ()=>abrirModal(r);
       r.slice(0,9).forEach(col=>{
@@ -201,6 +221,7 @@ function renderHistory(data){
       });
       t.appendChild(tr);
 
+      // Mobile
       let card = document.createElement("div");
       card.className = "history-card";
       card.onclick = ()=>abrirModal(r);
@@ -230,9 +251,7 @@ function abrirModal(r){
     <div class="tech-field"><strong>Solução:</strong><br>${r[7]}</div>
     <div class="tech-field"><strong>Encerramento:</strong> ${r[8]}</div>
   `;
-
   modalButtons.innerHTML = `<button onclick="fecharModal()" style="background:#2d6a4f;">Fechar</button>`;
-
   if (matricula.value && matricula.value === r[3]) {
     modalButtons.innerHTML += `
       <button onclick="editarRegistro()" style="background:#4dabf7;">Editar</button>
@@ -244,7 +263,8 @@ function abrirModal(r){
 function fecharModal(){ modalDetalhes.style.display="none"; }
 
 /* EDITAR */
-async function editarRegistro(){
+function editarRegistro(){
+  if(!registroSelecionado) return;
   nome.value = registroSelecionado[2];
   matricula.value = registroSelecionado[3];
   data.value = registroSelecionado[1].split("/").reverse().join("-");
@@ -253,13 +273,13 @@ async function editarRegistro(){
   problema.value = registroSelecionado[6];
   solucao.value = registroSelecionado[7];
   encerramento.value = registroSelecionado[8];
+
   fecharModal();
+  alert("Edite os campos no formulário e clique em Registrar para salvar as alterações.");
 
   turnoForm.onsubmit = async e=>{
     e.preventDefault();
-
     const p = {
-      id:registroSelecionado[0],
       nome:nome.value,
       matricula:matricula.value,
       data:data.value,
@@ -270,27 +290,43 @@ async function editarRegistro(){
       encerramento:encerramento.value
     };
 
-    await api("/editarRegistro", p);
-    alert("Registro atualizado!");
-    turnoForm.reset();
-    loadHistory(matricula.value);
+    try {
+      const res = await apiPost("editar", { id: registroSelecionado[0], data: p });
+      if(res && res.success){
+        alert("Registro atualizado!");
+        turnoForm.reset();
+        await loadHistory(matricula.value || null);
+        apiPost("registrarLog", { matricula: matricula.value, acao: "Editar Registro", detalhes: "ID: "+registroSelecionado[0] }).catch(()=>{});
+        logout();
+      } else alert("Erro: " + (res && res.message ? res.message : JSON.stringify(res)));
+    } catch (err) {
+      alert("Erro ao editar: " + err);
+    }
   };
 }
 
 /* DELETAR */
 async function deletarRegistro(){
+  if(!registroSelecionado) return;
   if(!confirm("Tem certeza que deseja deletar este registro?")) return;
 
-  await api("/deletarRegistro",{id:registroSelecionado[0]});
-  alert("Registro deletado!");
-  fecharModal();
-  loadHistory(matricula.value);
+  try {
+    const res = await apiPost("delete", { id: registroSelecionado[0] });
+    if(res && res.success){
+      alert("Registro deletado!");
+      fecharModal();
+      await loadHistory(matricula.value || null);
+      apiPost("registrarLog", { matricula: matricula.value, acao: "Deletar Registro", detalhes: "ID: "+registroSelecionado[0] }).catch(()=>{});
+      logout();
+    } else alert("Erro: " + (res && res.message ? res.message : JSON.stringify(res)));
+  } catch(e){
+    alert("Erro ao deletar: " + e);
+  }
 }
 
-/* NOVO REGISTRO */
+/* REGISTRO NOVO */
 turnoForm.onsubmit = async e=>{
   e.preventDefault();
-
   const p = {
     nome:nome.value,
     matricula:matricula.value,
@@ -301,21 +337,66 @@ turnoForm.onsubmit = async e=>{
     solucao:solucao.value,
     encerramento:encerramento.value
   };
-
-  await api("/registrarTurno", p);
-  alert("Registro salvo!");
-  turnoForm.reset();
-  loadHistory(matricula.value);
+  try {
+    const r = await apiPost("registrar", { data: p });
+    if(r && r.success){
+      alert("Registro salvo!");
+      turnoForm.reset();
+      await loadHistory(matricula.value || null);
+      apiPost("registrarLog", { matricula: matricula.value, acao: "Novo Registro", detalhes: "ID: "+(r.id||"") }).catch(()=>{});
+      logout();
+    } else alert("Erro: "+(r && r.message ? r.message : JSON.stringify(r)));
+  } catch (err) {
+    alert("Erro ao registrar: " + err);
+  }
 };
 
 /* WATCHDOG */
 async function atualizarWatchdog(){
-  try{
-    const r = await api("/getWatchdog");
-    watchdogEl.innerText = "Watchdog: " + r.watchdog;
-  } catch{
+  try {
+    const r = await apiPost("watchdog");
+    watchdogEl.innerText = "Watchdog: " + (r && r.watchdog ? r.watchdog : (r && r.status ? r.status : "OFFLINE"));
+  } catch (e) {
     watchdogEl.innerText = "Watchdog: OFFLINE";
   }
 }
 setInterval(atualizarWatchdog,3000);
-atualizarW
+atualizarWatchdog();
+
+/* GERAR PDF */
+btnPDF.onclick = async ()=>{
+  try {
+    const res = await apiPost("pdf");
+    if(res && res.url){
+      window.open(res.url, "_blank");
+    } else {
+      alert("Erro ao gerar PDF");
+    }
+  } catch(e){
+    alert("Erro ao gerar PDF: " + e);
+  }
+};
+
+/* BOTÃO DE LOG */
+btnLog.onclick = async ()=>{
+  try {
+    // seu backend atual não tem getLog mapeado; tentamos chamar action "getLog"
+    const res = await apiPost("getLog");
+    if(!res || !res.length){
+      alert("Nenhum log registrado ou rota getLog não implementada.");
+      return;
+    }
+    let texto = "📜 LOG DO SISTEMA:\n\n";
+    res.forEach(l=>{
+      texto += `${l[0]} | Matrícula: ${l[1]} | ${l[2]} | ${l[3]}\n`;
+    });
+    alert(texto);
+  } catch(e){
+    alert("Erro ao buscar logs (rota getLog pode não estar implementada).");
+  }
+};
+
+loadHistory();
+</script>
+</body>
+</html>
