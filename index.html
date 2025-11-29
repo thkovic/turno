@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Sistema de Histórico</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="watchdog">Watchdog: --</div>
+
+  <div class="container">
+    <h1>📝 Sistema de Histórico</h1>
+
+    <!-- LOGIN -->
+    <div id="loginDiv">
+      <h3>🔐 Login</h3>
+      <form id="loginForm" class="full-width">
+        <label>Matrícula</label>
+        <input id="loginMatricula" required>
+        <button type="submit">Entrar</button>
+      </form>
+    </div>
+
+    <!-- REGISTRO -->
+    <div id="registroDiv" style="display:none;">
+      <h3>Registrar Passagem</h3>
+      <form id="turnoForm">
+        <input id="nome" placeholder="Nome" required>
+        <input id="matricula" readonly required>
+        <input type="date" id="data" required>
+        <input id="equipamento" placeholder="Equipamento" required>
+        <input type="time" id="acionamento" required>
+        <textarea id="problema" placeholder="Problema" required></textarea>
+        <textarea id="solucao" placeholder="Solução" required></textarea>
+        <input type="time" id="encerramento" required>
+        <button id="btnSubmit">Registrar</button>
+        <button type="button" id="btnLogout">Logout</button>
+      </form>
+    </div>
+
+    <!-- BUSCA + PDF -->
+    <div class="search-bar">
+      <input type="text" id="searchInput" placeholder="Buscar histórico">
+      <button id="btnPDF">📄 Gerar PDF</button>
+    </div>
+
+    <!-- HISTÓRICO -->
+    <div class="history">
+      <h3>📊 Histórico de Registros</h3>
+      <table id="historyTable">
+        <thead>
+          <tr>
+            <th>ID</th><th>Data</th><th>Executante</th><th>Matrícula</th>
+            <th>Equipamento</th><th>Acionamento</th><th>Problema</th>
+            <th>Solução</th><th>Encerramento</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <div id="mobileHistory"></div>
+    </div>
+  </div>
+
+  <!-- MODAL -->
+  <div class="modal" id="modalDetalhes">
+    <div class="modal-content">
+      <h2>Ficha Técnica</h2>
+      <div id="modalFields"></div>
+      <div id="modalButtons"></div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
