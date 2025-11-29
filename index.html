@@ -1,181 +1,402 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sistema Passagem de Turno</title>
-
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Sistema de Histórico</title>
 <style>
-body { font-family: Arial, sans-serif; margin:0; padding:20px; background:#f5f5f5; }
-.container { max-width:1000px; margin:auto; background:#fff; padding:20px; border-radius:10px; }
-h2 { margin-top:0; }
-label { display:block; margin-top:10px; font-weight:bold; }
-input, select, textarea {
-  width:100%; padding:10px; border:1px solid #ccc; border-radius:6px; margin-top:5px;
+body{font-family:Arial;margin:0;padding:0;background:#fff;color:#333}
+.container{max-width:1000px;margin:40px auto;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.1);border-radius:8px}
+h1{text-align:center;color:#2d6a4f;margin-bottom:20px}
+form{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+label{font-weight:600}
+input,textarea{width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;box-sizing:border-box}
+textarea{min-height:70px;resize:vertical}
+.full-width{grid-column:1/-1}
+button{background:#95d5b2;color:#fff;border:none;padding:10px 14px;border-radius:6px;cursor:pointer}
+button:hover{opacity:.95}
+#watchdog{position:fixed;top:10px;right:10px;background:#95d5b2;color:#fff;padding:6px 10px;border-radius:6px;font-weight:bold}
+.history table{width:100%;border-collapse:collapse;font-size:13px}
+.history th,.history td{border:1px solid #ddd;padding:8px;text-align:left;max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.history th{background:#e9f5ef;color:#2d6a4f}
+#mobileHistory{display:none}
+.history-card{background:#f7f7f7;padding:14px;margin:12px 0;border-radius:10px;box-shadow:0 2px 4px rgba(0,0,0,.15)}
+.modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);justify-content:center;align-items:center;z-index:1000}
+.modal-content{background:#fff;padding:20px;border-radius:10px;max-width:600px;width:90%;max-height:90%;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.2)}
+.tech-field{margin-bottom:12px}
+.search-bar{display:flex;gap:10px;margin-bottom:15px}
+.search-bar input{flex:1}
+.pdf-btn{background:#2d6a4f;margin-left:10px}
+@media(max-width:1200px){
+  .container{width:95%;margin:10px auto;padding:12px;box-shadow:none}
+  form{grid-template-columns:1fr}
+  button{width:100%;padding:14px;font-size:16px}
+  #historyTable{display:none}
+  #mobileHistory{display:block}
+  .search-bar{flex-direction:column}
+  .pdf-btn{margin-left:0;width:100%}
 }
-button {
-  padding:12px 20px; border:none; background:#007bff; color:#fff; cursor:pointer; border-radius:6px;
-}
-button:hover { background:#0056b3; }
-table { width:100%; margin-top:20px; border-collapse:collapse; }
-th, td { padding:10px; border:1px solid #ddd; text-align:left; }
-th { background:#eee; }
-.watchdog {
-  padding:10px; border-radius:6px; margin-bottom:20px; font-weight:bold;
-}
-.online { background:#d4ffd4; color:#006600; }
-.offline { background:#ffd4d4; color:#660000; }
 </style>
-
 </head>
 <body>
 
+<div id="watchdog">Watchdog: --</div>
+
 <div class="container">
+  <h1>📝 Sistema de Histórico</h1>
 
-<h2>Sistema Passagem de Turno</h2>
+  <!-- LOGIN -->
+  <div id="loginDiv">
+    <h3>🔐 Login</h3>
+    <form id="loginForm" class="full-width">
+      <div class="full-width"><label>Matrícula</label><input id="loginMatricula" required></div>
+      <div class="full-width"><button>Entrar</button></div>
+    </form>
+  </div>
 
-<div id="watchdogBox" class="watchdog offline">
-  Watchdog: <span id="watchdogStatus">OFFLINE</span><br>
-  <small id="watchdogTimestamp"></small>
+  <!-- REGISTRO -->
+  <div id="registroDiv" style="display:none;">
+    <h3>Registrar Passagem</h3>
+    <form id="turnoForm">
+      <div><label>Nome *</label><input id="nome" required></div>
+      <div><label>Matrícula *</label><input id="matricula" readonly required></div>
+      <div><label>Data *</label><input type="date" id="data" required></div>
+      <div><label>Equipamento *</label><input id="equipamento" required></div>
+      <div><label>Acionamento *</label><input type="time" id="acionamento" required></div>
+      <div class="full-width"><label>Problema *</label><textarea id="problema" required></textarea></div>
+      <div class="full-width"><label>Solução *</label><textarea id="solucao" required></textarea></div>
+      <div><label>Encerramento *</label><input type="time" id="encerramento" required></div>
+      <div class="full-width">
+        <button id="btnSubmit">Registrar</button>
+        <button type="button" id="btnLogout" style="background:#ff6b6b;margin-top:8px;">Logout</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- BOTÃO DE LOG (aparece só para matrícula 991631240) -->
+  <div id="logDiv" style="display:none; margin-top:15px;">
+    <button id="btnLog" style="background:#1d3557;">📜 Sistema de Log</button>
+  </div>
+
+  <!-- BUSCA + PDF -->
+  <div class="search-bar">
+    <input type="text" id="searchInput" placeholder="Buscar histórico (ID, nome, equipamento)">
+    <button class="pdf-btn" id="btnPDF">📄 Gerar PDF</button>
+  </div>
+
+  <!-- HISTÓRICO -->
+  <div class="history">
+    <h3>📊 Histórico de Registros</h3>
+    <table id="historyTable">
+      <thead>
+        <tr>
+          <th>ID</th><th>Data</th><th>Executante</th><th>Matrícula</th><th>Equipamento</th>
+          <th>Acionamento</th><th>Problema</th><th>Solução</th><th>Encerramento</th>
+        </tr>
+      </thead>
+      <tbody><tr><td colspan="9">Carregando...</td></tr></tbody>
+    </table>
+    <div id="mobileHistory"></div>
+  </div>
 </div>
 
-<!-- FORMULÁRIO -->
-<label>Nome do Executante:</label>
-<input id="nome">
-
-<label>Matrícula:</label>
-<input id="matricula">
-
-<label>Equipamento:</label>
-<input id="equipamento">
-
-<label>Data:</label>
-<input type="date" id="data">
-
-<label>Acionamento:</label>
-<input type="time" id="acionamento">
-
-<label>Problema:</label>
-<textarea id="problema"></textarea>
-
-<label>Solução:</label>
-<textarea id="solucao"></textarea>
-
-<label>Encerramento:</label>
-<input type="time" id="encerramento">
-
-<button onclick="registrarTurno()">Registrar</button>
-
-<!-- Histórico -->
-<h3>Histórico</h3>
-<table id="tabela">
-<thead>
-<tr>
-  <th>ID</th>
-  <th>Data</th>
-  <th>Executante</th>
-  <th>Matrícula</th>
-  <th>Equipamento</th>
-  <th>Acionamento</th>
-  <th>Problema</th>
-  <th>Solução</th>
-  <th>Encerramento</th>
-</tr>
-</thead>
-<tbody></tbody>
-</table>
-
+<!-- MODAL -->
+<div class="modal" id="modalDetalhes">
+  <div class="modal-content">
+    <h2>Ficha Técnica</h2>
+    <div id="modalFields"></div>
+    <div id="modalButtons" style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
+      <button onclick="fecharModal()" style="background:#2d6a4f;">Fechar</button>
+    </div>
+  </div>
 </div>
 
 <script>
-const API_URL =
-"https://script.google.com/macros/s/AKfycbyjN_7typwQ8yFu-4CW6uRV9U4U6z1386BcGz3YAl_-di_KXedC2FFg3NEAIDjuL4ir/exec";
+/* === SUBSTITUA AQUI PELA URL DO SEU DEPLOY (Web App) === */
+const WEBAPP_URL = "COLE_AQUI_A_URL_DO_SEU_WEBAPP";
 
-// ------------------------
-// WATCHDOG
-// ------------------------
-async function checkWatchdog() {
-    try {
-        const res = await fetch(API_URL, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ action: "watchdog" })
-        });
-
-        const data = await res.json();
-
-        if (data.status === "ok") {
-            document.getElementById("watchdogBox").classList.remove("offline");
-            document.getElementById("watchdogBox").classList.add("online");
-
-            document.getElementById("watchdogStatus").innerText = "ONLINE";
-            document.getElementById("watchdogTimestamp").innerText = data.timestamp;
-            return;
-        }
-    } catch (e) {}
-
-    document.getElementById("watchdogBox").classList.remove("online");
-    document.getElementById("watchdogBox").classList.add("offline");
-    document.getElementById("watchdogStatus").innerText = "OFFLINE";
+/* Helper para chamar a API (doPost JSON) */
+async function apiPost(action, payload = {}) {
+  try {
+    const body = JSON.stringify(Object.assign({ action }, payload));
+    const res = await fetch(WEBAPP_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body
+    });
+    const json = await res.json();
+    return json;
+  } catch (err) {
+    console.error("API error:", err);
+    throw err;
+  }
 }
 
-setInterval(checkWatchdog, 5000);
-checkWatchdog();
+/* DOM */
+const loginForm = document.getElementById("loginForm");
+const loginDiv = document.getElementById("loginDiv");
+const registroDiv = document.getElementById("registroDiv");
+const matricula = document.getElementById("matricula");
+const turnoForm = document.getElementById("turnoForm");
+const searchInput = document.getElementById("searchInput");
+const btnPDF = document.getElementById("btnPDF");
+const modalDetalhes = document.getElementById("modalDetalhes");
+const modalFields = document.getElementById("modalFields");
+const modalButtons = document.getElementById("modalButtons");
+const watchdogEl = document.getElementById("watchdog");
+const logDiv = document.getElementById("logDiv");
+const btnLog = document.getElementById("btnLog");
 
-// ------------------------
-// REGISTRAR
-// ------------------------
-async function registrarTurno() {
-    const payload = {
-        nome: document.getElementById("nome").value,
-        matricula: document.getElementById("matricula").value,
-        equipamento: document.getElementById("equipamento").value,
-        data: document.getElementById("data").value,
-        acionamento: document.getElementById("acionamento").value,
-        problema: document.getElementById("problema").value,
-        solucao: document.getElementById("solucao").value,
-        encerramento: document.getElementById("encerramento").value
+let fullHistory = [];
+let registroSelecionado = null;
+
+/* LOGIN */
+loginForm.onsubmit = async e => {
+  e.preventDefault();
+  const mat = document.getElementById("loginMatricula").value;
+  loginDiv.style.display = "none";
+  registroDiv.style.display = "block";
+  matricula.value = mat;
+  await loadHistory(mat);
+
+  // Mostra botão de Log se matrícula for a específica
+  if (mat === "991631240") {
+    logDiv.style.display = "block";
+    // tenta registrar log (backend atual pode não ter rota específica)
+    apiPost("registrarLog", { matricula: mat, acao: "Login" }).catch(()=>{});
+  } else {
+    logDiv.style.display = "none";
+    apiPost("registrarLog", { matricula: mat, acao: "Login" }).catch(()=>{});
+  }
+};
+
+/* LOGOUT */
+async function logout(){
+  try {
+    await apiPost("registrarLog", { matricula: matricula.value, acao: "Logout" }).catch(()=>{});
+  } catch(e){}
+  registroDiv.style.display = "none";
+  loginDiv.style.display = "block";
+  turnoForm.reset();
+  matricula.value = "";
+  loadHistory();
+  logDiv.style.display = "none";
+}
+document.getElementById("btnLogout").onclick = logout;
+
+/* CARREGAR HISTÓRICO */
+async function loadHistory(matriculaFiltro = null){
+  try {
+    const res = await apiPost("historico", { matricula: matriculaFiltro });
+    // seu doPost retorna o array diretamente para "historico"
+    fullHistory = Array.isArray(res) ? res : (res.data || res.result || []);
+    renderHistory(fullHistory);
+  } catch (e) {
+    console.error(e);
+    fullHistory = [];
+    renderHistory(fullHistory);
+  }
+}
+
+function renderHistory(data){
+  const t = document.querySelector("#historyTable tbody");
+  const m = document.getElementById("mobileHistory");
+  t.innerHTML=""; m.innerHTML="";
+  if(!data || !data.length){
+    t.innerHTML='<tr><td colspan="9">Sem registros</td></tr>';
+    m.innerHTML='<p style="text-align:center;color:#888;">Sem registros</p>';
+    return;
+  }
+
+  const searchTerm = (searchInput.value || "").toLowerCase();
+  data.filter(r => r && r.some && r.some(c => String(c).toLowerCase().includes(searchTerm)))
+    .forEach(r=>{
+      // Desktop
+      let tr = document.createElement("tr");
+      tr.onclick = ()=>abrirModal(r);
+      r.slice(0,9).forEach(col=>{
+        let td = document.createElement("td");
+        td.textContent = col;
+        tr.appendChild(td);
+      });
+      t.appendChild(tr);
+
+      // Mobile
+      let card = document.createElement("div");
+      card.className = "history-card";
+      card.onclick = ()=>abrirModal(r);
+      card.innerHTML = `
+        <p><strong>ID:</strong> ${r[0]}</p>
+        <p><strong>Data:</strong> ${r[1]}</p>
+        <p><strong>Executante:</strong> ${r[2]}</p>
+        <p><strong>Equipamento:</strong> ${r[4]}</p>
+      `;
+      m.appendChild(card);
+    });
+}
+
+searchInput.oninput = ()=>renderHistory(fullHistory);
+
+/* MODAL */
+function abrirModal(r){
+  registroSelecionado = r;
+  modalFields.innerHTML = `
+    <div class="tech-field"><strong>ID:</strong> ${r[0]}</div>
+    <div class="tech-field"><strong>Data:</strong> ${r[1]}</div>
+    <div class="tech-field"><strong>Executante:</strong> ${r[2]}</div>
+    <div class="tech-field"><strong>Matrícula:</strong> ${r[3]}</div>
+    <div class="tech-field"><strong>Equipamento:</strong> ${r[4]}</div>
+    <div class="tech-field"><strong>Acionamento:</strong> ${r[5]}</div>
+    <div class="tech-field"><strong>Problema:</strong><br>${r[6]}</div>
+    <div class="tech-field"><strong>Solução:</strong><br>${r[7]}</div>
+    <div class="tech-field"><strong>Encerramento:</strong> ${r[8]}</div>
+  `;
+  modalButtons.innerHTML = `<button onclick="fecharModal()" style="background:#2d6a4f;">Fechar</button>`;
+  if (matricula.value && matricula.value === r[3]) {
+    modalButtons.innerHTML += `
+      <button onclick="editarRegistro()" style="background:#4dabf7;">Editar</button>
+      <button onclick="deletarRegistro()" style="background:#ff6b6b;">Deletar</button>
+    `;
+  }
+  modalDetalhes.style.display = "flex";
+}
+function fecharModal(){ modalDetalhes.style.display="none"; }
+
+/* EDITAR */
+function editarRegistro(){
+  if(!registroSelecionado) return;
+  nome.value = registroSelecionado[2];
+  matricula.value = registroSelecionado[3];
+  data.value = registroSelecionado[1].split("/").reverse().join("-");
+  equipamento.value = registroSelecionado[4];
+  acionamento.value = registroSelecionado[5];
+  problema.value = registroSelecionado[6];
+  solucao.value = registroSelecionado[7];
+  encerramento.value = registroSelecionado[8];
+
+  fecharModal();
+  alert("Edite os campos no formulário e clique em Registrar para salvar as alterações.");
+
+  turnoForm.onsubmit = async e=>{
+    e.preventDefault();
+    const p = {
+      nome:nome.value,
+      matricula:matricula.value,
+      data:data.value,
+      equipamento:equipamento.value,
+      acionamento:acionamento.value,
+      problema:problema.value,
+      solucao:solucao.value,
+      encerramento:encerramento.value
     };
 
-    const res = await fetch(API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "registrar", data: payload })
-    });
-
-    const dataRes = await res.json();
-    alert("Registro salvo! ID: " + dataRes.id);
-
-    carregarHistorico();
+    try {
+      const res = await apiPost("editar", { id: registroSelecionado[0], data: p });
+      if(res && res.success){
+        alert("Registro atualizado!");
+        turnoForm.reset();
+        await loadHistory(matricula.value || null);
+        apiPost("registrarLog", { matricula: matricula.value, acao: "Editar Registro", detalhes: "ID: "+registroSelecionado[0] }).catch(()=>{});
+        logout();
+      } else alert("Erro: " + (res && res.message ? res.message : JSON.stringify(res)));
+    } catch (err) {
+      alert("Erro ao editar: " + err);
+    }
+  };
 }
 
-// ------------------------
-// HISTÓRICO
-// ------------------------
-async function carregarHistorico() {
-    const res = await fetch(API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "historico" })
-    });
+/* DELETAR */
+async function deletarRegistro(){
+  if(!registroSelecionado) return;
+  if(!confirm("Tem certeza que deseja deletar este registro?")) return;
 
-    const lista = await res.json();
-    const tbody = document.querySelector("#tabela tbody");
-    tbody.innerHTML = "";
-
-    lista.forEach(l => {
-        const tr = document.createElement("tr");
-        l.forEach(v => {
-            const td = document.createElement("td");
-            td.textContent = v;
-            tr.appendChild(td);
-        });
-        tbody.appendChild(tr);
-    });
+  try {
+    const res = await apiPost("delete", { id: registroSelecionado[0] });
+    if(res && res.success){
+      alert("Registro deletado!");
+      fecharModal();
+      await loadHistory(matricula.value || null);
+      apiPost("registrarLog", { matricula: matricula.value, acao: "Deletar Registro", detalhes: "ID: "+registroSelecionado[0] }).catch(()=>{});
+      logout();
+    } else alert("Erro: " + (res && res.message ? res.message : JSON.stringify(res)));
+  } catch(e){
+    alert("Erro ao deletar: " + e);
+  }
 }
 
-carregarHistorico();
+/* REGISTRO NOVO */
+turnoForm.onsubmit = async e=>{
+  e.preventDefault();
+  const p = {
+    nome:nome.value,
+    matricula:matricula.value,
+    data:data.value,
+    equipamento:equipamento.value,
+    acionamento:acionamento.value,
+    problema:problema.value,
+    solucao:solucao.value,
+    encerramento:encerramento.value
+  };
+  try {
+    const r = await apiPost("registrar", { data: p });
+    if(r && r.success){
+      alert("Registro salvo!");
+      turnoForm.reset();
+      await loadHistory(matricula.value || null);
+      apiPost("registrarLog", { matricula: matricula.value, acao: "Novo Registro", detalhes: "ID: "+(r.id||"") }).catch(()=>{});
+      logout();
+    } else alert("Erro: "+(r && r.message ? r.message : JSON.stringify(r)));
+  } catch (err) {
+    alert("Erro ao registrar: " + err);
+  }
+};
+
+/* WATCHDOG */
+async function atualizarWatchdog(){
+  try {
+    const r = await apiPost("watchdog");
+    watchdogEl.innerText = "Watchdog: " + (r && r.watchdog ? r.watchdog : (r && r.status ? r.status : "OFFLINE"));
+  } catch (e) {
+    watchdogEl.innerText = "Watchdog: OFFLINE";
+  }
+}
+setInterval(atualizarWatchdog,3000);
+atualizarWatchdog();
+
+/* GERAR PDF */
+btnPDF.onclick = async ()=>{
+  try {
+    const res = await apiPost("pdf");
+    if(res && res.url){
+      window.open(res.url, "_blank");
+    } else {
+      alert("Erro ao gerar PDF");
+    }
+  } catch(e){
+    alert("Erro ao gerar PDF: " + e);
+  }
+};
+
+/* BOTÃO DE LOG */
+btnLog.onclick = async ()=>{
+  try {
+    // seu backend atual não tem getLog mapeado; tentamos chamar action "getLog"
+    const res = await apiPost("getLog");
+    if(!res || !res.length){
+      alert("Nenhum log registrado ou rota getLog não implementada.");
+      return;
+    }
+    let texto = "📜 LOG DO SISTEMA:\n\n";
+    res.forEach(l=>{
+      texto += `${l[0]} | Matrícula: ${l[1]} | ${l[2]} | ${l[3]}\n`;
+    });
+    alert(texto);
+  } catch(e){
+    alert("Erro ao buscar logs (rota getLog pode não estar implementada).");
+  }
+};
+
+loadHistory();
 </script>
-
 </body>
 </html>
