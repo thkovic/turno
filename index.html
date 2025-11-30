@@ -126,11 +126,10 @@ const modalFields = document.getElementById("modalFields");
 const modalButtons = document.getElementById("modalButtons");
 const watchdogEl = document.getElementById("watchdog");
 const logDiv = document.getElementById("logDiv");
-const btnLog = document.getElementById("btnLog");
 let fullHistory = [];
 let registroSelecionado = null;
 
-// ---------- FETCH AUX
+// ---------- FETCH AUX ----------
 async function callGAS(params, method="GET") {
     let url = GAS_URL;
     let options = { method };
@@ -235,7 +234,6 @@ turnoForm.onsubmit=async e=>{
     e.preventDefault();
     const p={nome:nome.value, matricula:matricula.value, data:data.value, equipamento:equipamento.value, acionamento:acionamento.value, problema:problema.value, solucao:solucao.value, encerramento:encerramento.value};
     const r=await callGAS({acao:"registrarTurno", payload:p});
-    console.log("Registrar Turno:", r);
     if(r.success){ alert("Registro salvo!"); turnoForm.reset(); await loadHistory(matricula.value); }
     else alert("Erro: "+(r.message||JSON.stringify(r)));
 };
@@ -244,34 +242,21 @@ turnoForm.onsubmit=async e=>{
 async function editarRegistroFront() {
     if(!registroSelecionado) return;
     const novo = {
-        nome:nome.value,
-        matricula:matricula.value,
-        data:data.value,
-        equipamento:equipamento.value,
-        acionamento:acionamento.value,
-        problema:problema.value,
-        solucao:solucao.value,
-        encerramento:encerramento.value
+        nome:nome.value, matricula:matricula.value, data:data.value,
+        equipamento:equipamento.value, acionamento:acionamento.value,
+        problema:problema.value, solucao:solucao.value, encerramento:encerramento.value
     };
     const r = await callGAS({acao:"editarRegistro", id: registroSelecionado[0], payload: novo});
-    console.log("Editar Registro:", r);
-    if(r.success){
-        alert("Registro atualizado!");
-        fecharModal();
-        await loadHistory(matricula.value);
-    } else alert("Erro: "+(r.message||JSON.stringify(r)));
+    if(r.success){ alert("Registro atualizado!"); fecharModal(); await loadHistory(matricula.value); }
+    else alert("Erro: "+(r.message||JSON.stringify(r)));
 }
 
 async function deletarRegistroFront() {
     if(!registroSelecionado) return;
     if(!confirm("Deseja realmente deletar este registro?")) return;
     const r = await callGAS({acao:"deletarRegistro", id: registroSelecionado[0], matricula: matricula.value});
-    console.log("Deletar Registro:", r);
-    if(r.success){
-        alert("Registro deletado!");
-        fecharModal();
-        await loadHistory(matricula.value);
-    } else alert("Erro: "+(r.message||JSON.stringify(r)));
+    if(r.success){ alert("Registro deletado!"); fecharModal(); await loadHistory(matricula.value); }
+    else alert("Erro: "+(r.message||JSON.stringify(r)));
 }
 
 // ---------- WATCHDOG ----------
@@ -281,7 +266,7 @@ async function atualizarWatchdog(){
         watchdogEl.innerText = "Watchdog: "+(r.watchdog||"OFFLINE");
     }catch{ watchdogEl.innerText="Watchdog: OFFLINE"; }
 }
-setInterval(atualizarWatchdog,1000);
+setInterval(atualizarWatchdog,3000);
 atualizarWatchdog();
 
 // ---------- PDF ----------
