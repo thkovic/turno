@@ -185,9 +185,6 @@ loginForm.onsubmit = async (e) => {
         console.error("Erro ao registrar log de login:", err);
     }
 };
-    await callGAS({acao:"registrarLog", matricula: mat, acaoTipo:"Login"});
-};
-
 /* ================== LOGOUT ================== */
 document.getElementById("btnLogout").onclick = async () => {
     await callGAS({acao:"registrarLog", matricula: matricula.value, acaoTipo:"Logout"});
