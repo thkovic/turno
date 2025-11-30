@@ -127,11 +127,10 @@ const modalButtons = document.getElementById("modalButtons");
 const watchdogEl = document.getElementById("watchdog");
 const logDiv = document.getElementById("logDiv");
 const btnLog = document.getElementById("btnLog");
-
 let fullHistory = [];
 let registroSelecionado = null;
 
-// ---------- FETCH AUX ----------
+// ---------- FETCH AUX
 async function callGAS(params, method="GET") {
     let url = GAS_URL;
     let options = { method };
@@ -172,7 +171,8 @@ document.getElementById("btnLogout").onclick = async () => {
 async function loadHistory(matriculaFiltro=null){
     const params = {acao:"getHistorico"};
     if(matriculaFiltro) params.matricula = matriculaFiltro;
-    fullHistory = await callGAS(params);
+    const r = await callGAS(params);
+    fullHistory = r.data || [];
     renderHistory(fullHistory);
 }
 
@@ -221,8 +221,10 @@ function abrirModal(r){
 <div class="tech-field"><strong>Encerramento:</strong> ${r[8]}</div>`;
     modalButtons.innerHTML=`<button onclick="fecharModal()" style="background:#2d6a4f;">Fechar</button>`;
     if(matricula.value===r[3]){
-        modalButtons.innerHTML+=`<button onclick="editarRegistro()" style="background:#4dabf7;">Editar</button>
-<button onclick="deletarRegistro()" style="background:#ff6b6b;">Deletar</button>`;
+        modalButtons.innerHTML+=`
+        <button onclick="editarRegistroFront()" style="background:#4dabf7;">Editar</button>
+        <button onclick="deletarRegistroFront()" style="background:#ff6b6b;">Deletar</button>
+        `;
     }
     modalDetalhes.style.display="flex";
 }
@@ -232,23 +234,58 @@ function fecharModal(){ modalDetalhes.style.display="none"; }
 turnoForm.onsubmit=async e=>{
     e.preventDefault();
     const p={nome:nome.value, matricula:matricula.value, data:data.value, equipamento:equipamento.value, acionamento:acionamento.value, problema:problema.value, solucao:solucao.value, encerramento:encerramento.value};
-    const r = await callGAS({acao:"registrarTurno", payload:p});
+    const r=await callGAS({acao:"registrarTurno", payload:p});
+    console.log("Registrar Turno:", r);
     if(r.success){ alert("Registro salvo!"); turnoForm.reset(); await loadHistory(matricula.value); }
-    else alert("Erro: "+r.message);
+    else alert("Erro: "+(r.message||JSON.stringify(r)));
 };
+
+// ---------- EDITAR / DELETAR ----------
+async function editarRegistroFront() {
+    if(!registroSelecionado) return;
+    const novo = {
+        nome:nome.value,
+        matricula:matricula.value,
+        data:data.value,
+        equipamento:equipamento.value,
+        acionamento:acionamento.value,
+        problema:problema.value,
+        solucao:solucao.value,
+        encerramento:encerramento.value
+    };
+    const r = await callGAS({acao:"editarRegistro", id: registroSelecionado[0], payload: novo});
+    console.log("Editar Registro:", r);
+    if(r.success){
+        alert("Registro atualizado!");
+        fecharModal();
+        await loadHistory(matricula.value);
+    } else alert("Erro: "+(r.message||JSON.stringify(r)));
+}
+
+async function deletarRegistroFront() {
+    if(!registroSelecionado) return;
+    if(!confirm("Deseja realmente deletar este registro?")) return;
+    const r = await callGAS({acao:"deletarRegistro", id: registroSelecionado[0], matricula: matricula.value});
+    console.log("Deletar Registro:", r);
+    if(r.success){
+        alert("Registro deletado!");
+        fecharModal();
+        await loadHistory(matricula.value);
+    } else alert("Erro: "+(r.message||JSON.stringify(r)));
+}
 
 // ---------- WATCHDOG ----------
 async function atualizarWatchdog(){
     try{
         const r = await callGAS({acao:"getWatchdog"});
-        watchdogEl.innerText = "Watchdog: "+r.watchdog;
+        watchdogEl.innerText = "Watchdog: "+(r.watchdog||"OFFLINE");
     }catch{ watchdogEl.innerText="Watchdog: OFFLINE"; }
 }
-setInterval(atualizarWatchdog,3000);
+setInterval(atualizarWatchdog,1000);
 atualizarWatchdog();
 
 // ---------- PDF ----------
-btnPDF.onclick=async ()=>{ const url=await callGAS({acao:"gerarPDF"}); window.open(url,"_blank"); };
+btnPDF.onclick=async ()=>{ const r=await callGAS({acao:"gerarPDF"}); window.open(r.url,"_blank"); };
 
 loadHistory();
 </script>
