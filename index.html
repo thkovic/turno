@@ -1,48 +1,63 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Sistema de Histórico</title>
 <style>
-/* -------------------- BASE -------------------- */
-body { font-family: Arial; margin:0; padding:0; background:#fff; color:#333; }
-.container { max-width:1000px; margin:40px auto; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,.1); border-radius:8px; }
-h1 { text-align:center; color:#2d6a4f; margin-bottom:20px; }
-/* -------------------- FORMULÁRIOS -------------------- */
-form { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px; }
-label { font-weight:600; }
-input,textarea { width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box; }
-textarea { min-height:70px; resize:vertical; }
-.full-width { grid-column:1/-1; }
-button { background:#95d5b2; color:#fff; border:none; padding:10px 14px; border-radius:6px; cursor:pointer; }
-button:hover { opacity:.95; }
-/* -------------------- WATCHDOG -------------------- */
-#watchdog { position:fixed; top:10px; right:10px; background:#95d5b2; color:#fff; padding:6px 10px; border-radius:6px; font-weight:bold; }
-/* -------------------- TABELA -------------------- */
-.history table { width:100%; border-collapse:collapse; font-size:13px; }
-.history th,.history td { border:1px solid #ddd; padding:8px; text-align:left; max-width:150px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.history th { background:#e9f5ef; color:#2d6a4f; }
-#mobileHistory { display:none; }
-.history-card { background:#f7f7f7; padding:14px; margin:12px 0; border-radius:10px; box-shadow:0 2px 4px rgba(0,0,0,.15); }
-/* -------------------- MODAL -------------------- */
-.modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,.5); justify-content:center; align-items:center; z-index:1000; }
-.modal-content { background:#fff; padding:20px; border-radius:10px; max-width:600px; width:90%; max-height:90%; overflow-y:auto; box-shadow:0 4px 12px rgba(0,0,0,.2); }
-.tech-field { margin-bottom:12px; }
-/* -------------------- BUSCA -------------------- */
-.search-bar { display:flex; gap:10px; margin-bottom:15px; }
-.search-bar input { flex:1; }
-.pdf-btn { background:#2d6a4f; margin-left:10px; }
-/* -------------------- RESPONSIVO -------------------- */
-@media(max-width:1200px){ .container{width:95%;margin:10px auto;padding:12px;box-shadow:none;} form{grid-template-columns:1fr;} button{width:100%;padding:14px;font-size:16px;} #historyTable{display:none;} #mobileHistory{display:block;} .search-bar{flex-direction:column;} .pdf-btn{margin-left:0;width:100%;} }
+  /* -------------------- BASE -------------------- */
+  body { font-family: Arial; margin:0; padding:0; background:#fff; color:#333; }
+  .container { max-width:1000px; margin:40px auto; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,.1); border-radius:8px; }
+  h1 { text-align:center; color:#2d6a4f; margin-bottom:20px; }
+
+  /* -------------------- FORMULÁRIOS -------------------- */
+  form { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px; }
+  label { font-weight:600; }
+  input, textarea { width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box; }
+  textarea { min-height:70px; resize: vertical; }
+  .full-width { grid-column:1/-1; }
+  button { background:#95d5b2; color:#fff; border:none; padding:10px 14px; border-radius:6px; cursor:pointer; }
+  button:hover { opacity:.95; }
+
+  /* -------------------- WATCHDOG -------------------- */
+  #watchdog { position: fixed; top: 10px; right: 10px; background:#95d5b2; color:#fff; padding:6px 10px; border-radius:6px; font-weight:bold; }
+
+  /* -------------------- TABELA -------------------- */
+  .history table { width:100%; border-collapse:collapse; font-size:13px; }
+  .history th, .history td { border:1px solid #ddd; padding:8px; text-align:left; max-width:150px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .history th { background:#e9f5ef; color:#2d6a4f; }
+  #mobileHistory { display:none; }
+  .history-card { background:#f7f7f7; padding:14px; margin:12px 0; border-radius:10px; box-shadow:0 2px 4px rgba(0,0,0,.15); }
+
+  /* -------------------- MODAL -------------------- */
+  .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,.5); justify-content:center; align-items:center; z-index:1000; }
+  .modal-content { background:#fff; padding:20px; border-radius:10px; max-width:600px; width:90%; max-height:90%; overflow-y:auto; box-shadow:0 4px 12px rgba(0,0,0,.2); }
+  .tech-field { margin-bottom:12px; }
+
+  /* -------------------- BUSCA -------------------- */
+  .search-bar { display:flex; gap:10px; margin-bottom:15px; }
+  .search-bar input { flex:1; }
+  .pdf-btn { background:#2d6a4f; margin-left:10px; }
+
+  /* -------------------- RESPONSIVO -------------------- */
+  @media(max-width:1200px){
+    .container { width:95%; margin:10px auto; padding:12px; box-shadow:none; }
+    form { grid-template-columns:1fr; }
+    button { width:100%; padding:14px; font-size:16px; }
+    #historyTable { display:none; }
+    #mobileHistory { display:block; }
+    .search-bar { flex-direction:column; }
+    .pdf-btn { margin-left:0; width:100%; }
+  }
 </style>
 </head>
 <body>
+
 <div id="watchdog">Watchdog: --</div>
 <div class="container">
 <h1>📝 Sistema de Histórico</h1>
 
-<!-- LOGIN -->
+<!-- -------------------- LOGIN -------------------- -->
 <div id="loginDiv">
 <h3>🔐 Login</h3>
 <form id="loginForm" class="full-width">
@@ -56,7 +71,7 @@ button:hover { opacity:.95; }
 </form>
 </div>
 
-<!-- REGISTRO -->
+<!-- -------------------- REGISTRO -------------------- -->
 <div id="registroDiv" style="display:none;">
 <h3>Registrar Passagem</h3>
 <form id="turnoForm">
@@ -75,18 +90,18 @@ button:hover { opacity:.95; }
 </form>
 </div>
 
-<!-- LOG -->
+<!-- -------------------- BOTÃO DE LOG -------------------- -->
 <div id="logDiv" style="display:none; margin-top:15px;">
 <button id="btnLog" style="background:#1d3557;">📜 Sistema de Log</button>
 </div>
 
-<!-- BUSCA + PDF -->
+<!-- -------------------- BUSCA + PDF -------------------- -->
 <div class="search-bar">
 <input type="text" id="searchInput" placeholder="Buscar histórico (ID, nome, equipamento)">
 <button class="pdf-btn" id="btnPDF">📄 Gerar PDF</button>
 </div>
 
-<!-- HISTÓRICO -->
+<!-- -------------------- HISTÓRICO -------------------- -->
 <div class="history">
 <h3>📊 Histórico de Registros</h3>
 <table id="historyTable">
@@ -95,13 +110,15 @@ button:hover { opacity:.95; }
 <th>ID</th><th>Data</th><th>Executante</th><th>Matrícula</th><th>Equipamento</th><th>Acionamento</th><th>Problema</th><th>Solução</th><th>Encerramento</th>
 </tr>
 </thead>
-<tbody><tr><td colspan="9">Carregando...</td></tr></tbody>
+<tbody>
+<tr><td colspan="9">Carregando...</td></tr>
+</tbody>
 </table>
 <div id="mobileHistory"></div>
 </div>
 </div>
 
-<!-- MODAL -->
+<!-- -------------------- MODAL -------------------- -->
 <div class="modal" id="modalDetalhes">
 <div class="modal-content">
 <h2>Ficha Técnica</h2>
@@ -112,9 +129,27 @@ button:hover { opacity:.95; }
 </div>
 </div>
 
+<!-- -------------------- SCRIPT -------------------- -->
 <script>
-const GAS_URL = "https://script.google.com/macros/s/AKfycbyjN_7typwQ8yFu-4CW6uRV9U4U6z1386BcGz3YAl_-di_KXedC2FFg3NEAIDjuL4ir/exec"; // <--- URL do Apps Script publicado
+const API_URL = "https://script.google.com/macros/s/AKfycbyjN_7typwQ8yFu-4CW6uRV9U4U6z1386BcGz3YAl_-di_KXedC2FFg3NEAIDjuL4ir/exec";
 
+async function fetchGAS(action, payload = {}) {
+    try {
+        const res = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action, ...payload })
+        });
+        if (!res.ok) throw new Error('Erro na requisição');
+        return await res.json();
+    } catch(e) {
+        console.error(e);
+        alert("Erro na comunicação com o servidor: " + e.message);
+        return null;
+    }
+}
+
+// Elements
 const loginForm = document.getElementById("loginForm");
 const loginDiv = document.getElementById("loginDiv");
 const registroDiv = document.getElementById("registroDiv");
@@ -132,87 +167,62 @@ const btnLog = document.getElementById("btnLog");
 let fullHistory = [];
 let registroSelecionado = null;
 
-/* ---------- FUNÇÃO FETCH ---------- */
-async function fetchGAS(payload) {
-    try {
-        const res = await fetch(GAS_URL, {
-            method: "POST",
-            body: JSON.stringify(payload),
-            headers: { "Content-Type": "application/json" }
-        });
-        return await res.json();
-    } catch(err) {
-        console.error(err);
-        return {error: err.message || err};
-    }
-}
-
-/* ---------- LOGIN ---------- */
+// ---------- LOGIN ----------
 loginForm.onsubmit = async e => {
     e.preventDefault();
     const mat = document.getElementById("loginMatricula").value;
-    matricula.value = mat;
     loginDiv.style.display = "none";
     registroDiv.style.display = "block";
-
-    await fetchGAS({acao:"registrarLog", matricula:mat, acaoTipo:"Login"});
-    loadHistory(mat);
-
-    if(mat==="991631240") logDiv.style.display="block";
-    else logDiv.style.display="none";
+    matricula.value = mat;
+    await loadHistory(mat);
+    logDiv.style.display = mat === "991631240" ? "block" : "none";
+    await fetchGAS("registrarLog", { matricula: mat, acao:"Login" });
 };
 
-/* ---------- LOGOUT ---------- */
-async function logout() {
-    await fetchGAS({acao:"registrarLog", matricula:matricula.value, acaoTipo:"Logout"});
-    registroDiv.style.display="none";
-    loginDiv.style.display="block";
+// ---------- LOGOUT ----------
+document.getElementById("btnLogout").onclick = async () => {
+    await fetchGAS("registrarLog", { matricula: matricula.value, acao:"Logout" });
+    registroDiv.style.display = "none";
+    loginDiv.style.display = "block";
     turnoForm.reset();
-    matricula.value="";
-    fullHistory=[];
-    renderHistory([]);
-    logDiv.style.display="none";
-}
-document.getElementById("btnLogout").onclick = logout;
+    matricula.value = "";
+    logDiv.style.display = "none";
+    await loadHistory();
+};
 
-/* ---------- CARREGAR HISTÓRICO ---------- */
-async function loadHistory(filtro=null) {
-    const r = await fetchGAS({acao:"getHistorico", matricula:filtro});
-    fullHistory = r || [];
+// ---------- HISTÓRICO ----------
+async function loadHistory(mat = null) {
+    const data = await fetchGAS("getHistorico", { matricula: mat });
+    fullHistory = data || [];
     renderHistory(fullHistory);
 }
 
 function renderHistory(data){
     const t = document.querySelector("#historyTable tbody");
     const m = document.getElementById("mobileHistory");
-    t.innerHTML=""; m.innerHTML="";
+    t.innerHTML = ""; m.innerHTML = "";
     if(!data.length){
         t.innerHTML='<tr><td colspan="9">Sem registros</td></tr>';
         m.innerHTML='<p style="text-align:center;color:#888;">Sem registros</p>';
         return;
     }
     const searchTerm = searchInput.value.toLowerCase();
-    data.filter(r=>r.some(c=>c.toString().toLowerCase().includes(searchTerm)))
+    data.filter(r => r.some(c => c.toString().toLowerCase().includes(searchTerm)))
         .forEach(r=>{
             // Desktop
-            let tr = document.createElement("tr");
+            let tr=document.createElement("tr");
             tr.onclick=()=>abrirModal(r);
-            r.slice(0,9).forEach(c=>{
-                let td = document.createElement("td"); td.textContent=c; tr.appendChild(td);
-            });
+            r.slice(0,9).forEach(col=>{ let td=document.createElement("td"); td.textContent=col; tr.appendChild(td); });
             t.appendChild(tr);
             // Mobile
             let card=document.createElement("div"); card.className="history-card"; card.onclick=()=>abrirModal(r);
-            card.innerHTML=`<p><strong>ID:</strong> ${r[0]}</p>
-                            <p><strong>Data:</strong> ${r[1]}</p>
-                            <p><strong>Executante:</strong> ${r[2]}</p>
-                            <p><strong>Equipamento:</strong> ${r[4]}</p>`;
+            card.innerHTML=`<p><strong>ID:</strong> ${r[0]}</p><p><strong>Data:</strong> ${r[1]}</p><p><strong>Executante:</strong> ${r[2]}</p><p><strong>Equipamento:</strong> ${r[4]}</p>`;
             m.appendChild(card);
         });
 }
-searchInput.oninput = ()=>renderHistory(fullHistory);
+searchInput.oninput=()=>renderHistory(fullHistory);
 
-/* ---------- MODAL ---------- */
+// ---------- MODAL ----------
 function abrirModal(r){
     registroSelecionado=r;
     modalFields.innerHTML=`
@@ -224,27 +234,36 @@ function abrirModal(r){
 <div class="tech-field"><strong>Acionamento:</strong> ${r[5]}</div>
 <div class="tech-field"><strong>Problema:</strong><br>${r[6]}</div>
 <div class="tech-field"><strong>Solução:</strong><br>${r[7]}</div>
-<div class="tech-field"><strong>Encerramento:</strong> ${r[8]}</div>`;
+<div class="tech-field"><strong>Encerramento:</strong> ${r[8]}</div>
+    `;
     modalButtons.innerHTML=`<button onclick="fecharModal()" style="background:#2d6a4f;">Fechar</button>`;
     if(matricula.value===r[3]){
-        modalButtons.innerHTML+=`<button onclick="editarRegistro()" style="background:#4dabf7;">Editar</button>
-        <button onclick="deletarRegistro()" style="background:#ff6b6b;">Deletar</button>`;
+        modalButtons.innerHTML+=`<button onclick="editarRegistro()" style="background:#4dabf7;">Editar</button><button onclick="deletarRegistro()" style="background:#ff6b6b;">Deletar</button>`;
     }
     modalDetalhes.style.display="flex";
 }
 function fecharModal(){ modalDetalhes.style.display="none"; }
 
-/* ---------- REGISTRAR ---------- */
-turnoForm.onsubmit = async e=>{
+// ---------- REGISTRO ----------
+turnoForm.onsubmit=async e=>{
     e.preventDefault();
-    const p={nome:nome.value, matricula:matricula.value, data:data.value, equipamento:equipamento.value, acionamento:acionamento.value, problema:problema.value, solucao:solucao.value, encerramento:encerramento.value};
-    const r=await fetchGAS({acao:"registrarTurno", payload:p});
-    if(r.success){ alert("Registro salvo! ID: "+r.id); turnoForm.reset(); loadHistory(matricula.value); }
-    else alert("Erro: "+(r.message||"Desconhecido"));
+    const p={
+        nome:nome.value,
+        matricula:matricula.value,
+        data:data.value,
+        equipamento:equipamento.value,
+        acionamento:acionamento.value,
+        problema:problema.value,
+        solucao:solucao.value,
+        encerramento:encerramento.value
+    };
+    const r=await fetchGAS("registrarTurno", p);
+    if(r && r.success){ alert("Registro salvo!"); turnoForm.reset(); await loadHistory(matricula.value); await fetchGAS("registrarLog", {matricula:matricula.value, acao:"Novo Registro", detalhes:"ID: "+r.id}); } 
+    else alert("Erro: "+(r ? r.message : "Servidor offline"));
 };
 
-/* ---------- EDITAR ---------- */
-async function editarRegistro(){
+// ---------- EDITAR ----------
+function editarRegistro(){
     if(!registroSelecionado) return;
     nome.value=registroSelecionado[2];
     matricula.value=registroSelecionado[3];
@@ -255,36 +274,45 @@ async function editarRegistro(){
     solucao.value=registroSelecionado[7];
     encerramento.value=registroSelecionado[8];
     fecharModal();
-    alert("Edite os campos e clique em Registrar para salvar alterações.");
+    alert("Edite os campos e clique em Registrar para salvar.");
 }
 
-/* ---------- DELETAR ---------- */
+// ---------- DELETAR ----------
 async function deletarRegistro(){
     if(!registroSelecionado) return;
-    if(!confirm("Tem certeza que deseja deletar?")) return;
-    const r=await fetchGAS({acao:"deletarRegistro", id:registroSelecionado[0]});
-    if(r.success){ alert("Registro deletado!"); fecharModal(); loadHistory(matricula.value); }
-    else alert("Erro: "+(r.message||"Desconhecido"));
+    if(!confirm("Tem certeza que deseja deletar este registro?")) return;
+    const r=await fetchGAS("deletarRegistro", {id:registroSelecionado[0]});
+    if(r && r.success){ alert("Registro deletado!"); fecharModal(); await loadHistory(matricula.value); await fetchGAS("registrarLog", {matricula:matricula.value, acao:"Deletar Registro", detalhes:"ID: "+registroSelecionado[0]}); } 
+    else alert("Erro: "+(r ? r.message : "Servidor offline"));
 }
 
-/* ---------- WATCHDOG ---------- */
+// ---------- WATCHDOG ----------
 async function atualizarWatchdog(){
-    const r=await fetchGAS({acao:"getWatchdog"});
-    watchdogEl.innerText="Watchdog: "+(r.watchdog||"OFFLINE");
+    const r = await fetchGAS("getWatchdog");
+    watchdogEl.innerText = r ? "Watchdog: "+r.watchdog : "Watchdog: OFFLINE";
 }
-setInterval(atualizarWatchdog,3000);
+setInterval(atualizarWatchdog, 3000);
 atualizarWatchdog();
 
-/* ---------- LOG ---------- */
-btnLog.onclick=async()=>{
-    const r=await fetchGAS({acao:"getLog"});
-    if(!r.length){ alert("Nenhum log registrado."); return; }
+// ---------- PDF ----------
+btnPDF.onclick = async ()=>{
+    const r = await fetchGAS("gerarPDF");
+    if(r && r.url) window.open(r.url, "_blank");
+    else alert("Erro ao gerar PDF");
+};
+
+// ---------- LOG ----------
+btnLog.onclick = async ()=>{
+    const r = await fetchGAS("getLog");
+    if(!r || !r.length){ alert("Nenhum log registrado."); return; }
     let texto="📜 LOG DO SISTEMA:\n\n";
     r.forEach(l=>{ texto+=`${l[0]} | Matrícula: ${l[1]} | ${l[2]} | ${l[3]}\n`; });
     alert(texto);
 };
 
+// Inicializa
 loadHistory();
+
 </script>
 </body>
 </html>
