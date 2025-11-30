@@ -294,7 +294,8 @@ function abrirModal(r){
     btnFechar.addEventListener("click", fecharModal);
     modalButtons.appendChild(btnFechar);
 
-    if ((matricula.value || "").trim() == (r[3] || "").trim()) {
+    // ✅ Correção: converter para string antes de trim()
+    if (String(matricula.value || "").trim() === String(r[3] || "").trim()) {
         const btnEditar = document.createElement("button");
         btnEditar.textContent = "Editar";
         btnEditar.style.background = "#4dabf7";
