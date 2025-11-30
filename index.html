@@ -159,7 +159,7 @@ document.getElementById("btnLogout").onclick = async () => {
     loginDiv.style.display="block";
     turnoForm.reset();
     matricula.value="";
-    fullHistory = await loadHistory();
+    fullHistory = await loadHistory("");
     logDiv.style.display="none";
 };
 
@@ -254,7 +254,7 @@ async function atualizarWatchdog(){
 setInterval(atualizarWatchdog,3000);
 atualizarWatchdog();
 
-loadHistory();
+loadHistory("");
 </script>
 </body>
 </html>
