@@ -243,7 +243,87 @@ turnoForm.onsubmit=async e=>{
     if(r.success){ alert("Registro salvo!"); turnoForm.reset(); await loadHistory(matricula.value); }
     else alert("Erro: "+r.message);
 };
+// ---------- EDITAR ----------
+async function editarRegistro(){
+    if(!registroSelecionado) return;
 
+    // Monta um formulário no modal com os valores atuais
+    modalFields.innerHTML = `
+<div class="tech-field"><strong>ID:</strong> ${registroSelecionado[0]}</div>
+<div class="tech-field"><label><strong>Data:</strong></label><br><input type="date" id="editData" value="${registroSelecionado[1]}"></div>
+<div class="tech-field"><label><strong>Executante:</strong></label><br><input type="text" id="editNome" value="${registroSelecionado[2]}"></div>
+<div class="tech-field"><label><strong>Matrícula:</strong></label><br><input type="text" id="editMatricula" value="${registroSelecionado[3]}" readonly></div>
+<div class="tech-field"><label><strong>Equipamento:</strong></label><br><input type="text" id="editEquipamento" value="${registroSelecionado[4]}"></div>
+<div class="tech-field"><label><strong>Acionamento:</strong></label><br><input type="time" id="editAcionamento" value="${registroSelecionado[5]}"></div>
+<div class="tech-field"><label><strong>Problema:</strong></label><br><textarea id="editProblema">${registroSelecionado[6]}</textarea></div>
+<div class="tech-field"><label><strong>Solução:</strong></label><br><textarea id="editSolucao">${registroSelecionado[7]}</textarea></div>
+<div class="tech-field"><label><strong>Encerramento:</strong></label><br><input type="time" id="editEncerramento" value="${registroSelecionado[8]}"></div>
+    `;
+
+    // Botões de ação
+    modalButtons.innerHTML = `
+<button onclick="fecharModal()" style="background:#6c757d;">Cancelar</button>
+<button onclick="salvarEdicao()" style="background:#2d6a4f;">Salvar</button>
+    `;
+}
+
+// Valida e envia a edição
+async function salvarEdicao(){
+    const payload = {
+        id: registroSelecionado[0],
+        nome: document.getElementById('editNome').value.trim(),
+        matricula: document.getElementById('editMatricula').value.trim(),
+        data: document.getElementById('editData').value,
+        equipamento: document.getElementById('editEquipamento').value.trim(),
+        acionamento: document.getElementById('editAcionamento').value,
+        problema: document.getElementById('editProblema').value.trim(),
+        solucao: document.getElementById('editSolucao').value.trim(),
+        encerramento: document.getElementById('editEncerramento').value
+    };
+
+    // Validações básicas
+    if(!payload.nome || !payload.data || !payload.equipamento || !payload.acionamento || !payload.problema || !payload.solucao || !payload.encerramento){
+        alert('Preencha todos os campos obrigatórios.');
+        return;
+    }
+    if(payload.acionamento && payload.encerramento && payload.acionamento > payload.encerramento){
+        alert('Encerramento deve ser maior que o Acionamento.');
+        return;
+    }
+
+    try{
+        const r = await callGAS({acao:'editarTurno', payload});
+        if(r.success){
+            alert('Registro atualizado com sucesso!');
+            fecharModal();
+            await loadHistory(matricula.value || null);
+        }else{
+            alert('Erro ao atualizar: ' + (r.message || 'desconhecido'));
+        }
+    }catch(err){
+        alert('Falha na edição. Tente novamente.');
+    }
+}
+
+// ---------- DELETAR ----------
+async function deletarRegistro(){
+    if(!registroSelecionado) return;
+    const ok = confirm(`Deseja realmente deletar o registro ID ${registroSelecionado[0]}?`);
+    if(!ok) return;
+
+    try{
+        const r = await callGAS({acao:'deletarTurno', id: registroSelecionado[0], matricula: matricula.value});
+        if(r.success){
+            alert('Registro deletado.');
+            fecharModal();
+            await loadHistory(matricula.value || null);
+        }else{
+            alert('Erro ao deletar: ' + (r.message || 'desconhecido'));
+        }
+    }catch(err){
+        alert('Falha na deleção. Tente novamente.');
+    }
+}
 // ---------- WATCHDOG ----------
 async function atualizarWatchdog(){
     try{
