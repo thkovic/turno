@@ -5,51 +5,179 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Sistema de Histórico</title>
 <style>
-/* -------------------- BASE -------------------- */
-body { font-family: Arial; margin:0; padding:0; background:#fff; color:#333; }
-.container { max-width:1000px; margin:40px auto; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,.1); border-radius:8px; }
-h1 { text-align:center; color:#2d6a4f; margin-bottom:20px; }
-/* -------------------- FORMULÁRIOS -------------------- */
-form { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px; }
-label { font-weight:600; }
-input, textarea { width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box; }
-textarea { min-height:70px; resize:vertical; }
-.full-width { grid-column:1/-1; }
-button { background:#95d5b2; color:#fff; border:none; padding:10px 14px; border-radius:6px; cursor:pointer; }
-button:hover { opacity:.95; }
-/* -------------------- WATCHDOG -------------------- */
-#watchdog { position:fixed; top:10px; right:10px; background:#95d5b2; color:#fff; padding:6px 10px; border-radius:6px; font-weight:bold; }
-/* -------------------- TABELA -------------------- */
-.history table { width:100%; border-collapse:collapse; font-size:13px; }
-.history th, .history td { border:1px solid #ddd; padding:8px; text-align:left; max-width:150px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.history th { background:#e9f5ef; color:#2d6a4f; }
-#mobileHistory { display:none; }
-.history-card { background:#f7f7f7; padding:14px; margin:12px 0; border-radius:10px; box-shadow:0 2px 4px rgba(0,0,0,.15); }
-/* -------------------- MODAL -------------------- */
-.modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,.5); justify-content:center; align-items:center; z-index:1000; }
-.modal-content { background:#fff; padding:20px; border-radius:10px; max-width:600px; width:90%; max-height:90%; overflow-y:auto; box-shadow:0 4px 12px rgba(0,0,0,.2); }
-.tech-field { margin-bottom:12px; }
-/* -------------------- BUSCA -------------------- */
-.search-bar { display:flex; gap:10px; margin-bottom:15px; }
-.search-bar input { flex:1; }
-.pdf-btn { background:#2d6a4f; margin-left:10px; }
-/* -------------------- RESPONSIVO -------------------- */
-@media(max-width:1200px){
-.container{width:95%;margin:10px auto;padding:12px;box-shadow:none;}
-form{grid-template-columns:1fr;}
-button{width:100%;padding:14px;font-size:16px;}
-#historyTable{display:none;}
-#mobileHistory{display:block;}
-.search-bar{flex-direction:column;}
-.pdf-btn{margin-left:0;width:100%;}
-}
+       /* -------------------- BASE -------------------- */
+       body {
+           font-family: Arial;
+           margin: 0;
+           padding: 0;
+           background: #fff;
+           color: #333;
+       }
+       .container {
+           max-width: 1000px;
+           margin: 40px auto;
+           padding: 20px;
+           box-shadow: 0 2px 8px rgba(0, 0, 0, .1);
+           border-radius: 8px;
+       }
+       h1 {
+           text-align: center;
+           color: #2d6a4f;
+           margin-bottom: 20px;
+       }
+       /* -------------------- FORMULÁRIOS -------------------- */
+       form {
+           display: grid;
+           grid-template-columns: 1fr 1fr;
+           gap: 12px;
+           margin-bottom: 14px;
+       }
+       label {
+           font-weight: 600;
+       }
+       input,
+       textarea {
+           width: 100%;
+           padding: 8px;
+           border: 1px solid #ccc;
+           border-radius: 4px;
+           box-sizing: border-box;
+       }
+       textarea {
+           min-height: 70px;
+           resize: vertical;
+       }
+       .full-width {
+           grid-column: 1/-1;
+       }
+       button {
+           background: #95d5b2;
+           color: #fff;
+           border: none;
+           padding: 10px 14px;
+           border-radius: 6px;
+           cursor: pointer;
+       }
+       button:hover {
+           opacity: .95;
+       }
+       /* -------------------- WATCHDOG -------------------- */
+       #watchdog {
+           position: fixed;
+           top: 10px;
+           right: 10px;
+           background: #95d5b2;
+           color: #fff;
+           padding: 6px 10px;
+           border-radius: 6px;
+           font-weight: bold;
+       }
+       /* -------------------- TABELA -------------------- */
+       .history table {
+           width: 100%;
+           border-collapse: collapse;
+           font-size: 13px;
+       }
+       .history th,
+       .history td {
+           border: 1px solid #ddd;
+           padding: 8px;
+           text-align: left;
+           max-width: 150px;
+           white-space: nowrap;
+           overflow: hidden;
+           text-overflow: ellipsis;
+       }
+       .history th {
+           background: #e9f5ef;
+           color: #2d6a4f;
+       }
+       #mobileHistory {
+           display: none;
+       }
+       .history-card {
+           background: #f7f7f7;
+           padding: 14px;
+           margin: 12px 0;
+           border-radius: 10px;
+           box-shadow: 0 2px 4px rgba(0, 0, 0, .15);
+       }
+       /* -------------------- MODAL -------------------- */
+       .modal {
+           display: none;
+           position: fixed;
+           top: 0;
+           left: 0;
+           width: 100%;
+           height: 100%;
+           background: rgba(0, 0, 0, .5);
+           justify-content: center;
+           align-items: center;
+           z-index: 1000;
+       }
+       .modal-content {
+           background: #fff;
+           padding: 20px;
+           border-radius: 10px;
+           max-width: 600px;
+           width: 90%;
+           max-height: 90%;
+           overflow-y: auto;
+           box-shadow: 0 4px 12px rgba(0, 0, 0, .2);
+       }
+       .tech-field {
+           margin-bottom: 12px;
+       }
+       /* -------------------- BUSCA -------------------- */
+       .search-bar {
+           display: flex;
+           gap: 10px;
+           margin-bottom: 15px;
+       }
+       .search-bar input {
+           flex: 1;
+       }
+       .pdf-btn {
+           background: #2d6a4f;
+           margin-left: 10px;
+       }
+       /* -------------------- RESPONSIVO -------------------- */
+       @media(max-width:1200px) {
+           .container {
+               width: 95%;
+               margin: 10px auto;
+               padding: 12px;
+               box-shadow: none;
+           }
+           form {
+               grid-template-columns: 1fr;
+           }
+           button {
+               width: 100%;
+               padding: 14px;
+               font-size: 16px;
+           }
+           #historyTable {
+               display: none;
+           }
+           #mobileHistory {
+               display: block;
+           }
+           .search-bar {
+               flex-direction: column;
+           }
+           .pdf-btn {
+               margin-left: 0;
+               width: 100%;
+           }
+       }
 </style>
 </head>
 <body>
 <div id="watchdog">Watchdog: --</div>
 <div class="container">
 <h1>📝 Sistema de Histórico</h1>
-<!-- LOGIN -->
+<!-- -------------------- LOGIN -------------------- -->
 <div id="loginDiv">
 <h3>🔐 Login</h3>
 <form id="loginForm" class="full-width">
@@ -62,7 +190,7 @@ button{width:100%;padding:14px;font-size:16px;}
 </div>
 </form>
 </div>
-<!-- REGISTRO -->
+<!-- -------------------- REGISTRO -------------------- -->
 <div id="registroDiv" style="display:none;">
 <h3>Registrar Passagem</h3>
 <form id="turnoForm">
@@ -80,16 +208,16 @@ button{width:100%;padding:14px;font-size:16px;}
 </div>
 </form>
 </div>
-<!-- BOTÃO LOG -->
+<!-- -------------------- BOTÃO DE LOG -------------------- -->
 <div id="logDiv" style="display:none; margin-top:15px;">
 <button id="btnLog" style="background:#1d3557;">📜 Sistema de Log</button>
 </div>
-<!-- BUSCA + PDF -->
+<!-- -------------------- BUSCA + PDF -------------------- -->
 <div class="search-bar">
 <input type="text" id="searchInput" placeholder="Buscar histórico (ID, nome, equipamento)">
 <button class="pdf-btn" id="btnPDF">📄 Gerar PDF</button>
 </div>
-<!-- HISTÓRICO -->
+<!-- -------------------- HISTÓRICO -------------------- -->
 <div class="history">
 <h3>📊 Histórico de Registros</h3>
 <table id="historyTable">
@@ -113,7 +241,7 @@ button{width:100%;padding:14px;font-size:16px;}
 <div id="mobileHistory"></div>
 </div>
 </div>
-<!-- MODAL -->
+<!-- -------------------- MODAL -------------------- -->
 <div class="modal" id="modalDetalhes">
 <div class="modal-content">
 <h2>Ficha Técnica</h2>
@@ -123,92 +251,146 @@ button{width:100%;padding:14px;font-size:16px;}
 </div>
 </div>
 </div>
+<!-- -------------------- SCRIPT -------------------- -->
 <script>
-// -------------------- VARIÁVEIS --------------------
-const API_BASE = "https://script.google.com/macros/s/AKfycbyjN_7typwQ8yFu-4CW6uRV9U4U6z1386BcGz3YAl_-di_KXedC2FFg3NEAIDjuL4ir/exec"; // <--- Substitua pelo seu endpoint
-const loginForm = document.getElementById("loginForm");
-const loginDiv = document.getElementById("loginDiv");
-const registroDiv = document.getElementById("registroDiv");
-const matricula = document.getElementById("matricula");
-const turnoForm = document.getElementById("turnoForm");
-const searchInput = document.getElementById("searchInput");
-const btnPDF = document.getElementById("btnPDF");
-const modalDetalhes = document.getElementById("modalDetalhes");
-const modalFields = document.getElementById("modalFields");
-const modalButtons = document.getElementById("modalButtons");
-const watchdogEl = document.getElementById("watchdog");
-const logDiv = document.getElementById("logDiv");
-const btnLog = document.getElementById("btnLog");
-let fullHistory = [];
-let registroSelecionado = null;
-// -------------------- LOGIN --------------------
-loginForm.onsubmit = e => {
-   e.preventDefault();
-   const mat = document.getElementById("loginMatricula").value;
-   loginDiv.style.display = "none";
-   registroDiv.style.display = "block";
-   matricula.value = mat;
-   loadHistory(mat);
-   if (mat === "991631240") logDiv.style.display = "block";
-   else logDiv.style.display = "none";
-   registrarLog(mat, "Login");
-};
-// -------------------- LOGOUT --------------------
-function logout() {
-   registrarLog(matricula.value, "Logout");
-   registroDiv.style.display = "none";
-   loginDiv.style.display = "block";
-   turnoForm.reset();
-   matricula.value = "";
-   loadHistory();
-   logDiv.style.display = "none";
-}
-document.getElementById("btnLogout").onclick = logout;
-// -------------------- HISTÓRICO --------------------
-function loadHistory(matFiltro = null) {
-   let url = API_BASE + "/historico";
-   if(matFiltro) url += "?matricula=" + matFiltro;
-   fetch(url)
-   .then(res => res.json())
-   .then(data => {
-       fullHistory = data || [];
-       renderHistory(fullHistory);
-   });
-}
-function renderHistory(data) {
-   const t = document.querySelector("#historyTable tbody");
-   const m = document.getElementById("mobileHistory");
-   t.innerHTML = ""; m.innerHTML = "";
-   if(!data.length) {
-       t.innerHTML = '<tr><td colspan="9">Sem registros</td></tr>';
-       m.innerHTML = '<p style="text-align:center;color:#888;">Sem registros</p>';
-       return;
-   }
-   const searchTerm = searchInput.value.toLowerCase();
-   data.filter(r => r.some(c => c.toString().toLowerCase().includes(searchTerm)))
-   .forEach(r => {
-       // Desktop
-       let tr = document.createElement("tr");
-       tr.onclick = () => abrirModal(r);
-       r.slice(0,9).forEach(col => {
-           let td = document.createElement("td");
-           td.textContent = col;
-           tr.appendChild(td);
-       });
-       t.appendChild(tr);
-       // Mobile
-       let card = document.createElement("div");
-       card.className = "history-card";
-       card.onclick = () => abrirModal(r);
-       card.innerHTML = `<p><strong>ID:</strong> ${r[0]}</p><p><strong>Data:</strong> ${r[1]}</p><p><strong>Executante:</strong> ${r[2]}</p><p><strong>Equipamento:</strong> ${r[4]}</p>`;
-       m.appendChild(card);
-   });
-}
-searchInput.oninput = () => renderHistory(fullHistory);
-// -------------------- MODAL --------------------
-function abrirModal(r) {
-   registroSelecionado = r;
-   modalFields.innerHTML = `
+       /*
+           OBS: Mantive a maior parte do JS original e troquei as chamadas ao google.script.run por JSONP onde aplicável.
+           Note: operações de criação/edição/deleção requerem chamadas POST/server-side e não funcionam via JSONP.
+       */
+       const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbyjN_7typwQ8yFu-4CW6uRV9U4U6z1386BcGz3YAl_-di_KXedC2FFg3NEAIDjuL4ir/exec";
+
+       const loginForm = document.getElementById("loginForm");
+       const loginDiv = document.getElementById("loginDiv");
+       const registroDiv = document.getElementById("registroDiv");
+       const matricula = document.getElementById("matricula");
+       const turnoForm = document.getElementById("turnoForm");
+       const searchInput = document.getElementById("searchInput");
+       const btnPDF = document.getElementById("btnPDF");
+       const modalDetalhes = document.getElementById("modalDetalhes");
+       const modalFields = document.getElementById("modalFields");
+       const modalButtons = document.getElementById("modalButtons");
+       const watchdogEl = document.getElementById("watchdog");
+       const logDiv = document.getElementById("logDiv");
+       const btnLog = document.getElementById("btnLog");
+       let fullHistory = [];
+       let registroSelecionado = null;
+
+       // ---------- JSONP helper ----------
+       function jsonpRequest(params, callbackName, onError) {
+           const qs = new URLSearchParams(params).toString();
+           const src = `${WEBAPP_URL}?${qs}&callback=${callbackName}`;
+           const s = document.createElement('script');
+           s.src = src;
+           s.async = true;
+           s.onerror = () => {
+               if (onError) onError();
+               if (s.parentNode) s.parentNode.removeChild(s);
+           };
+           s.onload = () => {
+               setTimeout(() => { if (s.parentNode) s.parentNode.removeChild(s); }, 500);
+           };
+           document.head.appendChild(s);
+       }
+
+       // ---------- CALLBACKS JSONP ----------
+       function handleHistorico(data) {
+           fullHistory = data || [];
+           renderHistory(fullHistory);
+       }
+       function handleWatchdog(data) {
+           if (data && data.watchdog) {
+               watchdogEl.innerText = "Watchdog: " + data.watchdog;
+           } else {
+               watchdogEl.innerText = "Watchdog: --";
+           }
+       }
+       function handleLog(data) {
+           if (!data || !data.length) {
+               alert("Nenhum log registrado.");
+               return;
+           }
+           let texto = "📜 LOG DO SISTEMA:\n\n";
+           data.forEach(l => {
+               texto += `${l[0]} | Matrícula: ${l[1]} | ${l[2]} | ${l[3]}\n`;
+           });
+           alert(texto);
+       }
+       function handleGerarPDF(data) {
+           if (data && data.url) {
+               window.open(data.url, "_blank");
+           } else {
+               alert("Erro ao gerar PDF: " + (data && data.error ? data.error : "desconhecido"));
+           }
+       }
+
+       /* ---------- LOGIN ---------- */
+       loginForm.onsubmit = e => {
+           e.preventDefault();
+           const mat = document.getElementById("loginMatricula").value;
+           loginDiv.style.display = "none";
+           registroDiv.style.display = "block";
+           matricula.value = mat;
+           loadHistory(mat);
+           // registrar login no backend não é possível por JSONP (POST)
+       };
+
+       /* ---------- LOGOUT ---------- */
+       function logout() {
+           registroDiv.style.display = "none";
+           loginDiv.style.display = "block";
+           turnoForm.reset();
+           matricula.value = "";
+           loadHistory();
+           logDiv.style.display = "none";
+       }
+       document.getElementById("btnLogout").onclick = logout;
+
+       /* ---------- CARREGAR HISTÓRICO (JSONP) ---------- */
+       function loadHistory(matriculaFiltro = null) {
+           jsonpRequest({ action: "historico", matricula: matriculaFiltro || "" }, "handleHistorico", () => {
+               alert("Erro ao carregar histórico (JSONP).");
+           });
+       }
+
+       function renderHistory(data) {
+           const t = document.querySelector("#historyTable tbody");
+           const m = document.getElementById("mobileHistory");
+           t.innerHTML = "";
+           m.innerHTML = "";
+           if (!data.length) {
+               t.innerHTML = '<tr><td colspan="9">Sem registros</td></tr>';
+               m.innerHTML = '<p style="text-align:center;color:#888;">Sem registros</p>';
+               return;
+           }
+           const searchTerm = searchInput.value.toLowerCase();
+           data.filter(r => r.some(c => c.toString().toLowerCase().includes(searchTerm)))
+               .forEach(r => {
+                   let tr = document.createElement("tr");
+                   tr.onclick = () => abrirModal(r);
+                   r.slice(0, 9).forEach(col => {
+                       let td = document.createElement("td");
+                       td.textContent = col;
+                       tr.appendChild(td);
+                   });
+                   t.appendChild(tr);
+                   let card = document.createElement("div");
+                   card.className = "history-card";
+                   card.onclick = () => abrirModal(r);
+                   card.innerHTML = `
+<p><strong>ID:</strong> ${r[0]}</p>
+<p><strong>Data:</strong> ${r[1]}</p>
+<p><strong>Executante:</strong> ${r[2]}</p>
+<p><strong>Equipamento:</strong> ${r[4]}</p>
+                   `;
+                   m.appendChild(card);
+               });
+       }
+       searchInput.oninput = () => renderHistory(fullHistory);
+
+       /* ---------- MODAL ---------- */
+       function abrirModal(r) {
+           registroSelecionado = r;
+           modalFields.innerHTML = `
 <div class="tech-field"><strong>ID:</strong> ${r[0]}</div>
 <div class="tech-field"><strong>Data:</strong> ${r[1]}</div>
 <div class="tech-field"><strong>Executante:</strong> ${r[2]}</div>
@@ -218,95 +400,86 @@ function abrirModal(r) {
 <div class="tech-field"><strong>Problema:</strong><br>${r[6]}</div>
 <div class="tech-field"><strong>Solução:</strong><br>${r[7]}</div>
 <div class="tech-field"><strong>Encerramento:</strong> ${r[8]}</div>
-   `;
-   modalButtons.innerHTML = `<button onclick="fecharModal()" style="background:#2d6a4f;">Fechar</button>`;
-   if(matricula.value === r[3]) {
-       modalButtons.innerHTML += `<button onclick="editarRegistro()" style="background:#4dabf7;">Editar</button><button onclick="deletarRegistro()" style="background:#ff6b6b;">Deletar</button>`;
-   }
-   modalDetalhes.style.display = "flex";
-}
-function fecharModal() { modalDetalhes.style.display = "none"; }
-// -------------------- REGISTRO / EDITAR --------------------
-turnoForm.onsubmit = e => {
-   e.preventDefault();
-   const p = {
-       nome: nome.value,
-       matricula: matricula.value,
-       data: data.value,
-       equipamento: equipamento.value,
-       acionamento: acionamento.value,
-       problema: problema.value,
-       solucao: solucao.value,
-       encerramento: encerramento.value
-   };
-   if(registroSelecionado) {
-       // Editar
-       fetch(API_BASE + "/editarRegistro/" + registroSelecionado[0], {
-           method:"PUT",
-           headers:{"Content-Type":"application/json"},
-           body: JSON.stringify(p)
-       })
-       .then(res => res.json())
-       .then(r => {
-           if(r.success) { alert("Registro atualizado!"); turnoForm.reset(); loadHistory(matricula.value); registroSelecionado=null; logout(); }
-           else alert("Erro: "+r.message);
-       });
-   } else {
-       // Novo
-       fetch(API_BASE + "/registrarTurno", {
-           method:"POST",
-           headers:{"Content-Type":"application/json"},
-           body: JSON.stringify(p)
-       })
-       .then(res => res.json())
-       .then(r => {
-           if(r.success) { alert("Registro salvo!"); turnoForm.reset(); loadHistory(matricula.value); logout(); }
-           else alert("Erro: "+r.message);
-       });
-   }
-};
-// -------------------- DELETAR --------------------
-function deletarRegistro() {
-   if(!registroSelecionado) return;
-   if(!confirm("Tem certeza que deseja deletar este registro?")) return;
-   fetch(API_BASE + "/deletarRegistro/" + registroSelecionado[0], { method:"DELETE" })
-   .then(res => res.json())
-   .then(r => {
-       if(r.success) { alert("Registro deletado!"); fecharModal(); loadHistory(matricula.value); registroSelecionado=null; logout(); }
-       else alert("Erro: "+r.message);
-   });
-}
-// -------------------- WATCHDOG --------------------
-function atualizarWatchdog() {
-   fetch(API_BASE + "/watchdog")
-   .then(res=>res.json())
-   .then(r => { watchdogEl.innerText = "Watchdog: " + r.watchdog; })
-   .catch(()=>{ watchdogEl.innerText = "Watchdog: OFFLINE"; });
-}
-setInterval(atualizarWatchdog,3000);
-atualizarWatchdog();
-// -------------------- PDF --------------------
-btnPDF.onclick = () => { window.open(API_BASE + "/gerarPDF", "_blank"); };
-// -------------------- LOG --------------------
-btnLog.onclick = () => {
-   fetch(API_BASE + "/log")
-   .then(res=>res.json())
-   .then(d=>{
-       if(!d.length){ alert("Nenhum log registrado."); return; }
-       let texto="📜 LOG DO SISTEMA:\n\n";
-       d.forEach(l=>{ texto += `${l[0]} | Matrícula: ${l[1]} | ${l[2]} | ${l[3]}\n`; });
-       alert(texto);
-   });
-};
-// -------------------- REGISTRAR LOG --------------------
-function registrarLog(mat, acao, extra="") {
-   fetch(API_BASE + "/registrarLog", {
-       method:"POST",
-       headers:{"Content-Type":"application/json"},
-       body: JSON.stringify({matricula:mat, acao:acao, extra:extra})
-   });
-}
-loadHistory();
+           `;
+           modalButtons.innerHTML = `
+<button onclick="fecharModal()" style="background:#2d6a4f;">Fechar</button>
+           `;
+           if (matricula.value === r[3]) {
+               modalButtons.innerHTML += `
+<button onclick="editarRegistro()" style="background:#4dabf7;">Editar</button>
+<button onclick="deletarRegistro()" style="background:#ff6b6b;">Deletar</button>
+               `;
+           }
+           modalDetalhes.style.display = "flex";
+       }
+       function fecharModal() {
+           modalDetalhes.style.display = "none";
+       }
+
+       /* ---------- EDITAR ---------- */
+       function editarRegistro() {
+           if (!registroSelecionado) return;
+           nome.value = registroSelecionado[2];
+           matricula.value = registroSelecionado[3];
+           data.value = registroSelecionado[1].split("/").reverse().join("-");
+           equipamento.value = registroSelecionado[4];
+           acionamento.value = registroSelecionado[5];
+           problema.value = registroSelecionado[6];
+           solucao.value = registroSelecionado[7];
+           encerramento.value = registroSelecionado[8];
+           fecharModal();
+           alert("Edite os campos no formulário e clique em Registrar para salvar as alterações.");
+           // Observação: salvar via google.script.run só funciona quando a UI for servida pelo Apps Script.
+       }
+
+       /* ---------- DELETAR ---------- */
+       function deletarRegistro() {
+           if (!registroSelecionado) return;
+           if (!confirm("Tem certeza que deseja deletar este registro?")) return;
+           alert("Operação de deletar só funciona quando a UI estiver servida pelo Apps Script (google.script.run).");
+       }
+
+       /* ---------- NOVO REGISTRO ---------- */
+       turnoForm.onsubmit = e => {
+           e.preventDefault();
+           const p = {
+               nome: nome.value,
+               matricula: matricula.value,
+               data: data.value,
+               equipamento: equipamento.value,
+               acionamento: acionamento.value,
+               problema: problema.value,
+               solucao: solucao.value,
+               encerramento: encerramento.value
+           };
+           alert("Salvar registros diretamente do GitHub Pages não é suportado por JSONP (somente GET). Para criar/editar/deletar é necessário servir a UI pelo Apps Script ou usar um proxy/endpoint que aceite POST.");
+       };
+
+       /* ---------- WATCHDOG (JSONP) ---------- */
+       function atualizarWatchdog() {
+           jsonpRequest({ action: "watchdog" }, "handleWatchdog", () => {
+               watchdogEl.innerText = "Watchdog: OFFLINE";
+           });
+       }
+       setInterval(atualizarWatchdog, 3000);
+       atualizarWatchdog();
+
+       /* ---------- PDF ---------- */
+       btnPDF.onclick = () => {
+           jsonpRequest({ action: "gerarPDF" }, "handleGerarPDF", () => {
+               alert("Erro ao gerar PDF (JSONP).");
+           });
+       };
+
+       /* ---------- LOG ---------- */
+       btnLog.onclick = () => {
+           jsonpRequest({ action: "log" }, "handleLog", () => {
+               alert("Erro ao carregar logs (JSONP).");
+           });
+       };
+
+       // carregar histórico inicial
+       loadHistory();
 </script>
 </body>
 </html>
