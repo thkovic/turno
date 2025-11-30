@@ -1,5 +1,5 @@
 // URL do seu Google Apps Script publicado como Web App
-const GAS_URL = "https://script.google.com/macros/s/AKfycbyjN_7typwQ8yFu-4CW6uRV9U4U6z1386BcGz3YAl_-di_KXedC2FFg3NEAIDjuL4ir/exec"; // substitua pelo link do seu Web App
+const GAS_URL = "https://script.google.com/macros/s/SEU_ID/exec"; // substitua pelo link do seu Web App
 
 // Referências aos elementos do DOM
 const loginForm = document.getElementById("loginForm");
@@ -38,13 +38,7 @@ loginForm.onsubmit = async e => {
   registroDiv.style.display = "block";
   matricula.value = mat;
   await loadHistory(mat);
-  if (mat === "991631240") {
-    logDiv.style.display = "block";
-    registrarLog(mat, "Login");
-  } else {
-    logDiv.style.display = "none";
-    registrarLog(mat, "Login");
-  }
+  registrarLog(mat, "Login");
 };
 
 /* ---------- LOGOUT ---------- */
@@ -70,38 +64,21 @@ async function loadHistory(matriculaFiltro = null) {
 
 function renderHistory(data) {
   const t = document.querySelector("#historyTable tbody");
-  const m = document.getElementById("mobileHistory");
   t.innerHTML = "";
-  m.innerHTML = "";
   if (!data.length) {
     t.innerHTML = '<tr><td colspan="9">Sem registros</td></tr>';
-    m.innerHTML = '<p style="text-align:center;color:#888;">Sem registros</p>';
     return;
   }
-  const searchTerm = searchInput.value.toLowerCase();
-  data.filter(r => r.some(c => c.toString().toLowerCase().includes(searchTerm)))
-    .forEach(r => {
-      // Desktop
-      let tr = document.createElement("tr");
-      tr.onclick = () => abrirModal(r);
-      r.slice(0, 9).forEach(col => {
-        let td = document.createElement("td");
-        td.textContent = col;
-        tr.appendChild(td);
-      });
-      t.appendChild(tr);
-      // Mobile
-      let card = document.createElement("div");
-      card.className = "history-card";
-      card.onclick = () => abrirModal(r);
-      card.innerHTML = `
-        <p><strong>ID:</strong> ${r[0]}</p>
-        <p><strong>Data:</strong> ${r[1]}</p>
-        <p><strong>Executante:</strong> ${r[2]}</p>
-        <p><strong>Equipamento:</strong> ${r[4]}</p>
-      `;
-      m.appendChild(card);
+  data.forEach(r => {
+    let tr = document.createElement("tr");
+    tr.onclick = () => abrirModal(r);
+    r.slice(0, 9).forEach(col => {
+      let td = document.createElement("td");
+      td.textContent = col;
+      tr.appendChild(td);
     });
+    t.appendChild(tr);
+  });
 }
 searchInput.oninput = () => renderHistory(fullHistory);
 
@@ -109,21 +86,21 @@ searchInput.oninput = () => renderHistory(fullHistory);
 function abrirModal(r) {
   registroSelecionado = r;
   modalFields.innerHTML = `
-    <div class="tech-field"><strong>ID:</strong> ${r[0]}</div>
-    <div class="tech-field"><strong>Data:</strong> ${r[1]}</div>
-    <div class="tech-field"><strong>Executante:</strong> ${r[2]}</div>
-    <div class="tech-field"><strong>Matrícula:</strong> ${r[3]}</div>
-    <div class="tech-field"><strong>Equipamento:</strong> ${r[4]}</div>
-    <div class="tech-field"><strong>Acionamento:</strong> ${r[5]}</div>
-    <div class="tech-field"><strong>Problema:</strong><br>${r[6]}</div>
-    <div class="tech-field"><strong>Solução:</strong><br>${r[7]}</div>
-    <div class="tech-field"><strong>Encerramento:</strong> ${r[8]}</div>
+    <div><strong>ID:</strong> ${r[0]}</div>
+    <div><strong>Data:</strong> ${r[1]}</div>
+    <div><strong>Executante:</strong> ${r[2]}</div>
+    <div><strong>Matrícula:</strong> ${r[3]}</div>
+    <div><strong>Equipamento:</strong> ${r[4]}</div>
+    <div><strong>Acionamento:</strong> ${r[5]}</div>
+    <div><strong>Problema:</strong> ${r[6]}</div>
+    <div><strong>Solução:</strong> ${r[7]}</div>
+    <div><strong>Encerramento:</strong> ${r[8]}</div>
   `;
-  modalButtons.innerHTML = `<button onclick="fecharModal()" style="background:#2d6a4f;">Fechar</button>`;
+  modalButtons.innerHTML = `<button onclick="fecharModal()">Fechar</button>`;
   if (matricula.value === r[3]) {
     modalButtons.innerHTML += `
-      <button onclick="editarRegistro()" style="background:#4dabf7;">Editar</button>
-      <button onclick="deletarRegistro()" style="background:#ff6b6b;">Deletar</button>
+      <button onclick="editarRegistro()">Editar</button>
+      <button onclick="deletarRegistro()">Deletar</button>
     `;
   }
   modalDetalhes.style.display = "flex";
@@ -144,7 +121,6 @@ function editarRegistro() {
   solucao.value = registroSelecionado[7];
   encerramento.value = registroSelecionado[8];
   fecharModal();
-  alert("Edite os campos no formulário e clique em Registrar para salvar as alterações.");
   turnoForm.onsubmit = async e => {
     e.preventDefault();
     const p = {
@@ -215,7 +191,7 @@ turnoForm.onsubmit = async e => {
   });
   const r = await res.json();
   if (r.success) {
-       alert("Registro salvo!");
+    alert("Registro salvo!");
     turnoForm.reset();
     loadHistory(matricula.value || null);
     registrarLog(matricula.value, "Novo Registro", "ID: " + r.id);
@@ -250,7 +226,6 @@ async function registrarLog(matricula, acao, detalhe = "") {
     console.error("Erro ao registrar log:", err);
   }
 }
-
 btnLog.onclick = async () => {
   try {
     const res = await fetch(GAS_URL + "?action=getLog");
@@ -266,26 +241,12 @@ btnLog.onclick = async () => {
 };
 
 /* ---------- PDF ---------- */
-btnPDF.onclick = () => {
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-  doc.setFontSize(14);
-  doc.text("Histórico de Registros", 14, 20);
-  let y = 30;
-  fullHistory.forEach(r => {
-    doc.text(`ID: ${r[0]} | Data: ${r[1]} | Executante: ${r[2]} | Equipamento: ${r[4]}`, 14, y);
-    y += 10;
-    if (y > 270) {
-      doc.addPage();
-      y = 20;
-    }
-  });
-  doc.save("historico.pdf");
+btnPDF.onclick = async () => {
+  try {
+    const res = await fetch(GAS_URL + "?action=gerarPDF");
+    const url = await res.json();
+    window.open(url, "_blank");
+  } catch (err) {
+    alert("Erro ao gerar PDF");
+  }
 };
-
-/* ---------- SERVICE WORKER ---------- */
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('service-worker.js')
-    .then(() => console.log('SW registrado!'))
-    .catch(err => console.error('Erro SW:', err));
-}
