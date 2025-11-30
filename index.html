@@ -29,6 +29,25 @@ button:hover{opacity:.95}
 .search-bar input{flex:1}
 .pdf-btn{background:#2d6a4f;margin-left:10px}
 .small{font-size:12px;color:#666}
+
+/* ---------- Correção: evita que a tabela estoure o layout ---------- */
+.history-wrapper {
+    width: 100%;
+    overflow-x: auto;          /* scroll horizontal só quando necessário */
+    margin-top: 10px;
+}
+#historyTable {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;       /* força colunas a respeitarem largura */
+}
+#historyTable th, #historyTable td {
+    word-break: break-word;    /* quebra palavras longas */
+    white-space: normal;       /* permite quebrar linhas */
+    padding: 8px;
+}
+
+/* ---------- Responsivo ---------- */
 @media(max-width:1200px){
   .container{width:95%;margin:10px auto;padding:12px;box-shadow:none}
   form{grid-template-columns:1fr}
@@ -89,16 +108,21 @@ button:hover{opacity:.95}
 
   <div class="history">
     <h3>📊 Histórico de Registros</h3>
-    <table id="historyTable">
-      <thead>
-        <tr>
-          <th>ID</th><th>Data</th><th>Executante</th><th>Matrícula</th><th>Equipamento</th><th>Acionamento</th><th>Problema</th><th>Solução</th><th>Encerramento</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr><td colspan="9">Carregando...</td></tr>
-      </tbody>
-    </table>
+
+    <!-- wrapper que evita overflow do layout -->
+    <div class="history-wrapper">
+      <table id="historyTable">
+        <thead>
+          <tr>
+            <th>ID</th><th>Data</th><th>Executante</th><th>Matrícula</th><th>Equipamento</th><th>Acionamento</th><th>Problema</th><th>Solução</th><th>Encerramento</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td colspan="9">Carregando...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
     <div id="mobileHistory"></div>
   </div>
 </div>
@@ -177,18 +201,21 @@ document.getElementById("btnLogout").onclick = async () => {
 };
 
 /* ================== CARREGAR HISTÓRICO ================== */
+/* O front-end ordena sempre do mais recente para o mais antigo (robusto contra formatos) */
 async function loadHistory(matriculaFiltro="") {
     try {
         const data = await callGAS({acao:"getHistorico", matricula: matriculaFiltro});
-
-        // 👉 INVERTE PARA MOSTRAR DO MAIS RECENTE PARA O MAIS ANTIGO
-        fullHistory = Array.isArray(data) ? data.reverse() : [];
-
+        fullHistory = Array.isArray(data) ? data : [];
+        // Ordena por data decrescente (tentando interpretar diferentes formatos)
+        fullHistory.sort((a,b) => {
+            const da = parsePossibleDate(a[1]);
+            const db = parsePossibleDate(b[1]);
+            return db - da; // mais recente primeiro
+        });
     } catch(err) {
         console.error("Erro ao carregar histórico:", err);
         fullHistory = [];
     }
-
     renderHistory(fullHistory);
     return fullHistory;
 }
@@ -231,9 +258,42 @@ function renderHistory(data) {
 searchInput.oninput = () => renderHistory(fullHistory);
 
 /* ================== UTILITÁRIOS ================== */
+/* Tenta converter valores em Date; aceita ISO ou strings "DD/MM/YYYY, HH:MM:SS" */
+function parsePossibleDate(v){
+    if(!v) return 0;
+    try{
+        // se for formato ISO (2025-11-29T03:00:00.000Z)
+        if(String(v).match(/^\d{4}-\d{2}-\d{2}T/)){
+            const d = new Date(String(v));
+            return isNaN(d) ? 0 : d.getTime();
+        }
+        // tenta reconhecer "DD/MM/YYYY" ou "DD/MM/YYYY, HH:MM:SS"
+        const s = String(v).trim();
+        const parts = s.split(',');
+        const datePart = parts[0].trim();
+        // separa por slash
+        if(datePart.match(/^\d{1,2}\/\d{1,2}\/\d{4}$/)){
+            const [dd,mm,yyyy] = datePart.split('/').map(x=>parseInt(x,10));
+            let hh=0, min=0, sec=0;
+            if(parts[1]){
+                const t = parts[1].trim().split(':').map(x=>parseInt(x,10));
+                hh = t[0]||0; min = t[1]||0; sec = t[2]||0;
+            }
+            const d = new Date(yyyy, mm-1, dd, hh, min, sec);
+            return isNaN(d) ? 0 : d.getTime();
+        }
+        // fallback: Date.parse
+        const df = Date.parse(s);
+        return isNaN(df) ? 0 : df;
+    } catch(e){
+        return 0;
+    }
+}
+
 function formatCell(value){
     if(value === null || value === undefined || value === "") return "";
     const s = String(value);
+    // se for ISO datetime
     if(s.match(/^\d{4}-\d{2}-\d{2}T/)) {
         try {
             const d = new Date(s);
@@ -242,6 +302,7 @@ function formatCell(value){
             }
         } catch(e){}
     }
+    // se for "DD/MM/YYYY, HH:MM:SS" já retorna como está
     return s;
 }
 function escapeHtml(s){
@@ -273,7 +334,7 @@ function formatTimeForInput(raw){
 function abrirModal(r){
     registroSelecionado = r;
     modalEditMode = false;
-    modalTitle = document.getElementById("modalTitle");
+    const modalTitle = document.getElementById("modalTitle");
     modalTitle.textContent = `Ficha Técnica - ID ${r[0]}`;
 
     modalFields.innerHTML = `
@@ -405,8 +466,6 @@ function fecharModal(){
 /* ================== REGISTRAR (form principal) ================== */
 turnoForm.onsubmit = async e => {
     e.preventDefault();
-    // se estiver em modo edição via form (neste fluxo não usamos form para editar — edição é pelo modal),
-    // então tratamos como novo registro apenas
     const payload = {
         acao: "registrarTurno",
         nome: document.getElementById("nome").value.trim(),
@@ -422,7 +481,6 @@ turnoForm.onsubmit = async e => {
         const res = await callGAS(payload);
         if(res && res.success){
             alert("Registro salvo!");
-            // solicitado: recarregar a página inteira
             location.reload();
         } else {
             alert("Erro ao salvar: " + (res && res.message ? res.message : "desconhecido"));
@@ -458,9 +516,19 @@ btnPDF.onclick = async () => {
     }
 };
 
+/* ================== BOTÃO LOG ================== */
+/* Usuário pediu que o log fique apenas na planilha — avisamos o usuário */
+document.getElementById("btnLog").onclick = () => {
+    alert("Os logs são gravados na aba 'Log' da planilha. Acesse a planilha para visualizar o LOG.");
+};
+
 /* ================== Inicialização ================== */
 loadHistory(""); // carrega tudo ao abrir a página
 
+/* fecha modal ao clicar fora */
+window.addEventListener("click", e => {
+    if(e.target === modalDetalhes) fecharModal();
+});
 </script>
 </body>
 </html>
