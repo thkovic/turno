@@ -160,7 +160,7 @@ loginForm.onsubmit = async e => {
     matricula.value = mat;
     await loadHistory(mat);
     logDiv.style.display = (mat === "991631240") ? "block" : "none";
-    await callGAS({acao:"registrarLog", matricula: mat, acaoTipo    :"Login"});
+    await callGAS({acao:"registrarLog    :"Login"});
 };
 
 /* LOGOUT */
@@ -250,8 +250,125 @@ function renderHistory(data) {
 }
 searchInput.oninput = () => renderHistory(fullHistory);
 
-/* ================== MODAL, EDIÇÃO, DELEÇÃO, REGISTRO, WATCHDOG, PDF ================== */
-/* ... (mantém exatamente como você já tinha implementado: abrirModal, enterModalEditMode, confirmAndDelete, fecharModal, turnoForm.onsubmit, atualizarWatchdog, btnPDF.onclick) ... */
+/* ================== MODAL ================== */
+function abrirModal(r){
+    registroSelecionado = r;
+    modalEditMode = false;
+    document.getElementById("modalTitle").textContent = `Ficha Técnica - ID ${r[0]}`;
+
+    modalFields.innerHTML = `
+      <div class="tech-field"><strong>ID:</strong> ${escapeHtml(r[0])}</div>
+      <div class="tech-field"><strong>Data:</strong> ${formatDate(r[1])}</div>
+      <div class="tech-field"><strong>Executante:</strong> ${escapeHtml(r[2])}</div>
+      <div class="tech-field"><strong>Matrícula:</strong> ${escapeHtml(r[3])}</div>
+      <div class="tech-field"><strong>Equipamento:</strong> ${escapeHtml(r[4])}</div>
+      <div class="tech-field"><strong>Acionamento:</strong> ${formatTime(r[5])}</div>
+      <div class="tech-field"><strong>Problema:</strong><div>${escapeHtml(r[6])}</div></div>
+      <div class="tech-field"><strong>Solução:</strong><div>${escapeHtml(r[7])}</div></div>
+      <div class="tech-field"><strong>Encerramento:</strong> ${formatTime(r[8])}</div>
+    `;
+
+    modalButtons.innerHTML = "";
+    const btnFechar = document.createElement("button");
+    btnFechar.textContent = "Fechar";
+    btnFechar.style.background = "#2d6a4f";
+    btnFechar.addEventListener("click", fecharModal);
+    modalButtons.appendChild(btnFechar);
+
+    if (String((matricula.value || "")).trim() === String(r[3]).trim()) {
+        const btnEditar = document.createElement("button");
+        btnEditar.textContent = "Editar";
+        btnEditar.style.background = "#4dabf7";
+        btnEditar.addEventListener("click", () => enterModalEditMode());
+        modalButtons.appendChild(btnEditar);
+
+        const btnDeletar = document.createElement("button");
+        btnDeletar.textContent = "Deletar";
+        btnDeletar.style.background = "#ff6b6b";
+        btnDeletar.addEventListener("click", () => confirmAndDelete());
+        modalButtons.appendChild(btnDeletar);
+    }
+
+    modalDetalhes.style.display = "flex";
+}
+
+function fecharModal(){
+    modalDetalhes.style.display = "none";
+    registroSelecionado = null;
+    modalEditMode = false;
+}
+
+/* ================== DELETAR ================== */
+async function confirmAndDelete(){
+    if(!registroSelecionado) return;
+    if(!confirm(`Deseja realmente deletar o registro ID ${registroSelecionado[0]}?`)) return;
+    try {
+        const res = await callGAS({acao:"deletarTurno", id: String(registroSelecionado[0]), matricula: String(matricula.value || "")});
+        if(res && res.success){
+            alert("Registro deletado.");
+            await loadHistory(matricula.value);
+            fecharModal();
+        } else {
+            alert("Erro ao deletar: " + (res && res.message ? res.message : "desconhecido"));
+        }
+    } catch(e) {
+        alert("Falha na requisição de deleção.");
+    }
+}
+
+/* ================== REGISTRAR ================== */
+turnoForm.onsubmit = async e => {
+    e.preventDefault();
+    const payload = {
+        acao: "registrarTurno",
+        nome: document.getElementById("nome").value.trim(),
+        matricula: document.getElementById("matricula").value.trim(),
+        data: document.getElementById("data").value || "",
+        equipamento: document.getElementById("equipamento").value.trim(),
+        acionamento: document.getElementById("acionamento").value || "",
+        problema: document.getElementById("problema").value.trim(),
+        solucao: document.getElementById("solucao").value.trim(),
+        encerramento: document.getElementById("encerramento").value || ""
+    };
+    try {
+        const res = await callGAS(payload);
+        if(res && res.success){
+            alert("Registro salvo!");
+            await loadHistory(matricula.value);
+            turnoForm.reset();
+        } else {
+            alert("Erro ao salvar: " + (res && res.message ? res.message : "desconhecido"));
+        }
+    } catch(e) {
+        alert("Falha na requisição de registro.");
+    }
+};
+
+/* ================== WATCHDOG ================== */
+async function atualizarWatchdog(){
+    try{
+        const r = await callGAS({acao:"getWatchdog"});
+        watchdogEl.innerText = "Watchdog: " + (r && r.watchdog !== undefined ? r.watchdog : "OFFLINE");
+    } catch(e) {
+        watchdogEl.innerText = "Watchdog: OFFLINE";
+    }
+}
+setInterval(atualizarWatchdog, 3000);
+atualizarWatchdog();
+
+/* ================== PDF ================== */
+btnPDF.onclick = async () => {
+    try {
+        const r = await callGAS({acao:"gerarPDF"});
+        if(r && r.url){
+            window.open(r.url, "_blank");
+        } else {
+            alert("Não foi possível gerar PDF.");
+        }
+    } catch(e) {
+        alert("Erro ao solicitar PDF.");
+    }
+};
 
 /* ================== Inicialização ================== */
 loadHistory(""); // carrega tudo ao abrir a página
