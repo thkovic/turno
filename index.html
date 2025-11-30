@@ -1,261 +1,259 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Sistema Passagem de Turno - Login</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Sistema de Histórico</title>
 <style>
-body { font-family: Arial, sans-serif; margin:0; padding:0; background:#fff; color:#333; }
-.container { max-width:1000px; margin:40px auto; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.1); border-radius:8px; }
-h1 { color:#2d6a4f; text-align:center; margin-bottom:20px; }
-form { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px; }
-form label { display:block; font-weight:bold; margin-bottom:4px; }
-form input, form textarea { width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; box-sizing:border-box; }
-form textarea { resize: vertical; min-height:60px; }
-.full-width { grid-column:1/-1; }
-button { background-color:#95d5b2; color:#fff; border:none; padding:12px 20px; font-size:16px; cursor:pointer; border-radius:4px; transition:0.3s; }
-button:hover { background-color:#74c69d; }
-button:disabled { background-color:#ccc; cursor:not-allowed; }
-.history { margin-top:40px; }
-.history table { width:100%; border-collapse:collapse; font-size:14px; }
-.history th, .history td { border:1px solid #ddd; padding:8px; text-align:left; }
-.history th { background-color:#e9f5ef; color:#2d6a4f; }
-.history tr:nth-child(even){ background:#f9f9f9; }
-#watchdog { position:absolute; top:10px; right:10px; padding:5px 10px; background:#95d5b2; color:#fff; border-radius:4px; font-weight:bold; }
-.alert { padding:10px; margin:10px 0; border-radius:4px; }
-.success { background:#d4edda; color:#155724; border:1px solid #c3e6cb; }
-.error { background:#f8d7da; color:#721c24; border:1px solid #f5c6cb; }
-.info { background:#d1ecf1; color:#0c5460; border:1px solid #bee5eb; }
-.loading { display:inline-block; width:20px; height:20px; border:3px solid #f3f3f3; border-top:3px solid #2d6a4f; border-radius:50%; animation:spin 1s linear infinite; margin-left:10px; }
-.debug-info { background:#fff3cd; color:#856404; border:1px solid #ffeaa7; padding:10px; margin:10px 0; border-radius:4px; font-size:12px; }
-.hidden { display:none; }
-@keyframes spin { from { transform: rotate(0deg);} to { transform: rotate(360deg); } }
+       body{font-family:Arial;margin:0;padding:0;background:#fff;color:#333}
+       .container{max-width:1000px;margin:40px auto;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.1);border-radius:8px}
+       h1{text-align:center;color:#2d6a4f;margin-bottom:20px}
+       form{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+       label{font-weight:600}
+       input,textarea{width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;box-sizing:border-box}
+       textarea{min-height:70px;resize:vertical}
+       .full-width{grid-column:1/-1}
+       button{background:#95d5b2;color:#fff;border:none;padding:10px 14px;border-radius:6px;cursor:pointer}
+       button:hover{opacity:.95}
+       #watchdog{position:fixed;top:10px;right:10px;background:#95d5b2;color:#fff;padding:6px 10px;border-radius:6px;font-weight:bold}
+       .history table{width:100%;border-collapse:collapse;font-size:13px}
+       .history th,.history td{border:1px solid #ddd;padding:8px;text-align:left;max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+       .history th{background:#e9f5ef;color:#2d6a4f}
+       #mobileHistory{display:none}
+       .history-card{background:#f7f7f7;padding:14px;margin:12px 0;border-radius:10px;box-shadow:0 2px 4px rgba(0,0,0,.15)}
+       .modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);justify-content:center;align-items:center;z-index:1000}
+       .modal-content{background:#fff;padding:20px;border-radius:10px;max-width:600px;width:90%;max-height:90%;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.2)}
+       .tech-field{margin-bottom:12px}
+       .search-bar{display:flex;gap:10px;margin-bottom:15px}
+       .search-bar input{flex:1}
+       .pdf-btn{background:#2d6a4f;margin-left:10px}
+       @media(max-width:1200px){
+         .container{width:95%;margin:10px auto;padding:12px;box-shadow:none}
+         form{grid-template-columns:1fr}
+         button{width:100%;padding:14px;font-size:16px}
+         #historyTable{display:none}
+         #mobileHistory{display:block}
+         .search-bar{flex-direction:column}
+         .pdf-btn{margin-left:0;width:100%}
+       }
 </style>
 </head>
 <body>
 <div id="watchdog">Watchdog: --</div>
 <div class="container">
-
-<h1>📝 Sistema de Passagem de Turno</h1>
-
-<div id="alertContainer"></div>
+<h1>📝 Sistema de Histórico</h1>
 
 <!-- LOGIN -->
 <div id="loginDiv">
-<h2>🔐 Login</h2>
+<h3>🔐 Login</h3>
 <form id="loginForm" class="full-width">
-<div class="full-width"><label>Matrícula</label><input type="text" id="loginMatricula" placeholder="Digite sua matrícula" required/></div>
-<div class="full-width"><button type="submit">Login</button></div>
-</form>
-</div>
-
-<!-- FORMULÁRIO DE REGISTRO -->
-<div id="registroDiv" class="hidden">
-<h2>Registrar Passagem de Turno</h2>
-<form id="turnoForm">
-<div><label>Nome do Operador *</label><input type="text" id="nome" required placeholder="Seu nome completo"/></div>
-<div><label>Matrícula *</label><input type="text" id="matricula" required readonly/></div>
-<div><label>Data *</label><input type="date" id="data" required/></div>
-<div><label>Equipamento *</label><input type="text" id="equipamento" required placeholder="Nome do equipamento"/></div>
-<div><label>Acionamento (Hora) *</label><input type="time" id="acionamento" required/></div>
-<div class="full-width"><label>Problema Identificado *</label><textarea id="problema" required placeholder="Descreva o problema"></textarea></div>
-<div class="full-width"><label>Solução Aplicada *</label><textarea id="solucao" required placeholder="Descreva a solução"></textarea></div>
-<div><label>Encerramento (Hora) *</label><input type="time" id="encerramento" required/></div>
 <div class="full-width">
-<button type="submit" id="btnSubmit">✅ Registrar Passagem de Turno</button>
-<button type="button" id="btnLogout" style="background:#ff6b6b; margin-left:10px;">🚪 Logout</button>
-<button type="button" id="btnLimpar" style="background:#ff6b6b; margin-left:10px;">🗑️ Limpar Planilha</button>
+<label>Matrícula</label>
+<input id="loginMatricula" required>
+</div>
+<div class="full-width">
+<button>Entrar</button>
 </div>
 </form>
 </div>
 
-<!-- HISTÓRICO -->
+<!-- REGISTRO -->
+<div id="registroDiv" style="display:none;">
+<h3>Registrar Passagem</h3>
+<form id="turnoForm">
+<div><label>Nome *</label><input id="nome" required></div>
+<div><label>Matrícula *</label><input id="matricula" readonly required></div>
+<div><label>Data *</label><input type="date" id="data" required></div>
+<div><label>Equipamento *</label><input id="equipamento" required></div>
+<div><label>Acionamento *</label><input type="time" id="acionamento" required></div>
+<div class="full-width"><label>Problema *</label><textarea id="problema" required></textarea></div>
+<div class="full-width"><label>Solução *</label><textarea id="solucao" required></textarea></div>
+<div><label>Encerramento *</label><input type="time" id="encerramento" required></div>
+<div class="full-width">
+<button id="btnSubmit">Registrar</button>
+<button type="button" id="btnLogout" style="background:#ff6b6b;margin-top:8px;">Logout</button>
+</div>
+</form>
+</div>
+
+<div id="logDiv" style="display:none; margin-top:15px;">
+<button id="btnLog" style="background:#1d3557;">📜 Sistema de Log</button>
+</div>
+
+<div class="search-bar">
+<input type="text" id="searchInput" placeholder="Buscar histórico (ID, nome, equipamento)">
+<button class="pdf-btn" id="btnPDF">📄 Gerar PDF</button>
+</div>
+
 <div class="history">
-<h2>📊 Histórico de Registros</h2>
-<button id="btnLoadHistory">🔄 Atualizar Histórico</button>
-<button id="btnDebug" style="background: #ff6b6b; margin-left: 10px;">🐛 Debug</button>
-<div id="historyInfo" style="margin:10px 0; font-style:italic;"></div>
+<h3>📊 Histórico de Registros</h3>
 <table id="historyTable">
 <thead>
 <tr>
-<th>ID</th>
-<th>Data</th>
-<th>Operador</th>
-<th>Matrícula</th>
-<th>Equipamento</th>
-<th>Acionamento</th>
-<th>Problema</th>
-<th>Solução</th>
-<th>Encerramento</th>
+<th>ID</th><th>Data</th><th>Executante</th><th>Matrícula</th><th>Equipamento</th><th>Acionamento</th><th>Problema</th><th>Solução</th><th>Encerramento</th>
 </tr>
 </thead>
 <tbody>
-<tr>
-<td colspan="9" style="text-align:center; padding:20px;">
-Clique em "Atualizar Histórico" para carregar os registros
-</td>
-</tr>
+<tr><td colspan="9">Carregando...</td></tr>
 </tbody>
 </table>
+<div id="mobileHistory"></div>
+</div>
+</div>
+
+<div class="modal" id="modalDetalhes">
+<div class="modal-content">
+<h2>Ficha Técnica</h2>
+<div id="modalFields"></div>
+<div id="modalButtons" style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
+<button onclick="fecharModal()" style="background:#2d6a4f;">Fechar</button>
+</div>
 </div>
 </div>
 
 <script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwFS6gRrIGYeWFZ9KYjSaOMLfJd_TTsrZcLNGyvdb7R0RZBcXrQUlgLUdAjNr7B58o/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbyjN_7typwQ8yFu-4CW6uRV9U4U6z1386BcGz3YAl_-di_KXedC2FFg3NEAIDjuL4ir/exec";
 
-let loggedIn = false;
+const loginForm = document.getElementById("loginForm");
+const loginDiv = document.getElementById("loginDiv");
+const registroDiv = document.getElementById("registroDiv");
+const matricula = document.getElementById("matricula");
+const turnoForm = document.getElementById("turnoForm");
+const searchInput = document.getElementById("searchInput");
+const btnPDF = document.getElementById("btnPDF");
+const modalDetalhes = document.getElementById("modalDetalhes");
+const modalFields = document.getElementById("modalFields");
+const modalButtons = document.getElementById("modalButtons");
+const watchdogEl = document.getElementById("watchdog");
+const logDiv = document.getElementById("logDiv");
+const btnLog = document.getElementById("btnLog");
+let fullHistory = [];
+let registroSelecionado = null;
 
-// Alerts
-function showAlert(msg, type="info"){
-    const container = document.getElementById("alertContainer");
-    const div = document.createElement("div");
-    div.className = `alert ${type}`;
-    div.textContent = msg;
-    container.appendChild(div);
-    setTimeout(()=>div.remove(),5000);
-}
-
-// Login
-document.getElementById("loginForm").addEventListener("submit", function(e){
-    e.preventDefault();
-    const matricula = document.getElementById("loginMatricula").value.trim();
-    if(!matricula){ showAlert("Informe sua matrícula","error"); return; }
-    loggedIn = true;
-    document.getElementById("registroDiv").classList.remove("hidden");
-    document.getElementById("loginDiv").classList.add("hidden");
-    document.getElementById("matricula").value = matricula;
-    document.getElementById("nome").value = "";
-    showAlert("✅ Login realizado com sucesso","success");
-});
-
-// Logout
-document.getElementById("btnLogout").addEventListener("click", ()=>{
-    loggedIn=false;
-    document.getElementById("registroDiv").classList.add("hidden");
-    document.getElementById("loginDiv").classList.remove("hidden");
-    showAlert("🔒 Logout realizado","info");
-});
-
-// Fetch Watchdog
-async function fetchWatchdog(){
-    try{
-        const resp = await fetch(SCRIPT_URL);
-        const data = await resp.json();
-        document.getElementById("watchdog").textContent = "Watchdog: "+ (data.watchdog || data.valor || "--");
-    }catch(e){ document.getElementById("watchdog").textContent="Watchdog: Erro"; }
-}
-
-// Post data
-async function postData(obj){
-    const resp = await fetch(SCRIPT_URL,{
-        method:"POST",
-        body:JSON.stringify(obj)
-    });
-    return await resp.json();
-}
-
-// Registro de turno
-document.getElementById("turnoForm").addEventListener("submit", async(e)=>{
-    e.preventDefault();
-    if(!loggedIn){ showAlert("❌ É necessário fazer login para registrar","error"); return; }
-
-    const btn = document.getElementById("btnSubmit");
-    const originalText = btn.textContent;
-    btn.textContent="Registrando..."; btn.disabled=true;
-
-    try{
-        const obj = {
-            nome: document.getElementById("nome").value.trim(),
-            matricula: document.getElementById("matricula").value.trim(),
-            data: document.getElementById("data").value,
-            equipamento: document.getElementById("equipamento").value.trim(),
-            acionamento: document.getElementById("acionamento").value,
-            problema: document.getElementById("problema").value.trim(),
-            solucao: document.getElementById("solucao").value.trim(),
-            encerramento: document.getElementById("encerramento").value
-        };
-        const resp = await postData(obj);
-        if(resp.success){
-            showAlert("✅ "+resp.message,"success");
-            document.getElementById("equipamento").value="";
-            document.getElementById("problema").value="";
-            document.getElementById("solucao").value="";
-            document.getElementById("acionamento").value="";
-            document.getElementById("encerramento").value="";
-            setTimeout(()=>loadHistory(),1000);
-        } else showAlert("❌ Erro: "+resp.message,"error");
-    } catch(error){ showAlert("❌ Erro: "+error.message,"error"); }
-    finally{ btn.textContent=originalText; btn.disabled=false; }
-});
-
-// Histórico
-async function getHistoryData(){ return await postData({getHistory:true}); }
-
-async function loadHistory(){
-    const data = await getHistoryData();
-    const tbody = document.querySelector("#historyTable tbody");
-    tbody.innerHTML="";
-
-    if(Array.isArray(data)){
-        if(data.length===0){
-            const tr=document.createElement("tr");
-            const td=document.createElement("td");
-            td.colSpan=9; td.textContent="Nenhum registro encontrado"; td.style.textAlign="center"; td.style.padding="20px";
-            tr.appendChild(td); tbody.appendChild(tr);
-        } else {
-            data.sort((a,b)=>new Date(b[1])-new Date(a[1]));
-            data.forEach(row=>{
-                const tr=document.createElement("tr");
-                const cols=[
-                    row[0]||"",                          // ID
-                    row[1] ? formatData(row[1]) : "",    // Data (yyyy-MM-dd)
-                    row[2]||"",                          // Operador
-                    row[3]||"",                          // Matrícula
-                    row[4]||"",                          // Equipamento
-                    row[5] ? formatHora(row[5]) : "",    // Acionamento (HH:mm)
-                    row[6]||"",                          // Problema
-                    row[7]||"",                          // Solução
-                    row[8] ? formatHora(row[8]) : ""     // Encerramento (HH:mm)
-                ];
-                cols.forEach(v=>{
-                    const td=document.createElement("td");
-                    td.textContent=v;
-                    tr.appendChild(td);
-                });
-                tbody.appendChild(tr);
-            });
-        }
-    } else showAlert("Erro ao carregar histórico","error");
-}
-
-// Formata data yyyy-MM-dd
-function formatData(d){
-    if(!d) return "";
-    if(d.includes("T")) return d.substring(0,10);
-    const date = new Date(d);
-    if(!isNaN(date.getTime())){
-        const yyyy = date.getFullYear();
-        const mm = (date.getMonth()+1).toString().padStart(2,"0");
-        const dd = date.getDate().toString().padStart(2,"0");
-        return `${yyyy}-${mm}-${dd}`;
+// ---------- FETCH AUX
+async function callGAS(params, method="GET") {
+    let url = GAS_URL;
+    let options = { method };
+    if(method === "GET") {
+        url += "?" + new URLSearchParams(params);
+    } else {
+        options.body = JSON.stringify(params);
+        options.headers = {"Content-Type":"application/json"};
     }
-    return d;
+    const res = await fetch(url, options);
+    return res.json();
 }
 
-// Formata hora HH:mm
-function formatHora(h){
-    if(!h) return "";
-    if(h.includes("T")) return h.substring(11,16);
-    if(h.match(/^\d{2}:\d{2}$/)) return h;
-    const date = new Date(h);
-    if(!isNaN(date.getTime())) return date.getHours().toString().padStart(2,"0")+":"+date.getMinutes().toString().padStart(2,"0");
-    return h;
+// ---------- LOGIN ----------
+loginForm.onsubmit = async e => {
+    e.preventDefault();
+    const mat = document.getElementById("loginMatricula").value;
+    loginDiv.style.display = "none";
+    registroDiv.style.display = "block";
+    matricula.value = mat;
+    await loadHistory(mat);
+    if(mat === "991631240") logDiv.style.display="block"; else logDiv.style.display="none";
+    await callGAS({acao:"registrarLog", matricula: mat, acaoTipo:"Login"});
+};
+
+// ---------- LOGOUT ----------
+document.getElementById("btnLogout").onclick = async () => {
+    await callGAS({acao:"registrarLog", matricula: matricula.value, acaoTipo:"Logout"});
+    registroDiv.style.display="none";
+    loginDiv.style.display="block";
+    turnoForm.reset();
+    matricula.value="";
+    await loadHistory();
+    logDiv.style.display="none";
+};
+
+// ---------- CARREGAR HISTÓRICO ----------
+async function loadHistory(matriculaFiltro=null){
+    const params = {acao:"getHistorico"};
+    if(matriculaFiltro) params.matricula = matriculaFiltro;
+    fullHistory = await callGAS(params);
+    renderHistory(fullHistory);
 }
 
-// Inicial
+// ---------- RENDER HISTÓRICO ----------
+function renderHistory(data){
+    const t = document.querySelector("#historyTable tbody");
+    const m = document.getElementById("mobileHistory");
+    t.innerHTML = ""; m.innerHTML = "";
+    if(!data.length){
+        t.innerHTML='<tr><td colspan="9">Sem registros</td></tr>';
+        m.innerHTML='<p style="text-align:center;color:#888;">Sem registros</p>';
+        return;
+    }
+    const searchTerm = searchInput.value.toLowerCase();
+    data.filter(r => r.some(c=>c.toString().toLowerCase().includes(searchTerm)))
+        .forEach(r=>{
+            let tr=document.createElement("tr");
+            tr.onclick=()=>abrirModal(r);
+            r.slice(0,9).forEach(col=>{let td=document.createElement("td"); td.textContent=col; tr.appendChild(td)});
+            t.appendChild(tr);
+
+            let card=document.createElement("div");
+            card.className="history-card";
+            card.onclick=()=>abrirModal(r);
+            card.innerHTML=`<p><strong>ID:</strong> ${r[0]}</p>
+<p><strong>Data:</strong> ${r[1]}</p>
+<p><strong>Executante:</strong> ${r[2]}</p>
+<p><strong>Equipamento:</strong> ${r[4]}</p>`;
+            m.appendChild(card);
+        });
+}
+searchInput.oninput=()=>renderHistory(fullHistory);
+
+// ---------- MODAL ----------
+function abrirModal(r){
+    registroSelecionado=r;
+    modalFields.innerHTML=`
+<div class="tech-field"><strong>ID:</strong> ${r[0]}</div>
+<div class="tech-field"><strong>Data:</strong> ${r[1]}</div>
+<div class="tech-field"><strong>Executante:</strong> ${r[2]}</div>
+<div class="tech-field"><strong>Matrícula:</strong> ${r[3]}</div>
+<div class="tech-field"><strong>Equipamento:</strong> ${r[4]}</div>
+<div class="tech-field"><strong>Acionamento:</strong> ${r[5]}</div>
+<div class="tech-field"><strong>Problema:</strong><br>${r[6]}</div>
+<div class="tech-field"><strong>Solução:</strong><br>${r[7]}</div>
+<div class="tech-field"><strong>Encerramento:</strong> ${r[8]}</div>`;
+    modalButtons.innerHTML=`<button onclick="fecharModal()" style="background:#2d6a4f;">Fechar</button>`;
+    if(matricula.value===r[3]){
+        modalButtons.innerHTML+=`<button onclick="editarRegistro()" style="background:#4dabf7;">Editar</button>
+<button onclick="deletarRegistro()" style="background:#ff6b6b;">Deletar</button>`;
+    }
+    modalDetalhes.style.display="flex";
+}
+function fecharModal(){ modalDetalhes.style.display="none"; }
+
+// ---------- REGISTRAR ----------
+turnoForm.onsubmit=async e=>{
+    e.preventDefault();
+    const p={
+        nome:nome.value, matricula:matricula.value, data:data.value,
+        equipamento:equipamento.value, acionamento:acionamento.value,
+        problema:problema.value, solucao:solucao.value, encerramento:encerramento.value
+    };
+    const r=await callGAS({acao:"registrarTurno", payload:p});
+    if(r.success){ alert("Registro salvo!"); turnoForm.reset(); await loadHistory(matricula.value); }
+    else alert("Erro: "+r.message);
+};
+
+// ---------- WATCHDOG ----------
+async function atualizarWatchdog(){
+    try{
+        const r = await callGAS({acao:"getWatchdog"});
+        watchdogEl.innerText = "Watchdog: "+r.watchdog;
+    }catch{ watchdogEl.innerText="Watchdog: OFFLINE"; }
+}
+setInterval(atualizarWatchdog,3000);
+atualizarWatchdog();
+
+// ---------- PDF ----------
+btnPDF.onclick=async ()=>{ const url=await callGAS({acao:"gerarPDF"}); window.open(url,"_blank"); };
+
 loadHistory();
-setInterval(fetchWatchdog,5000);
-document.getElementById("btnLoadHistory").addEventListener("click",loadHistory);
 </script>
 </body>
 </html>
