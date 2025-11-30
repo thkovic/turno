@@ -1,0 +1,11 @@
+{
+  "name": "sistema-historico-gas",
+  "version": "1.0.0",
+  "description": "Projeto Apps Script do Sistema de Histórico - pronto para uso com clasp",
+  "scripts": {
+    "push": "clasp push",
+    "deploy": "clasp push"
+  },
+  "author": "",
+  "license": "MIT"
+}
