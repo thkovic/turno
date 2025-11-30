@@ -320,6 +320,9 @@ function fecharModal(){
 /* EDIÇÃO */
 function enterModalEditMode(r){
     modalFields.innerHTML = `
+      <div class="tech-field"><label>Executante:</label>
+        <input id="editExecutante" value="${escapeHtml(r[2])}">
+      </div>
       <div class="tech-field"><label>Data:</label>
         <input type="date" id="editData" value="${new Date(r[1]).toISOString().split('T')[0]}">
       </div>
@@ -350,6 +353,7 @@ function enterModalEditMode(r){
                 acao: "editarTurno",
                 id: String(r[0]),
                 matricula: matricula.value,
+                executante: document.getElementById("editExecutante").value, // ✅ novo campo
                 data: document.getElementById("editData").value,
                 equipamento: document.getElementById("editEquipamento").value,
                 acionamento: document.getElementById("editAcionamento").value,
@@ -365,7 +369,7 @@ function enterModalEditMode(r){
             } else {
                 alert("Erro ao atualizar: " + (res && res.message ? res.message : "desconhecido"));
             }
-                } catch(e) {
+        } catch(e) {
             alert("Falha na requisição de edição.");
         }
     });
