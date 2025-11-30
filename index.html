@@ -5,37 +5,37 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Sistema de Histórico</title>
 <style>
-body{font-family:Arial;margin:0;padding:0;background:#fff;color:#333}
-.container{max-width:1000px;margin:40px auto;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.1);border-radius:8px}
-h1{text-align:center;color:#2d6a4f;margin-bottom:20px}
-form{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
-label{font-weight:600}
-input,textarea{width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;box-sizing:border-box}
-textarea{min-height:70px;resize:vertical}
-.full-width{grid-column:1/-1}
-button{background:#95d5b2;color:#fff;border:none;padding:10px 14px;border-radius:6px;cursor:pointer}
-button:hover{opacity:.95}
-#watchdog{position:fixed;top:10px;right:10px;background:#95d5b2;color:#fff;padding:6px 10px;border-radius:6px;font-weight:bold}
-.history table{width:100%;border-collapse:collapse;font-size:13px}
-.history th,.history td{border:1px solid #ddd;padding:8px;text-align:left;max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.history th{background:#e9f5ef;color:#2d6a4f}
-#mobileHistory{display:none}
-.history-card{background:#f7f7f7;padding:14px;margin:12px 0;border-radius:10px;box-shadow:0 2px 4px rgba(0,0,0,.15)}
-.modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);justify-content:center;align-items:center;z-index:1000}
-.modal-content{background:#fff;padding:20px;border-radius:10px;max-width:600px;width:90%;max-height:90%;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.2)}
-.tech-field{margin-bottom:12px}
-.search-bar{display:flex;gap:10px;margin-bottom:15px}
-.search-bar input{flex:1}
-.pdf-btn{background:#2d6a4f;margin-left:10px}
-@media(max-width:1200px){
-  .container{width:95%;margin:10px auto;padding:12px;box-shadow:none}
-  form{grid-template-columns:1fr}
-  button{width:100%;padding:14px;font-size:16px}
-  #historyTable{display:none}
-  #mobileHistory{display:block}
-  .search-bar{flex-direction:column}
-  .pdf-btn{margin-left:0;width:100%}
-}
+       body{font-family:Arial;margin:0;padding:0;background:#fff;color:#333}
+       .container{max-width:1000px;margin:40px auto;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.1);border-radius:8px}
+       h1{text-align:center;color:#2d6a4f;margin-bottom:20px}
+       form{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+       label{font-weight:600}
+       input,textarea{width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;box-sizing:border-box}
+       textarea{min-height:70px;resize:vertical}
+       .full-width{grid-column:1/-1}
+       button{background:#95d5b2;color:#fff;border:none;padding:10px 14px;border-radius:6px;cursor:pointer}
+       button:hover{opacity:.95}
+       #watchdog{position:fixed;top:10px;right:10px;background:#95d5b2;color:#fff;padding:6px 10px;border-radius:6px;font-weight:bold}
+       .history table{width:100%;border-collapse:collapse;font-size:13px}
+       .history th,.history td{border:1px solid #ddd;padding:8px;text-align:left;max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+       .history th{background:#e9f5ef;color:#2d6a4f}
+       #mobileHistory{display:none}
+       .history-card{background:#f7f7f7;padding:14px;margin:12px 0;border-radius:10px;box-shadow:0 2px 4px rgba(0,0,0,.15)}
+       .modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);justify-content:center;align-items:center;z-index:1000}
+       .modal-content{background:#fff;padding:20px;border-radius:10px;max-width:600px;width:90%;max-height:90%;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.2)}
+       .tech-field{margin-bottom:12px}
+       .search-bar{display:flex;gap:10px;margin-bottom:15px}
+       .search-bar input{flex:1}
+       .pdf-btn{background:#2d6a4f;margin-left:10px}
+       @media(max-width:1200px){
+         .container{width:95%;margin:10px auto;padding:12px;box-shadow:none}
+         form{grid-template-columns:1fr}
+         button{width:100%;padding:14px;font-size:16px}
+         #historyTable{display:none}
+         #mobileHistory{display:block}
+         .search-bar{flex-direction:column}
+         .pdf-btn{margin-left:0;width:100%}
+       }
 </style>
 </head>
 <body>
@@ -126,10 +126,11 @@ const modalFields = document.getElementById("modalFields");
 const modalButtons = document.getElementById("modalButtons");
 const watchdogEl = document.getElementById("watchdog");
 const logDiv = document.getElementById("logDiv");
+const btnLog = document.getElementById("btnLog");
 let fullHistory = [];
 let registroSelecionado = null;
 
-// ---------- FETCH AUX ----------
+// ---------- FETCH AUX
 async function callGAS(params, method="GET") {
     let url = GAS_URL;
     let options = { method };
@@ -170,8 +171,7 @@ document.getElementById("btnLogout").onclick = async () => {
 async function loadHistory(matriculaFiltro=null){
     const params = {acao:"getHistorico"};
     if(matriculaFiltro) params.matricula = matriculaFiltro;
-    const r = await callGAS(params);
-    fullHistory = r.data || [];
+      fullHistory = await callGAS(params);
     renderHistory(fullHistory);
 }
 
@@ -190,7 +190,11 @@ function renderHistory(data){
         .forEach(r=>{
             let tr=document.createElement("tr");
             tr.onclick=()=>abrirModal(r);
-            r.slice(0,9).forEach(col=>{let td=document.createElement("td"); td.textContent=col; tr.appendChild(td)});
+            r.slice(0,9).forEach(col=>{
+                let td=document.createElement("td");
+                td.textContent=col;
+                tr.appendChild(td);
+            });
             t.appendChild(tr);
 
             let card=document.createElement("div");
@@ -220,10 +224,8 @@ function abrirModal(r){
 <div class="tech-field"><strong>Encerramento:</strong> ${r[8]}</div>`;
     modalButtons.innerHTML=`<button onclick="fecharModal()" style="background:#2d6a4f;">Fechar</button>`;
     if(matricula.value===r[3]){
-        modalButtons.innerHTML+=`
-        <button onclick="editarRegistroFront()" style="background:#4dabf7;">Editar</button>
-        <button onclick="deletarRegistroFront()" style="background:#ff6b6b;">Deletar</button>
-        `;
+        modalButtons.innerHTML+=`<button onclick="editarRegistro()" style="background:#4dabf7;">Editar</button>
+<button onclick="deletarRegistro()" style="background:#ff6b6b;">Deletar</button>`;
     }
     modalDetalhes.style.display="flex";
 }
@@ -232,45 +234,31 @@ function fecharModal(){ modalDetalhes.style.display="none"; }
 // ---------- REGISTRAR ----------
 turnoForm.onsubmit=async e=>{
     e.preventDefault();
-    const p={nome:nome.value, matricula:matricula.value, data:data.value, equipamento:equipamento.value, acionamento:acionamento.value, problema:problema.value, solucao:solucao.value, encerramento:encerramento.value};
-    const r=await callGAS({acao:"registrarTurno", payload:p});
-    if(r.success){ alert("Registro salvo!"); turnoForm.reset(); await loadHistory(matricula.value); }
-    else alert("Erro: "+(r.message||JSON.stringify(r)));
-};
-
-// ---------- EDITAR / DELETAR ----------
-async function editarRegistroFront() {
-    if(!registroSelecionado) return;
-    const novo = {
+    const p={
         nome:nome.value, matricula:matricula.value, data:data.value,
         equipamento:equipamento.value, acionamento:acionamento.value,
         problema:problema.value, solucao:solucao.value, encerramento:encerramento.value
     };
-    const r = await callGAS({acao:"editarRegistro", id: registroSelecionado[0], payload: novo});
-    if(r.success){ alert("Registro atualizado!"); fecharModal(); await loadHistory(matricula.value); }
-    else alert("Erro: "+(r.message||JSON.stringify(r)));
-}
-
-async function deletarRegistroFront() {
-    if(!registroSelecionado) return;
-    if(!confirm("Deseja realmente deletar este registro?")) return;
-    const r = await callGAS({acao:"deletarRegistro", id: registroSelecionado[0], matricula: matricula.value});
-    if(r.success){ alert("Registro deletado!"); fecharModal(); await loadHistory(matricula.value); }
-    else alert("Erro: "+(r.message||JSON.stringify(r)));
-}
+    const r=await callGAS({acao:"registrarTurno", payload:p});
+    if(r.success){ alert("Registro salvo!"); turnoForm.reset(); await loadHistory(matricula.value); }
+    else alert("Erro: "+r.message);
+};
 
 // ---------- WATCHDOG ----------
 async function atualizarWatchdog(){
     try{
         const r = await callGAS({acao:"getWatchdog"});
-        watchdogEl.innerText = "Watchdog: "+(r.watchdog||"OFFLINE");
+        watchdogEl.innerText = "Watchdog: "+r.watchdog;
     }catch{ watchdogEl.innerText="Watchdog: OFFLINE"; }
 }
 setInterval(atualizarWatchdog,3000);
 atualizarWatchdog();
 
 // ---------- PDF ----------
-btnPDF.onclick=async ()=>{ const r=await callGAS({acao:"gerarPDF"}); window.open(r.url,"_blank"); };
+btnPDF.onclick=async ()=>{ 
+    const url=await callGAS({acao:"gerarPDF"}); 
+    window.open(url,"_blank"); 
+};
 
 loadHistory();
 </script>
