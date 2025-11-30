@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Sistema de Histórico</title>
 <style>
+/* estilos resumidos para clareza */
 body{font-family:Arial;margin:0;padding:0;background:#fff;color:#333}
 .container{max-width:1000px;margin:40px auto;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.1);border-radius:8px}
 h1{text-align:center;color:#2d6a4f;margin-bottom:20px}
@@ -27,7 +28,6 @@ button:hover{opacity:.95}
 .search-bar{display:flex;gap:10px;margin-bottom:15px}
 .search-bar input{flex:1}
 .pdf-btn{background:#2d6a4f;margin-left:10px}
-.small{font-size:12px;color:#666}
 @media(max-width:1200px){
   .container{width:95%;margin:10px auto;padding:12px;box-shadow:none}
   form{grid-template-columns:1fr}
@@ -112,7 +112,7 @@ button:hover{opacity:.95}
 </div>
 
 <script>
-const GAS_URL = "https://script.google.com/macros/s/AKfycbyjN_7typwQ8yFu-4CW6uRV9U4U6z1386BcGz3YAl_-di_KXedC2FFg3NEAIDjuL4ir/exec";
+const GAS_URL = "https://script.google.com/macros/s/SEU_SCRIPT_ID/exec";
 
 const loginForm = document.getElementById("loginForm");
 const loginDiv = document.getElementById("loginDiv");
@@ -157,26 +157,19 @@ loginForm.onsubmit = async (e) => {
         alert("Informe a matrícula.");
         return;
     }
-
     loginDiv.style.display = "none";
     registroDiv.style.display = "block";
     matricula.value = mat;
-
     await loadHistory(mat);
     logDiv.style.display = (mat === "991631240") ? "block" : "none";
-
     try {
-        await callGAS({
-            acao: "registrarLog",
-            matricula: mat,
-            acaoTipo: "Login"
-        });
+        await callGAS({acao:"registrarLog", matricula: mat, acaoTipo:"Login"});
     } catch (err) {
         console.error("Erro ao registrar log de login:", err);
     }
 };
 
-/* ================== LOGOUT ================== */
+/* LOGOUT */
 document.getElementById("btnLogout").onclick = async () => {
     await callGAS({acao:"registrarLog", matricula: matricula.value, acaoTipo:"Logout"});
     registroDiv.style.display = "none";
@@ -187,7 +180,7 @@ document.getElementById("btnLogout").onclick = async () => {
     logDiv.style.display = "none";
 };
 
-/* ================== FUNÇÕES DE FORMATO ================== */
+/* FUNÇÕES DE FORMATO */
 function formatDate(value){
     if(!value) return "";
     const d = new Date(value);
@@ -207,7 +200,7 @@ function escapeHtml(s){
       .replaceAll('"',"&quot;");
 }
 
-/* ================== CARREGAR HISTÓRICO ================== */
+/* CARREGAR HISTÓRICO */
 async function loadHistory(matriculaFiltro="") {
     try {
         const data = await callGAS({acao:"getHistorico", matricula: matriculaFiltro});
@@ -220,7 +213,7 @@ async function loadHistory(matriculaFiltro="") {
     return fullHistory;
 }
 
-/* ================== RENDER HISTÓRICO ================== */
+/* RENDER HISTÓRICO */
 function renderHistory(data) {
     const t = document.querySelector("#historyTable tbody");
     const m = document.getElementById("mobileHistory");
@@ -277,7 +270,7 @@ function renderHistory(data) {
 }
 searchInput.oninput = () => renderHistory(fullHistory);
 
-/* ================== MODAL ================== */
+/* MODAL */
 function abrirModal(r){
     registroSelecionado = r;
     document.getElementById("modalTitle").textContent = `Ficha Técnica - ID ${r[0]}`;
@@ -301,7 +294,6 @@ function abrirModal(r){
     btnFechar.addEventListener("click", fecharModal);
     modalButtons.appendChild(btnFechar);
 
-    // comparação corrigida para evitar espaços ou tipos diferentes
     if ((matricula.value || "").trim() == (r[3] || "").trim()) {
         const btnEditar = document.createElement("button");
         btnEditar.textContent = "Editar";
@@ -319,7 +311,12 @@ function abrirModal(r){
     modalDetalhes.style.display = "flex";
 }
 
-/* ================== MODO EDIÇÃO ================== */
+function fecharModal(){
+    modalDetalhes.style.display = "none";
+    registroSelecionado = null;
+}
+
+/* EDIÇÃO */
 function enterModalEditMode(r){
     modalFields.innerHTML = `
       <div class="tech-field"><label>Data:</label>
@@ -367,7 +364,7 @@ function enterModalEditMode(r){
             } else {
                 alert("Erro ao atualizar: " + (res && res.message ? res.message : "desconhecido"));
             }
-        } catch(e) {
+                } catch(e) {
             alert("Falha na requisição de edição.");
         }
     });
@@ -380,7 +377,25 @@ function enterModalEditMode(r){
     modalButtons.appendChild(btnCancelar);
 }
 
-/* ================== REGISTRAR ================== */
+/* DELETAR */
+async function confirmAndDelete(){
+    if(!registroSelecionado) return;
+    if(!confirm(`Deseja realmente deletar o registro ID ${registroSelecionado[0]}?`)) return;
+    try {
+        const res = await callGAS({acao:"deletarTurno", id: String(registroSelecionado[0]), matricula: String(matricula.value || "")});
+        if(res && res.success){
+            alert("Registro deletado.");
+            await loadHistory(matricula.value);
+            fecharModal();
+        } else {
+            alert("Erro ao deletar: " + (res && res.message ? res.message : "desconhecido"));
+        }
+    } catch(e) {
+        alert("Falha na requisição de deleção.");
+    }
+}
+
+/* REGISTRAR */
 turnoForm.onsubmit = async e => {
     e.preventDefault();
     const payload = {
@@ -408,7 +423,7 @@ turnoForm.onsubmit = async e => {
     }
 };
 
-/* ================== WATCHDOG ================== */
+/* WATCHDOG */
 async function atualizarWatchdog(){
     try{
         const r = await callGAS({acao:"getWatchdog"});
@@ -420,7 +435,7 @@ async function atualizarWatchdog(){
 setInterval(atualizarWatchdog, 3000);
 atualizarWatchdog();
 
-/* ================== PDF ================== */
+/* PDF */
 btnPDF.onclick = async () => {
     try {
         const r = await callGAS({acao:"gerarPDF"});
@@ -434,7 +449,7 @@ btnPDF.onclick = async () => {
     }
 };
 
-/* ================== Inicialização ================== */
+/* Inicialização */
 loadHistory(""); // carrega tudo ao abrir a página
 </script>
 </body>
