@@ -221,6 +221,18 @@ btnPDF.onclick = async () => {
         alert("Erro ao solicitar PDF.");
     }
 };
+/* ================== CARREGAR HISTÓRICO ================== */
+async function loadHistory(matriculaFiltro="") {
+    try {
+        const data = await callGAS({acao:"getHistorico", matricula: matriculaFiltro});
+        fullHistory = Array.isArray(data) ? data.reverse() : [];
+    } catch(err) {
+        console.error("Erro ao carregar histórico:", err);
+        fullHistory = [];
+    }
+    renderHistory(fullHistory);
+    return fullHistory;
+}
 
 /* ================== Inicialização ================== */
 loadHistory(""); // carrega tudo ao abrir a página
