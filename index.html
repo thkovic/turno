@@ -5,37 +5,37 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Sistema de Histórico</title>
 <style>
-       body{font-family:Arial;margin:0;padding:0;background:#fff;color:#333}
-       .container{max-width:1000px;margin:40px auto;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.1);border-radius:8px}
-       h1{text-align:center;color:#2d6a4f;margin-bottom:20px}
-       form{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
-       label{font-weight:600}
-       input,textarea{width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;box-sizing:border-box}
-       textarea{min-height:70px;resize:vertical}
-       .full-width{grid-column:1/-1}
-       button{background:#95d5b2;color:#fff;border:none;padding:10px 14px;border-radius:6px;cursor:pointer}
-       button:hover{opacity:.95}
-       #watchdog{position:fixed;top:10px;right:10px;background:#95d5b2;color:#fff;padding:6px 10px;border-radius:6px;font-weight:bold}
-       .history table{width:100%;border-collapse:collapse;font-size:13px}
-       .history th,.history td{border:1px solid #ddd;padding:8px;text-align:left;max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-       .history th{background:#e9f5ef;color:#2d6a4f}
-       #mobileHistory{display:none}
-       .history-card{background:#f7f7f7;padding:14px;margin:12px 0;border-radius:10px;box-shadow:0 2px 4px rgba(0,0,0,.15)}
-       .modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);justify-content:center;align-items:center;z-index:1000}
-       .modal-content{background:#fff;padding:20px;border-radius:10px;max-width:600px;width:90%;max-height:90%;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.2)}
-       .tech-field{margin-bottom:12px}
-       .search-bar{display:flex;gap:10px;margin-bottom:15px}
-       .search-bar input{flex:1}
-       .pdf-btn{background:#2d6a4f;margin-left:10px}
-       @media(max-width:1200px){
-         .container{width:95%;margin:10px auto;padding:12px;box-shadow:none}
-         form{grid-template-columns:1fr}
-         button{width:100%;padding:14px;font-size:16px}
-         #historyTable{display:none}
-         #mobileHistory{display:block}
-         .search-bar{flex-direction:column}
-         .pdf-btn{margin-left:0;width:100%}
-       }
+body{font-family:Arial;margin:0;padding:0;background:#fff;color:#333}
+.container{max-width:1000px;margin:40px auto;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.1);border-radius:8px}
+h1{text-align:center;color:#2d6a4f;margin-bottom:20px}
+form{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+label{font-weight:600}
+input,textarea{width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;box-sizing:border-box}
+textarea{min-height:70px;resize:vertical}
+.full-width{grid-column:1/-1}
+button{background:#95d5b2;color:#fff;border:none;padding:10px 14px;border-radius:6px;cursor:pointer}
+button:hover{opacity:.95}
+#watchdog{position:fixed;top:10px;right:10px;background:#95d5b2;color:#fff;padding:6px 10px;border-radius:6px;font-weight:bold}
+.history table{width:100%;border-collapse:collapse;font-size:13px}
+.history th,.history td{border:1px solid #ddd;padding:8px;text-align:left;max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.history th{background:#e9f5ef;color:#2d6a4f}
+#mobileHistory{display:none}
+.history-card{background:#f7f7f7;padding:14px;margin:12px 0;border-radius:10px;box-shadow:0 2px 4px rgba(0,0,0,.15)}
+.modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);justify-content:center;align-items:center;z-index:1000}
+.modal-content{background:#fff;padding:20px;border-radius:10px;max-width:600px;width:90%;max-height:90%;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.2)}
+.tech-field{margin-bottom:12px}
+.search-bar{display:flex;gap:10px;margin-bottom:15px}
+.search-bar input{flex:1}
+.pdf-btn{background:#2d6a4f;margin-left:10px}
+@media(max-width:1200px){
+  .container{width:95%;margin:10px auto;padding:12px;box-shadow:none}
+  form{grid-template-columns:1fr}
+  button{width:100%;padding:14px;font-size:16px}
+  #historyTable{display:none}
+  #mobileHistory{display:block}
+  .search-bar{flex-direction:column}
+  .pdf-btn{margin-left:0;width:100%}
+}
 </style>
 </head>
 <body>
@@ -43,7 +43,6 @@
 <div class="container">
 <h1>📝 Sistema de Histórico</h1>
 
-<!-- LOGIN -->
 <div id="loginDiv">
 <h3>🔐 Login</h3>
 <form id="loginForm" class="full-width">
@@ -57,7 +56,6 @@
 </form>
 </div>
 
-<!-- REGISTRO -->
 <div id="registroDiv" style="display:none;">
 <h3>Registrar Passagem</h3>
 <form id="turnoForm">
@@ -126,56 +124,53 @@ const modalFields = document.getElementById("modalFields");
 const modalButtons = document.getElementById("modalButtons");
 const watchdogEl = document.getElementById("watchdog");
 const logDiv = document.getElementById("logDiv");
-const btnLog = document.getElementById("btnLog");
 let fullHistory = [];
 let registroSelecionado = null;
 
-// ---------- FETCH AUX
-async function callGAS(params, method="GET") {
-    let url = GAS_URL;
-    let options = { method };
-    if(method === "GET") {
-        url += "?" + new URLSearchParams(params);
-    } else {
-        options.body = JSON.stringify(params);
-        options.headers = {"Content-Type":"application/json"};
-    }
-    const res = await fetch(url, options);
-    return res.json();
+// ----------------- JSONP FETCH -----------------
+function callGAS(params) {
+    const callback = "handleResponse_" + Math.random().toString(36).substring(2, 15);
+    const url = GAS_URL + "?" + new URLSearchParams({...params, callback});
+    return new Promise((resolve, reject) => {
+        window[callback] = (data) => { resolve(data); delete window[callback]; };
+        const script = document.createElement("script");
+        script.src = url;
+        script.onerror = () => reject("Falha na requisição JSONP");
+        document.body.appendChild(script);
+    });
 }
 
-// ---------- LOGIN ----------
+// ----------------- LOGIN -----------------
 loginForm.onsubmit = async e => {
     e.preventDefault();
     const mat = document.getElementById("loginMatricula").value;
     loginDiv.style.display = "none";
     registroDiv.style.display = "block";
     matricula.value = mat;
-    await loadHistory(mat);
+    fullHistory = await loadHistory(mat);
     if(mat === "991631240") logDiv.style.display="block"; else logDiv.style.display="none";
     await callGAS({acao:"registrarLog", matricula: mat, acaoTipo:"Login"});
 };
 
-// ---------- LOGOUT ----------
+// ----------------- LOGOUT -----------------
 document.getElementById("btnLogout").onclick = async () => {
     await callGAS({acao:"registrarLog", matricula: matricula.value, acaoTipo:"Logout"});
     registroDiv.style.display="none";
     loginDiv.style.display="block";
     turnoForm.reset();
     matricula.value="";
-    await loadHistory();
+    fullHistory = await loadHistory();
     logDiv.style.display="none";
 };
 
-// ---------- CARREGAR HISTÓRICO ----------
+// ----------------- HISTÓRICO -----------------
 async function loadHistory(matriculaFiltro=null){
-    const params = {acao:"getHistorico"};
-    if(matriculaFiltro) params.matricula = matriculaFiltro;
-      fullHistory = await callGAS(params);
+    const data = await callGAS({acao:"getHistorico", matricula: matriculaFiltro});
+    fullHistory = data;
     renderHistory(fullHistory);
+    return fullHistory;
 }
 
-// ---------- RENDER HISTÓRICO ----------
 function renderHistory(data){
     const t = document.querySelector("#historyTable tbody");
     const m = document.getElementById("mobileHistory");
@@ -209,11 +204,10 @@ function renderHistory(data){
 }
 searchInput.oninput=()=>renderHistory(fullHistory);
 
-// ---------- MODAL ----------
+// ----------------- MODAL -----------------
 function abrirModal(r){
     registroSelecionado=r;
-    modalFields.innerHTML=`
-<div class="tech-field"><strong>ID:</strong> ${r[0]}</div>
+    modalFields.innerHTML=`<div class="tech-field"><strong>ID:</strong> ${r[0]}</div>
 <div class="tech-field"><strong>Data:</strong> ${r[1]}</div>
 <div class="tech-field"><strong>Executante:</strong> ${r[2]}</div>
 <div class="tech-field"><strong>Matrícula:</strong> ${r[3]}</div>
@@ -231,132 +225,34 @@ function abrirModal(r){
 }
 function fecharModal(){ modalDetalhes.style.display="none"; }
 
-// ---------- REGISTRAR ----------
+// ----------------- REGISTRAR -----------------
 turnoForm.onsubmit = async e => {
     e.preventDefault();
-
     const p = {
         nome: document.getElementById("nome").value,
         matricula: document.getElementById("matricula").value,
-        data: document.getElementById("data").value,          // yyyy-MM-dd
+        data: document.getElementById("data").value,
         equipamento: document.getElementById("equipamento").value,
-        acionamento: document.getElementById("acionamento").value, // HH:mm
+        acionamento: document.getElementById("acionamento").value,
         problema: document.getElementById("problema").value,
         solucao: document.getElementById("solucao").value,
-        encerramento: document.getElementById("encerramento").value // HH:mm
+        encerramento: document.getElementById("encerramento").value
     };
-
-    try {
-        // força POST para enviar o payload corretamente
-        const r = await callGAS({acao:"registrarTurno", payload:p}, "POST");
-
-        if (r.success) {
-            alert("Registro salvo!");
-            turnoForm.reset();
-            await loadHistory(document.getElementById("matricula").value);
-        } else {
-            alert("Erro: " + (r.message || "Falha desconhecida"));
-        }
-    } catch (err) {
-        alert("Erro de comunicação com o servidor: " + err.message);
-    }
+    const r = await callGAS({...p, acao:"registrarTurno"});
+    if(r.success){
+        alert("Registro salvo!");
+        turnoForm.reset();
+        await loadHistory(document.getElementById("matricula").value);
+    }else alert("Erro: " + (r.message || "Falha desconhecida"));
 };
-// ---------- EDITAR ----------
-async function editarRegistro(){
-    if(!registroSelecionado) return;
 
-    // Monta um formulário no modal com os valores atuais
-    modalFields.innerHTML = `
-<div class="tech-field"><strong>ID:</strong> ${registroSelecionado[0]}</div>
-<div class="tech-field"><label><strong>Data:</strong></label><br><input type="date" id="editData" value="${registroSelecionado[1]}"></div>
-<div class="tech-field"><label><strong>Executante:</strong></label><br><input type="text" id="editNome" value="${registroSelecionado[2]}"></div>
-<div class="tech-field"><label><strong>Matrícula:</strong></label><br><input type="text" id="editMatricula" value="${registroSelecionado[3]}" readonly></div>
-<div class="tech-field"><label><strong>Equipamento:</strong></label><br><input type="text" id="editEquipamento" value="${registroSelecionado[4]}"></div>
-<div class="tech-field"><label><strong>Acionamento:</strong></label><br><input type="time" id="editAcionamento" value="${registroSelecionado[5]}"></div>
-<div class="tech-field"><label><strong>Problema:</strong></label><br><textarea id="editProblema">${registroSelecionado[6]}</textarea></div>
-<div class="tech-field"><label><strong>Solução:</strong></label><br><textarea id="editSolucao">${registroSelecionado[7]}</textarea></div>
-<div class="tech-field"><label><strong>Encerramento:</strong></label><br><input type="time" id="editEncerramento" value="${registroSelecionado[8]}"></div>
-    `;
-
-    // Botões de ação
-    modalButtons.innerHTML = `
-<button onclick="fecharModal()" style="background:#6c757d;">Cancelar</button>
-<button onclick="salvarEdicao()" style="background:#2d6a4f;">Salvar</button>
-    `;
-}
-
-// Valida e envia a edição
-async function salvarEdicao(){
-    const payload = {
-        id: registroSelecionado[0],
-        nome: document.getElementById('editNome').value.trim(),
-        matricula: document.getElementById('editMatricula').value.trim(),
-        data: document.getElementById('editData').value,
-        equipamento: document.getElementById('editEquipamento').value.trim(),
-        acionamento: document.getElementById('editAcionamento').value,
-        problema: document.getElementById('editProblema').value.trim(),
-        solucao: document.getElementById('editSolucao').value.trim(),
-        encerramento: document.getElementById('editEncerramento').value
-    };
-
-    // Validações básicas
-    if(!payload.nome || !payload.data || !payload.equipamento || !payload.acionamento || !payload.problema || !payload.solucao || !payload.encerramento){
-        alert('Preencha todos os campos obrigatórios.');
-        return;
-    }
-    if(payload.acionamento && payload.encerramento && payload.acionamento > payload.encerramento){
-        alert('Encerramento deve ser maior que o Acionamento.');
-        return;
-    }
-
-    try{
-        const r = await callGAS({acao:'editarTurno', payload});
-        if(r.success){
-            alert('Registro atualizado com sucesso!');
-            fecharModal();
-            await loadHistory(matricula.value || null);
-        }else{
-            alert('Erro ao atualizar: ' + (r.message || 'desconhecido'));
-        }
-    }catch(err){
-        alert('Falha na edição. Tente novamente.');
-    }
-}
-
-// ---------- DELETAR ----------
-async function deletarRegistro(){
-    if(!registroSelecionado) return;
-    const ok = confirm(`Deseja realmente deletar o registro ID ${registroSelecionado[0]}?`);
-    if(!ok) return;
-
-    try{
-        const r = await callGAS({acao:'deletarTurno', id: registroSelecionado[0], matricula: matricula.value});
-        if(r.success){
-            alert('Registro deletado.');
-            fecharModal();
-            await loadHistory(matricula.value || null);
-        }else{
-            alert('Erro ao deletar: ' + (r.message || 'desconhecido'));
-        }
-    }catch(err){
-        alert('Falha na deleção. Tente novamente.');
-    }
-}
-// ---------- WATCHDOG ----------
+// ----------------- WATCHDOG -----------------
 async function atualizarWatchdog(){
-    try{
-        const r = await callGAS({acao:"getWatchdog"});
-        watchdogEl.innerText = "Watchdog: "+r.watchdog;
-    }catch{ watchdogEl.innerText="Watchdog: OFFLINE"; }
+    const r = await callGAS({acao:"getWatchdog"});
+    watchdogEl.innerText = "Watchdog: "+(r.watchdog||"OFFLINE");
 }
 setInterval(atualizarWatchdog,3000);
 atualizarWatchdog();
-
-// ---------- PDF ----------
-btnPDF.onclick=async ()=>{ 
-    const url=await callGAS({acao:"gerarPDF"}); 
-    window.open(url,"_blank"); 
-};
 
 loadHistory();
 </script>
