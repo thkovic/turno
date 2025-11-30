@@ -1,7 +1,7 @@
 // URL do seu Google Apps Script publicado como Web App
-const GAS_URL = "https://script.google.com/macros/s/AKfycbyjN_7typwQ8yFu-4CW6uRV9U4U6z1386BcGz3YAl_-di_KXedC2FFg3NEAIDjuL4ir/exec"; // substitua pelo link do seu Web App
+const GAS_URL = "https://script.google.com/macros/s/SEU_ID/exec"; // substitua pelo link do seu Web App
 
-// Referências aos elementos
+// Referências aos elementos do DOM
 const loginForm = document.getElementById("loginForm");
 const loginDiv = document.getElementById("loginDiv");
 const registroDiv = document.getElementById("registroDiv");
@@ -17,6 +17,16 @@ const logDiv = document.getElementById("logDiv");
 const btnLog = document.getElementById("btnLog");
 const btnLogout = document.getElementById("btnLogout");
 
+// Campos do formulário de registro
+const nome = document.getElementById("nome");
+const data = document.getElementById("data");
+const equipamento = document.getElementById("equipamento");
+const acionamento = document.getElementById("acionamento");
+const problema = document.getElementById("problema");
+const solucao = document.getElementById("solucao");
+const encerramento = document.getElementById("encerramento");
+
+// Variáveis de controle
 let fullHistory = [];
 let registroSelecionado = null;
 
@@ -205,7 +215,7 @@ turnoForm.onsubmit = async e => {
   });
   const r = await res.json();
   if (r.success) {
-    alert("Registro salvo!");
+       alert("Registro salvo!");
     turnoForm.reset();
     loadHistory(matricula.value || null);
     registrarLog(matricula.value, "Novo Registro", "ID: " + r.id);
@@ -218,4 +228,64 @@ turnoForm.onsubmit = async e => {
 /* ---------- WATCHDOG ---------- */
 async function atualizarWatchdog() {
   try {
-    const res
+    const res = await fetch(GAS_URL + "?action=getWatchdog");
+    const d = await res.json();
+    watchdogEl.textContent = "Watchdog: " + d.status;
+  } catch (err) {
+    watchdogEl.textContent = "Watchdog: erro";
+  }
+}
+setInterval(atualizarWatchdog, 5000);
+atualizarWatchdog();
+
+/* ---------- LOG ---------- */
+async function registrarLog(matricula, acao, detalhe = "") {
+  try {
+    await fetch(GAS_URL + "?action=registrarLog", {
+      method: "POST",
+      body: JSON.stringify({ matricula, acao, detalhe }),
+      headers: { "Content-Type": "application/json" }
+    });
+  } catch (err) {
+    console.error("Erro ao registrar log:", err);
+  }
+}
+
+btnLog.onclick = async () => {
+  try {
+    const res = await fetch(GAS_URL + "?action=getLog");
+    const logs = await res.json();
+    let txt = "Sistema de Log:\n\n";
+    logs.forEach(l => {
+      txt += `${l[0]} - ${l[1]} - ${l[2]} - ${l[3]}\n`;
+    });
+    alert(txt);
+  } catch (err) {
+    alert("Erro ao carregar log");
+  }
+};
+
+/* ---------- PDF ---------- */
+btnPDF.onclick = () => {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  doc.setFontSize(14);
+  doc.text("Histórico de Registros", 14, 20);
+  let y = 30;
+  fullHistory.forEach(r => {
+    doc.text(`ID: ${r[0]} | Data: ${r[1]} | Executante: ${r[2]} | Equipamento: ${r[4]}`, 14, y);
+    y += 10;
+    if (y > 270) {
+      doc.addPage();
+      y = 20;
+    }
+  });
+  doc.save("historico.pdf");
+};
+
+/* ---------- SERVICE WORKER ---------- */
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('service-worker.js')
+    .then(() => console.log('SW registrado!'))
+    .catch(err => console.error('Erro SW:', err));
+}
