@@ -82,7 +82,7 @@ button:hover{opacity:.95}
   </div>
 
   <div class="search-bar">
-    <input type="text" id="searchInput" placeholder="Buscar histórico (ID, nome, equipamento)">
+    <input type="text" id="searchInput" placeholder="Buscar histórico (ID, nome, equipamento, data)">
     <button class="pdf-btn" id="btnPDF">📄 Gerar PDF</button>
   </div>
 
@@ -101,6 +101,75 @@ button:hover{opacity:.95}
     <div id="mobileHistory"></div>
   </div>
 </div>
+
+<!-- MODAL -->
+<div class="modal" id="modalDetalhes" aria-hidden="true">
+  <div class="modal-content" role="dialog" aria-modal="true">
+    <h2 id="modalTitle">Ficha Técnica</h2>
+    <div id="modalFields"></div>
+    <div id="modalButtons" style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;"></div>
+  </div>
+</div>
+
+<script>
+/* ... funções callGAS, login/logout, formatDate, formatTime ... */
+
+/* ================== RENDER HISTÓRICO ================== */
+function renderHistory(data) {
+    const t = document.querySelector("#historyTable tbody");
+    const m = document.getElementById("mobileHistory");
+    t.innerHTML = ""; m.innerHTML = "";
+    if(!Array.isArray(data) || data.length === 0) {
+        t.innerHTML = '<tr><td colspan="9">Sem registros</td></tr>';
+        m.innerHTML = '<p style="text-align:center;color:#888;">Sem registros</p>';
+        return;
+    }
+    const searchTerm = (searchInput.value || "").toLowerCase();
+
+    data
+      .filter(r => {
+          return r.some((c, idx) => {
+              let val = String(c || "").toLowerCase();
+              if ([1,5,8].includes(idx)) {
+                  const d = new Date(c);
+                  if (!isNaN(d)) {
+                      const dataStr = d.toLocaleDateString("pt-BR").toLowerCase();
+                      const horaStr = d.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}).toLowerCase();
+                      return dataStr.includes(searchTerm) || horaStr.includes(searchTerm);
+                  }
+              }
+              return val.includes(searchTerm);
+          });
+      })
+      .forEach(r => {
+          const tr = document.createElement("tr");
+          tr.dataset.id = String(r[0]);
+          tr.addEventListener("click", () => abrirModal(r));
+          tr.innerHTML = `
+            <td>${escapeHtml(r[0])}</td>
+            <td>${formatDate(r[1])}</td>
+            <td>${escapeHtml(r[2])}</td>
+            <td>${escapeHtml(r[3])}</td>
+            <td>${escapeHtml(r[4])}</td>
+            <td>${formatTime(r[5])}</td>
+            <td>${escapeHtml(r[6])}</td>
+            <td>${escapeHtml(r[7])}</td>
+            <td>${formatTime(r[8])}</td>
+          `;
+          t.appendChild(tr);
+
+          const card = document.createElement("div");
+          card.className = "history-card";
+          card.dataset.id = String(r[0]);
+          card.addEventListener("click", () => abrirModal(r));
+          card.innerHTML = `<p><strong>ID:</strong> ${r[0]}</p>
+                            <p><strong>Data:</strong> ${formatDate(r[1])}</p>
+                            <p><strong>Executante:</strong> ${escapeHtml(r[2])}</p>
+                            <p><strong>Equipamento:</strong> ${escapeHtml(r[4])}</p>`;
+          m.appendChild(card);
+      });
+}
+searchInput.oninput = () => renderHistory(fullHistory);
 
 <!-- MODAL -->
 <div class="modal" id="modalDetalhes" aria-hidden="true">
