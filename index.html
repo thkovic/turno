@@ -112,7 +112,8 @@ button:hover{opacity:.95}
 </div>
 
 <script>
-// ---------- VARIÁVEIS ----------
+const GAS_URL = "https://script.google.com/macros/s/AKfycbyjN_7typwQ8yFu-4CW6uRV9U4U6z1386BcGz3YAl_-di_KXedC2FFg3NEAIDjuL4ir/exec";
+
 const loginForm = document.getElementById("loginForm");
 const loginDiv = document.getElementById("loginDiv");
 const registroDiv = document.getElementById("registroDiv");
@@ -127,45 +128,59 @@ const watchdogEl = document.getElementById("watchdog");
 const logDiv = document.getElementById("logDiv");
 const btnLog = document.getElementById("btnLog");
 
-let fullHistory = JSON.parse(localStorage.getItem("historico")||"[]");
-let fullLog = JSON.parse(localStorage.getItem("log")||"[]");
+let fullHistory = [];
 let registroSelecionado = null;
 
+// ---------- FETCH AUX ----------
+async function callGAS(params, method="GET") {
+    let url = GAS_URL;
+    let options = { method };
+    if(method === "GET") {
+        url += "?" + new URLSearchParams(params);
+    } else {
+        options.body = JSON.stringify(params);
+        options.headers = {"Content-Type":"application/json"};
+    }
+    const res = await fetch(url, options);
+    return res.json();
+}
+
 // ---------- LOGIN ----------
-loginForm.onsubmit = e => {
+loginForm.onsubmit = async e => {
     e.preventDefault();
     const mat = document.getElementById("loginMatricula").value;
     loginDiv.style.display = "none";
     registroDiv.style.display = "block";
     matricula.value = mat;
-    loadHistory(mat);
+    await loadHistory(mat);
     if(mat === "991631240") logDiv.style.display="block"; else logDiv.style.display="none";
-    registrarLog(mat,"Login");
+    await callGAS({acao:"registrarLog", matricula: mat, acaoTipo:"Login"});
 };
 
 // ---------- LOGOUT ----------
-document.getElementById("btnLogout").onclick = () => {
-    registrarLog(matricula.value,"Logout");
+document.getElementById("btnLogout").onclick = async () => {
+    await callGAS({acao:"registrarLog", matricula: matricula.value, acaoTipo:"Logout"});
     registroDiv.style.display="none";
     loginDiv.style.display="block";
     turnoForm.reset();
     matricula.value="";
-    loadHistory();
+    await loadHistory();
     logDiv.style.display="none";
 };
 
 // ---------- CARREGAR HISTÓRICO ----------
-function loadHistory(matriculaFiltro=null){
-    let data = [...fullHistory];
-    if(matriculaFiltro) data = data.filter(r => r[3] === matriculaFiltro);
-    renderHistory(data);
+async function loadHistory(matriculaFiltro=null){
+    const params = {acao:"getHistorico"};
+    if(matriculaFiltro) params.matricula = matriculaFiltro;
+    fullHistory = await callGAS(params);
+    renderHistory(fullHistory);
 }
 
 // ---------- RENDER HISTÓRICO ----------
 function renderHistory(data){
     const t = document.querySelector("#historyTable tbody");
     const m = document.getElementById("mobileHistory");
-    t.innerHTML=""; m.innerHTML="";
+    t.innerHTML = ""; m.innerHTML = "";
     if(!data.length){
         t.innerHTML='<tr><td colspan="9">Sem registros</td></tr>';
         m.innerHTML='<p style="text-align:center;color:#888;">Sem registros</p>';
@@ -189,7 +204,7 @@ function renderHistory(data){
             m.appendChild(card);
         });
 }
-searchInput.oninput=()=>loadHistory(matricula.value);
+searchInput.oninput=()=>renderHistory(fullHistory);
 
 // ---------- MODAL ----------
 function abrirModal(r){
@@ -214,73 +229,26 @@ function abrirModal(r){
 function fecharModal(){ modalDetalhes.style.display="none"; }
 
 // ---------- REGISTRAR ----------
-turnoForm.onsubmit=e=>{
+turnoForm.onsubmit=async e=>{
     e.preventDefault();
-    const p={
-        nome:nome.value, matricula:matricula.value, data:data.value,
-        equipamento:equipamento.value, acionamento:acionamento.value,
-        problema:problema.value, solucao:solucao.value, encerramento:encerramento.value
-    };
-    const id = fullHistory.length;
-    fullHistory.push([id,p.data,p.nome,p.matricula,p.equipamento,p.acionamento,p.problema,p.solucao,p.encerramento]);
-    localStorage.setItem("historico", JSON.stringify(fullHistory));
-    registrarLog(matricula.value,"Novo Registro","ID: "+id);
-    alert("Registro salvo!");
-    turnoForm.reset();
-    loadHistory(matricula.value);
+    const p={nome:nome.value, matricula:matricula.value, data:data.value, equipamento:equipamento.value, acionamento:acionamento.value, problema:problema.value, solucao:solucao.value, encerramento:encerramento.value};
+    const r = await callGAS({acao:"registrarTurno", payload:p});
+    if(r.success){ alert("Registro salvo!"); turnoForm.reset(); await loadHistory(matricula.value); }
+    else alert("Erro: "+r.message);
 };
 
-// ---------- EDITAR / DELETAR ----------
-function editarRegistro(){
-    if(!registroSelecionado) return;
-    const id = registroSelecionado[0];
-    registroSelecionado[1] = data.value;
-    registroSelecionado[2] = nome.value;
-    registroSelecionado[4] = equipamento.value;
-    registroSelecionado[5] = acionamento.value;
-    registroSelecionado[6] = problema.value;
-    registroSelecionado[7] = solucao.value;
-    registroSelecionado[8] = encerramento.value;
-    fullHistory[id] = registroSelecionado;
-    localStorage.setItem("historico", JSON.stringify(fullHistory));
-    registrarLog(matricula.value,"Editar Registro","ID: "+id);
-    fecharModal();
-    loadHistory(matricula.value);
-}
-function deletarRegistro(){
-    if(!registroSelecionado) return;
-    const id = registroSelecionado[0];
-    fullHistory = fullHistory.filter(r=>r[0]!=id);
-    localStorage.setItem("historico", JSON.stringify(fullHistory));
-    registrarLog(matricula.value,"Deletar Registro","ID: "+id);
-    fecharModal();
-    loadHistory(matricula.value);
-}
-
-// ---------- LOG ----------
-function registrarLog(mat,acao,obs=""){
-    fullLog.push([new Date().toLocaleString(),mat,acao,obs]);
-    localStorage.setItem("log", JSON.stringify(fullLog));
-}
-
 // ---------- WATCHDOG ----------
-function atualizarWatchdog(){
-    watchdogEl.innerText="Watchdog: ONLINE";
+async function atualizarWatchdog(){
+    try{
+        const r = await callGAS({acao:"getWatchdog"});
+        watchdogEl.innerText = "Watchdog: "+r.watchdog;
+    }catch{ watchdogEl.innerText="Watchdog: OFFLINE"; }
 }
 setInterval(atualizarWatchdog,3000);
 atualizarWatchdog();
 
 // ---------- PDF ----------
-btnPDF.onclick=()=>{
-    let conteudo = "<h1>Histórico</h1><table border='1' cellpadding='5'><tr><th>ID</th><th>Data</th><th>Executante</th><th>Matrícula</th><th>Equipamento</th><th>Acionamento</th><th>Problema</th><th>Solução</th><th>Encerramento</th></tr>";
-    fullHistory.forEach(r=>{
-        conteudo += `<tr>${r.slice(0,9).map(c=>"<td>"+c+"</td>").join("")}</tr>`;
-    });
-    conteudo += "</table>";
-    const w = window.open();
-    w.document.write(conteudo);
-    w.document.close();
-};
+btnPDF.onclick=async ()=>{ const url=await callGAS({acao:"gerarPDF"}); window.open(url,"_blank"); };
 
 loadHistory();
 </script>
