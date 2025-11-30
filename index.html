@@ -232,16 +232,34 @@ function abrirModal(r){
 function fecharModal(){ modalDetalhes.style.display="none"; }
 
 // ---------- REGISTRAR ----------
-turnoForm.onsubmit=async e=>{
+turnoForm.onsubmit = async e => {
     e.preventDefault();
-    const p={
-        nome:nome.value, matricula:matricula.value, data:data.value,
-        equipamento:equipamento.value, acionamento:acionamento.value,
-        problema:problema.value, solucao:solucao.value, encerramento:encerramento.value
+
+    const p = {
+        nome: document.getElementById("nome").value,
+        matricula: document.getElementById("matricula").value,
+        data: document.getElementById("data").value,          // yyyy-MM-dd
+        equipamento: document.getElementById("equipamento").value,
+        acionamento: document.getElementById("acionamento").value, // HH:mm
+        problema: document.getElementById("problema").value,
+        solucao: document.getElementById("solucao").value,
+        encerramento: document.getElementById("encerramento").value // HH:mm
     };
-    const r=await callGAS({acao:"registrarTurno", payload:p});
-    if(r.success){ alert("Registro salvo!"); turnoForm.reset(); await loadHistory(matricula.value); }
-    else alert("Erro: "+r.message);
+
+    try {
+        // força POST para enviar o payload corretamente
+        const r = await callGAS({acao:"registrarTurno", payload:p}, "POST");
+
+        if (r.success) {
+            alert("Registro salvo!");
+            turnoForm.reset();
+            await loadHistory(document.getElementById("matricula").value);
+        } else {
+            alert("Erro: " + (r.message || "Falha desconhecida"));
+        }
+    } catch (err) {
+        alert("Erro de comunicação com o servidor: " + err.message);
+    }
 };
 // ---------- EDITAR ----------
 async function editarRegistro(){
