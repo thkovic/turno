@@ -149,7 +149,7 @@ function callGAS(params) {
     });
 }
 
-/* ================== LOGIN ================== */
+/* LOGIN */
 loginForm.onsubmit = async (e) => {
     e.preventDefault();
     const mat = document.getElementById("loginMatricula").value.trim();
@@ -157,25 +157,20 @@ loginForm.onsubmit = async (e) => {
         alert("Informe a matrícula.");
         return;
     }
+
     loginDiv.style.display = "none";
     registroDiv.style.display = "block";
     matricula.value = mat;
+
     await loadHistory(mat);
     logDiv.style.display = (mat === "991631240") ? "block" : "none";
+
     try {
         await callGAS({
             acao: "registrarLog",
             matricula: mat,
             acaoTipo: "Login"
         });
-    } catch (err) {
-        console.error("Erro ao registrar log de login:", err);
-    }
-};
-          acao: "registrarLog",
-        matricula: mat,
-        acaoTipo: "Login"
-    });
     } catch (err) {
         console.error("Erro ao registrar log de login:", err);
     }
