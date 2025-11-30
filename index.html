@@ -254,8 +254,10 @@
 <!-- -------------------- SCRIPT -------------------- -->
 <script>
        /*
-           OBS: Mantive a maior parte do JS original e troquei as chamadas ao google.script.run por JSONP onde aplicável.
-           Note: operações de criação/edição/deleção requerem chamadas POST/server-side e não funcionam via JSONP.
+           OBS: Adicionado suporte a JSONP para leituras (historico, watchdog, log, gerarPDF).
+           Operações de escrita (registrar/editar/deletar) continuam usando google.script.run
+           quando o HTML é servido pelo Apps Script. Se você hospedar em GitHub Pages, writes
+           não funcionarão sem um proxy ou endpoints adicionais.
        */
        const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbyjN_7typwQ8yFu-4CW6uRV9U4U6z1386BcGz3YAl_-di_KXedC2FFg3NEAIDjuL4ir/exec";
 
@@ -275,52 +277,54 @@
        let fullHistory = [];
        let registroSelecionado = null;
 
-       // ---------- JSONP helper ----------
+       /* ---------- JSONP HELPERS ---------- */
        function jsonpRequest(params, callbackName, onError) {
-           const qs = new URLSearchParams(params).toString();
-           const src = `${WEBAPP_URL}?${qs}&callback=${callbackName}`;
-           const s = document.createElement('script');
-           s.src = src;
-           s.async = true;
-           s.onerror = () => {
-               if (onError) onError();
-               if (s.parentNode) s.parentNode.removeChild(s);
-           };
-           s.onload = () => {
-               setTimeout(() => { if (s.parentNode) s.parentNode.removeChild(s); }, 500);
-           };
-           document.head.appendChild(s);
+         const qs = new URLSearchParams(params).toString();
+         const src = `${WEBAPP_URL}?${qs}&callback=${callbackName}`;
+         const s = document.createElement('script');
+         s.src = src;
+         s.async = true;
+         s.onerror = () => {
+           if (onError) onError();
+           if (s.parentNode) s.parentNode.removeChild(s);
+         };
+         s.onload = () => {
+           setTimeout(() => {
+             if (s.parentNode) s.parentNode.removeChild(s);
+           }, 500);
+         };
+         document.head.appendChild(s);
        }
 
-       // ---------- CALLBACKS JSONP ----------
+       // Callbacks globais JSONP
        function handleHistorico(data) {
-           fullHistory = data || [];
-           renderHistory(fullHistory);
+         fullHistory = data || [];
+         renderHistory(fullHistory);
        }
        function handleWatchdog(data) {
-           if (data && data.watchdog) {
-               watchdogEl.innerText = "Watchdog: " + data.watchdog;
-           } else {
-               watchdogEl.innerText = "Watchdog: --";
-           }
+         if (data && data.watchdog) {
+           watchdogEl.innerText = "Watchdog: " + data.watchdog;
+         } else {
+           watchdogEl.innerText = "Watchdog: --";
+         }
        }
        function handleLog(data) {
-           if (!data || !data.length) {
-               alert("Nenhum log registrado.");
-               return;
-           }
-           let texto = "📜 LOG DO SISTEMA:\n\n";
-           data.forEach(l => {
-               texto += `${l[0]} | Matrícula: ${l[1]} | ${l[2]} | ${l[3]}\n`;
-           });
-           alert(texto);
+         if (!data || !data.length) {
+           alert("Nenhum log registrado.");
+           return;
+         }
+         let texto = "📜 LOG DO SISTEMA:\n\n";
+         data.forEach(l => {
+           texto += `${l[0]} | Matrícula: ${l[1]} | ${l[2]} | ${l[3]}\n`;
+         });
+         alert(texto);
        }
        function handleGerarPDF(data) {
-           if (data && data.url) {
-               window.open(data.url, "_blank");
-           } else {
-               alert("Erro ao gerar PDF: " + (data && data.error ? data.error : "desconhecido"));
-           }
+         if (data && data.url) {
+           window.open(data.url, "_blank");
+         } else {
+           alert("Erro ao gerar PDF: " + (data && data.error ? data.error : "desconhecido"));
+         }
        }
 
        /* ---------- LOGIN ---------- */
@@ -331,11 +335,17 @@
            registroDiv.style.display = "block";
            matricula.value = mat;
            loadHistory(mat);
-           // registrar login no backend não é possível por JSONP (POST)
+           if (mat === "991631240") {
+               logDiv.style.display = "block";
+               google.script.run && google.script.run.registrarLog ? google.script.run.registrarLog(mat, "Login") : null;
+           } else {
+               logDiv.style.display = "none";
+               google.script.run && google.script.run.registrarLog ? google.script.run.registrarLog(mat, "Login") : null;
+           }
        };
-
        /* ---------- LOGOUT ---------- */
        function logout() {
+           google.script.run && google.script.run.registrarLog ? google.script.run.registrarLog(matricula.value, "Logout") : null;
            registroDiv.style.display = "none";
            loginDiv.style.display = "block";
            turnoForm.reset();
@@ -343,12 +353,12 @@
            loadHistory();
            logDiv.style.display = "none";
        }
-       document.getElementById("btnLogout").onclick = logout;
+       btnLogout.onclick = logout;
 
        /* ---------- CARREGAR HISTÓRICO (JSONP) ---------- */
        function loadHistory(matriculaFiltro = null) {
            jsonpRequest({ action: "historico", matricula: matriculaFiltro || "" }, "handleHistorico", () => {
-               alert("Erro ao carregar histórico (JSONP).");
+             alert('Erro ao carregar histórico (JSONP).');
            });
        }
 
@@ -365,6 +375,7 @@
            const searchTerm = searchInput.value.toLowerCase();
            data.filter(r => r.some(c => c.toString().toLowerCase().includes(searchTerm)))
                .forEach(r => {
+                   // Desktop
                    let tr = document.createElement("tr");
                    tr.onclick = () => abrirModal(r);
                    r.slice(0, 9).forEach(col => {
@@ -373,6 +384,7 @@
                        tr.appendChild(td);
                    });
                    t.appendChild(tr);
+                   // Mobile
                    let card = document.createElement("div");
                    card.className = "history-card";
                    card.onclick = () => abrirModal(r);
@@ -386,7 +398,6 @@
                });
        }
        searchInput.oninput = () => renderHistory(fullHistory);
-
        /* ---------- MODAL ---------- */
        function abrirModal(r) {
            registroSelecionado = r;
@@ -415,7 +426,6 @@
        function fecharModal() {
            modalDetalhes.style.display = "none";
        }
-
        /* ---------- EDITAR ---------- */
        function editarRegistro() {
            if (!registroSelecionado) return;
@@ -429,17 +439,49 @@
            encerramento.value = registroSelecionado[8];
            fecharModal();
            alert("Edite os campos no formulário e clique em Registrar para salvar as alterações.");
-           // Observação: salvar via google.script.run só funciona quando a UI for servida pelo Apps Script.
+           turnoForm.onsubmit = e => {
+               e.preventDefault();
+               const p = {
+                   nome: nome.value,
+                   matricula: matricula.value,
+                   data: data.value,
+                   equipamento: equipamento.value,
+                   acionamento: acionamento.value,
+                   problema: problema.value,
+                   solucao: solucao.value,
+                   encerramento: encerramento.value
+               };
+               google.script.run.withSuccessHandler(r => {
+                   if (r.success) {
+                       alert("Registro atualizado!");
+                       turnoForm.reset();
+                       loadHistory(matricula.value || null);
+                       google.script.run.registrarLog(matricula.value, "Editar Registro", "ID: " + registroSelecionado[0]);
+                       logout();
+                   } else {
+                       alert("Erro: " + r.message);
+                   }
+               }).editarRegistro(registroSelecionado[0], p);
+           };
        }
-
        /* ---------- DELETAR ---------- */
        function deletarRegistro() {
            if (!registroSelecionado) return;
            if (!confirm("Tem certeza que deseja deletar este registro?")) return;
-           alert("Operação de deletar só funciona quando a UI estiver servida pelo Apps Script (google.script.run).");
+           google.script.run.withSuccessHandler(r => {
+               if (r.success) {
+                   alert("Registro deletado!");
+                   fecharModal();
+                   loadHistory(matricula.value || null);
+                   google.script.run.registrarLog(matricula.value, "Deletar Registro", "ID: " + registroSelecionado[0]);
+                   logout();
+               } else {
+                   alert("Erro: " + r.message);
+               }
+           }).deletarRegistro(registroSelecionado[0]);
        }
-
        /* ---------- NOVO REGISTRO ---------- */
+       // default submit handler for creating new records
        turnoForm.onsubmit = e => {
            e.preventDefault();
            const p = {
@@ -452,33 +494,38 @@
                solucao: solucao.value,
                encerramento: encerramento.value
            };
-           alert("Salvar registros diretamente do GitHub Pages não é suportado por JSONP (somente GET). Para criar/editar/deletar é necessário servir a UI pelo Apps Script ou usar um proxy/endpoint que aceite POST.");
+           google.script.run.withSuccessHandler(r => {
+               if (r.success) {
+                   alert("Registro salvo!");
+                   turnoForm.reset();
+                   loadHistory(matricula.value || null);
+                   google.script.run.registrarLog(matricula.value, "Novo Registro", "ID: " + r.id);
+                   logout();
+               } else {
+                   alert("Erro: " + r.message);
+               }
+           }).registrarTurno(p);
        };
-
        /* ---------- WATCHDOG (JSONP) ---------- */
        function atualizarWatchdog() {
            jsonpRequest({ action: "watchdog" }, "handleWatchdog", () => {
-               watchdogEl.innerText = "Watchdog: OFFLINE";
+             watchdogEl.innerText = "Watchdog: OFFLINE";
            });
        }
        setInterval(atualizarWatchdog, 3000);
        atualizarWatchdog();
-
-       /* ---------- PDF ---------- */
+       /* ---------- PDF (JSONP) ---------- */
        btnPDF.onclick = () => {
            jsonpRequest({ action: "gerarPDF" }, "handleGerarPDF", () => {
-               alert("Erro ao gerar PDF (JSONP).");
+             alert('Erro ao gerar PDF (JSONP).');
            });
        };
-
-       /* ---------- LOG ---------- */
+       /* ---------- LOG (JSONP) ---------- */
        btnLog.onclick = () => {
            jsonpRequest({ action: "log" }, "handleLog", () => {
-               alert("Erro ao carregar logs (JSONP).");
+             alert('Erro ao carregar logs (JSONP).');
            });
        };
-
-       // carregar histórico inicial
        loadHistory();
 </script>
 </body>
