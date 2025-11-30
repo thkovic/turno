@@ -1,5 +1,5 @@
 // URL do seu Google Apps Script publicado como Web App
-const GAS_URL = "https://script.google.com/macros/s/SEU_ID/exec"; // substitua pelo link do seu Web App
+const GAS_URL = "https://script.google.com/macros/s/AKfycbyjN_7typwQ8yFu-4CW6uRV9U4U6z1386BcGz3YAl_-di_KXedC2FFg3NEAIDjuL4ir/exec"; // substitua pelo link do seu Web App
 
 // Referências aos elementos
 const loginForm = document.getElementById("loginForm");
