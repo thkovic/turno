@@ -9,6 +9,7 @@
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#000000">
 
+  <!-- CSS externo -->
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -16,7 +17,7 @@
   <div class="container">
     <h1>📝 Sistema de Histórico</h1>
 
-    <!-- Login -->
+    <!-- -------------------- LOGIN -------------------- -->
     <div id="loginDiv">
       <h3>🔐 Login</h3>
       <form id="loginForm" class="full-width">
@@ -30,48 +31,73 @@
       </form>
     </div>
 
-    <!-- Registro -->
+    <!-- -------------------- REGISTRO -------------------- -->
     <div id="registroDiv" style="display:none;">
-      <!-- Seu formulário de registro aqui -->
+      <h3>Registrar Passagem</h3>
+      <form id="turnoForm">
+        <div><label>Nome *</label><input id="nome" required></div>
+        <div><label>Matrícula *</label><input id="matricula" readonly required></div>
+        <div><label>Data *</label><input type="date" id="data" required></div>
+        <div><label>Equipamento *</label><input id="equipamento" required></div>
+        <div><label>Acionamento *</label><input type="time" id="acionamento" required></div>
+        <div class="full-width"><label>Problema *</label><textarea id="problema" required></textarea></div>
+        <div class="full-width"><label>Solução *</label><textarea id="solucao" required></textarea></div>
+        <div><label>Encerramento *</label><input type="time" id="encerramento" required></div>
+        <div class="full-width">
+          <button id="btnSubmit">Registrar</button>
+          <button type="button" id="btnLogout" style="background:#ff6b6b;margin-top:8px;">Logout</button>
+        </div>
+      </form>
     </div>
 
-    <!-- Histórico, Log, PDF, Modal -->
-    <!-- (conteúdo das partes 2 e 3 que você já montou) -->
+    <!-- -------------------- BOTÃO DE LOG -------------------- -->
+    <div id="logDiv" style="display:none; margin-top:15px;">
+      <button id="btnLog" style="background:#1d3557;">📜 Sistema de Log</button>
+    </div>
+
+    <!-- -------------------- BUSCA + PDF -------------------- -->
+    <div class="search-bar">
+      <input type="text" id="searchInput" placeholder="Buscar histórico (ID, nome, equipamento)">
+      <button class="pdf-btn" id="btnPDF">📄 Gerar PDF</button>
+    </div>
+
+    <!-- -------------------- HISTÓRICO -------------------- -->
+    <div class="history">
+      <h3>📊 Histórico de Registros</h3>
+      <table id="historyTable">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Data</th>
+            <th>Executante</th>
+            <th>Matrícula</th>
+            <th>Equipamento</th>
+            <th>Acionamento</th>
+            <th>Problema</th>
+            <th>Solução</th>
+            <th>Encerramento</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td colspan="9">Carregando...</td></tr>
+        </tbody>
+      </table>
+      <div id="mobileHistory"></div>
+    </div>
   </div>
 
-  <script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbyjN_7typwQ8yFu-4CW6uRV9U4U6z1386BcGz3YAl_-di_KXedC2FFg3NEAIDjuL4ir/exec"; // coloque aqui a URL do seu Web App
+  <!-- -------------------- MODAL -------------------- -->
+  <div class="modal" id="modalDetalhes">
+    <div class="modal-content">
+      <h2>Ficha Técnica</h2>
+      <div id="modalFields"></div>
+      <div id="modalButtons" style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
+        <button onclick="fecharModal()" style="background:#2d6a4f;">Fechar</button>
+      </div>
+    </div>
+  </div>
 
-    // GET exemplo
-    async function loadHistory(matriculaFiltro = null) {
-      const url = GAS_URL + "?action=getHistorico" + (matriculaFiltro ? "&matricula=" + matriculaFiltro : "");
-      const res = await fetch(url);
-      const data = await res.json();
-      renderHistory(data);
-    }
-
-    // POST exemplo
-    async function registrarTurno(payload) {
-      const res = await fetch(GAS_URL + "?action=registrarTurno", {
-        method: "POST",
-        body: JSON.stringify(payload),
-        headers: { "Content-Type": "application/json" }
-      });
-      const r = await res.json();
-      if (r.success) {
-        alert("Registro salvo!");
-        loadHistory(payload.matricula);
-      } else {
-        alert("Erro: " + r.message);
-      }
-    }
-
-    // Service Worker
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('service-worker.js')
-        .then(() => console.log('SW registrado!'))
-        .catch(err => console.error('Erro SW:', err));
-    }
-  </script>
+  <!-- JS externo -->
+  <script src="app.js"></script>
 </body>
 </html>
