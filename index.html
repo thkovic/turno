@@ -180,11 +180,15 @@ document.getElementById("btnLogout").onclick = async () => {
 async function loadHistory(matriculaFiltro="") {
     try {
         const data = await callGAS({acao:"getHistorico", matricula: matriculaFiltro});
-        fullHistory = Array.isArray(data) ? data : (data && data.length ? data : []);
+
+        // 👉 INVERTE PARA MOSTRAR DO MAIS RECENTE PARA O MAIS ANTIGO
+        fullHistory = Array.isArray(data) ? data.reverse() : [];
+
     } catch(err) {
         console.error("Erro ao carregar histórico:", err);
         fullHistory = [];
     }
+
     renderHistory(fullHistory);
     return fullHistory;
 }
