@@ -29,24 +29,6 @@ button:hover{opacity:.95}
 .search-bar input{flex:1}
 .pdf-btn{background:#2d6a4f;margin-left:10px}
 .small{font-size:12px;color:#666}
-
-.history-wrapper {
-    width: 100%;
-    overflow-x: auto;
-    margin-top: 10px;
-}
-#historyTable {
-    width: 100%;
-    border-collapse: collapse;
-    table-layout: fixed;
-}
-#historyTable th, #historyTable td {
-    word-break: break-word;
-    white-space: normal;
-    padding: 8px;
-}
-
-/* ---------- Responsivo ---------- */
 @media(max-width:1200px){
   .container{width:95%;margin:10px auto;padding:12px;box-shadow:none}
   form{grid-template-columns:1fr}
@@ -59,9 +41,7 @@ button:hover{opacity:.95}
 </style>
 </head>
 <body>
-
 <div id="watchdog">Watchdog: --</div>
-
 <div class="container">
   <h1>📝 Sistema de Histórico</h1>
 
@@ -109,29 +89,23 @@ button:hover{opacity:.95}
 
   <div class="history">
     <h3>📊 Histórico de Registros</h3>
-
-    <div class="history-wrapper">
-      <table id="historyTable">
-        <thead>
-          <tr>
-            <th>ID</th><th>Data</th><th>Executante</th><th>Matrícula</th>
-            <th>Equipamento</th><th>Acionamento</th><th>Problema</th>
-            <th>Solução</th><th>Encerramento</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr><td colspan="9">Carregando...</td></tr>
-        </tbody>
-      </table>
-    </div>
-
+    <table id="historyTable">
+      <thead>
+        <tr>
+          <th>ID</th><th>Data</th><th>Executante</th><th>Matrícula</th><th>Equipamento</th><th>Acionamento</th><th>Problema</th><th>Solução</th><th>Encerramento</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td colspan="9">Carregando...</td></tr>
+      </tbody>
+    </table>
     <div id="mobileHistory"></div>
   </div>
 </div>
 
-<!-- MODAL -->
+<!-- MODAL (edição dentro do modal) -->
 <div class="modal" id="modalDetalhes" aria-hidden="true">
-  <div class="modal-content">
+  <div class="modal-content" role="dialog" aria-modal="true">
     <h2 id="modalTitle">Ficha Técnica</h2>
     <div id="modalFields"></div>
     <div id="modalButtons" style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;"></div>
@@ -139,10 +113,10 @@ button:hover{opacity:.95}
 </div>
 
 <script>
-/* ================== CONFIG ================== */
+/* ================== CONFIGURAÇÃO ================== */
 const GAS_URL = "https://script.google.com/macros/s/AKfycbyjN_7typwQ8yFu-4CW6uRV9U4U6z1386BcGz3YAl_-di_KXedC2FFg3NEAIDjuL4ir/exec";
 
-/* elementos */
+/* ================== ELEMENTOS ================== */
 const loginForm = document.getElementById("loginForm");
 const loginDiv = document.getElementById("loginDiv");
 const registroDiv = document.getElementById("registroDiv");
@@ -158,34 +132,35 @@ const logDiv = document.getElementById("logDiv");
 
 let fullHistory = [];
 let registroSelecionado = null;
-let modalEditMode = false;
+let modalEditMode = false; // controla se modal está em modo edição
 
-/* ================== JSONP ================== */
+/* ================== JSONP helper ================== */
 function callGAS(params) {
     const callback = "cb_" + Math.random().toString(36).slice(2,12);
     const url = GAS_URL + "?" + new URLSearchParams({...params, callback});
     return new Promise((resolve, reject) => {
-        window[callback] = data => {
+        window[callback] = (data) => {
             resolve(data);
-            delete window[callback];
+            try { delete window[callback]; } catch(e){}
         };
-        const scr = document.createElement("script");
-        scr.src = url;
-        scr.onerror = () => reject(new Error("JSONP falhou"));
-        document.body.appendChild(scr);
+        const script = document.createElement("script");
+        script.src = url;
+        script.onerror = () => {
+            reject(new Error("Falha na requisição JSONP"));
+            try { delete window[callback]; } catch(e){}
+        };
+        document.body.appendChild(script);
     });
 }
 
-/* ================== LOGIN ================== */
+/* ================== LOGIN / LOGOUT ================== */
 loginForm.onsubmit = async e => {
     e.preventDefault();
     const mat = document.getElementById("loginMatricula").value.trim();
-    if(!mat) return alert("Informe a matrícula");
-
+    if(!mat) return alert("Informe a matrícula.");
     loginDiv.style.display = "none";
     registroDiv.style.display = "block";
     matricula.value = mat;
-
     await loadHistory(mat);
     logDiv.style.display = (mat === "991631240") ? "block" : "none";
     await callGAS({acao:"registrarLog", matricula: mat, acaoTipo:"Login"});
@@ -205,224 +180,286 @@ document.getElementById("btnLogout").onclick = async () => {
 async function loadHistory(matriculaFiltro="") {
     try {
         const data = await callGAS({acao:"getHistorico", matricula: matriculaFiltro});
-        fullHistory = Array.isArray(data) ? data : [];
-    } catch(e){
+
+        // 👉 INVERTE PARA MOSTRAR DO MAIS RECENTE PARA O MAIS ANTIGO
+        fullHistory = Array.isArray(data) ? data.reverse() : [];
+
+    } catch(err) {
+        console.error("Erro ao carregar histórico:", err);
         fullHistory = [];
     }
+
     renderHistory(fullHistory);
+    return fullHistory;
 }
 
-/* ================== RENDER TABELA ================== */
+/* ================== RENDER HISTÓRICO ================== */
 function renderHistory(data) {
     const t = document.querySelector("#historyTable tbody");
     const m = document.getElementById("mobileHistory");
-
-    t.innerHTML = "";
-    m.innerHTML = "";
-
-    if(!data.length){
-        t.innerHTML = `<tr><td colspan="9">Sem registros</td></tr>`;
-        m.innerHTML = `<p style="text-align:center;color:#aaa;">Sem registros</p>`;
+    t.innerHTML = ""; m.innerHTML = "";
+    if(!Array.isArray(data) || data.length === 0) {
+        t.innerHTML = '<tr><td colspan="9">Sem registros</td></tr>';
+        m.innerHTML = '<p style="text-align:center;color:#888;">Sem registros</p>';
         return;
     }
+    const searchTerm = (searchInput.value || "").toLowerCase();
+    data
+      .filter(r => r.some(c => String(c || "").toLowerCase().includes(searchTerm)))
+      .forEach(r => {
+          const tr = document.createElement("tr");
+          tr.dataset.id = String(r[0]);
+          tr.addEventListener("click", () => abrirModal(r));
+          for (let i=0; i<9; i++){
+              const td = document.createElement("td");
+              td.textContent = formatCell(r[i]);
+              tr.appendChild(td);
+          }
+          t.appendChild(tr);
 
-    const term = searchInput.value.toLowerCase();
-
-    data.filter(r => r.some(c => String(c).toLowerCase().includes(term)))
-        .forEach(r => {
-            const tr = document.createElement("tr");
-            tr.dataset.id = r[0];
-            tr.onclick = () => abrirModal(r);
-
-            r.slice(0,9).forEach(v=>{
-                const td = document.createElement("td");
-                td.textContent = v;
-                tr.appendChild(td);
-            });
-
-            t.appendChild(tr);
-
-            const card = document.createElement("div");
-            card.className = "history-card";
-            card.dataset.id = r[0];
-            card.onclick = () => abrirModal(r);
-            card.innerHTML = `
-              <p><strong>ID:</strong> ${r[0]}</p>
-              <p><strong>Data:</strong> ${r[1]}</p>
-              <p><strong>Executante:</strong> ${r[2]}</p>
-              <p><strong>Equipamento:</strong> ${r[4]}</p>
-            `;
-            m.appendChild(card);
-        });
+          const card = document.createElement("div");
+          card.className = "history-card";
+          card.dataset.id = String(r[0]);
+          card.addEventListener("click", () => abrirModal(r));
+          card.innerHTML = `<p><strong>ID:</strong> ${r[0]}</p>
+                            <p><strong>Data:</strong> ${formatCell(r[1])}</p>
+                            <p><strong>Executante:</strong> ${escapeHtml(r[2])}</p>
+                            <p><strong>Equipamento:</strong> ${escapeHtml(r[4])}</p>`;
+          m.appendChild(card);
+      });
 }
-
 searchInput.oninput = () => renderHistory(fullHistory);
 
-/* ================== MODAL ================== */
+/* ================== UTILITÁRIOS ================== */
+function formatCell(value){
+    if(value === null || value === undefined || value === "") return "";
+    const s = String(value);
+    if(s.match(/^\d{4}-\d{2}-\d{2}T/)) {
+        try {
+            const d = new Date(s);
+            if(!isNaN(d)){
+                return `${d.toLocaleString()}`;
+            }
+        } catch(e){}
+    }
+    return s;
+}
+function escapeHtml(s){
+    if(s === null || s === undefined) return "";
+    return String(s)
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;");
+}
+function formatDateForInput(raw){
+    if(!raw) return "";
+    try{
+        const d = new Date(raw);
+        if(isNaN(d)) return "";
+        return d.toISOString().slice(0,10);
+    }catch(e){ return ""; }
+}
+function formatTimeForInput(raw){
+    if(!raw) return "";
+    try{
+        const d = new Date(raw);
+        if(isNaN(d)) return "";
+        return d.toISOString().slice(11,16);
+    }catch(e){ return ""; }
+}
+
+/* ================== MODAL (edição dentro do modal) ================== */
 function abrirModal(r){
     registroSelecionado = r;
-    modalDetalhes.style.display = "flex";
+    modalEditMode = false;
+    modalTitle = document.getElementById("modalTitle");
+    modalTitle.textContent = `Ficha Técnica - ID ${r[0]}`;
 
     modalFields.innerHTML = `
-        <div class="tech-field"><strong>ID:</strong> ${r[0]}</div>
-        <div class="tech-field"><strong>Data:</strong> ${r[1]}</div>
-        <div class="tech-field"><strong>Executante:</strong> ${r[2]}</div>
-        <div class="tech-field"><strong>Matrícula:</strong> ${r[3]}</div>
-        <div class="tech-field"><strong>Equipamento:</strong> ${r[4]}</div>
-        <div class="tech-field"><strong>Acionamento:</strong> ${r[5]}</div>
-        <div class="tech-field"><strong>Problema:</strong><br>${r[6]}</div>
-        <div class="tech-field"><strong>Solução:</strong><br>${r[7]}</div>
-        <div class="tech-field"><strong>Encerramento:</strong> ${r[8]}</div>
+      <div class="tech-field"><strong>ID:</strong> ${escapeHtml(r[0])}</div>
+      <div class="tech-field"><strong>Data:</strong> <span id="fld_data">${escapeHtml(formatCell(r[1]))}</span></div>
+      <div class="tech-field"><strong>Executante:</strong> <span id="fld_nome">${escapeHtml(r[2])}</span></div>
+      <div class="tech-field"><strong>Matrícula:</strong> <span id="fld_matricula">${escapeHtml(r[3])}</span></div>
+      <div class="tech-field"><strong>Equipamento:</strong> <span id="fld_equip">${escapeHtml(r[4])}</span></div>
+      <div class="tech-field"><strong>Acionamento:</strong> <span id="fld_acion">${escapeHtml(formatCell(r[5]))}</span></div>
+      <div class="tech-field"><strong>Problema:</strong><div id="fld_prob">${escapeHtml(r[6])}</div></div>
+      <div class="tech-field"><strong>Solução:</strong><div id="fld_sol">${escapeHtml(r[7])}</div></div>
+      <div class="tech-field"><strong>Encerramento:</strong> <span id="fld_enc">${escapeHtml(formatCell(r[8]))}</span></div>
     `;
 
+    // botões
     modalButtons.innerHTML = "";
+    const btnFechar = document.createElement("button");
+    btnFechar.textContent = "Fechar";
+    btnFechar.style.background = "#2d6a4f";
+    btnFechar.addEventListener("click", fecharModal);
+    modalButtons.appendChild(btnFechar);
 
-    const fechar = document.createElement("button");
-    fechar.textContent = "Fechar";
-    fechar.onclick = fecharModal;
-    modalButtons.appendChild(fechar);
+    // se matricula logada == do registro, permite editar/deletar
+    if (String((matricula.value || "")).trim() === String(r[3]).trim()) {
+        const btnEditar = document.createElement("button");
+        btnEditar.textContent = "Editar";
+        btnEditar.style.background = "#4dabf7";
+        btnEditar.addEventListener("click", () => enterModalEditMode());
+        modalButtons.appendChild(btnEditar);
 
-    if(matricula.value === r[3]) {
-        const ed = document.createElement("button");
-        ed.textContent = "Editar";
-        ed.style.background = "#4dabf7";
-        ed.onclick = enterModalEditMode;
-        modalButtons.appendChild(ed);
-
-        const del = document.createElement("button");
-        del.textContent = "Deletar";
-        del.style.background = "#ff6b6b";
-        del.onclick = confirmAndDelete;
-        modalButtons.appendChild(del);
+        const btnDeletar = document.createElement("button");
+        btnDeletar.textContent = "Deletar";
+        btnDeletar.style.background = "#ff6b6b";
+        btnDeletar.addEventListener("click", () => confirmAndDelete());
+        modalButtons.appendChild(btnDeletar);
     }
+
+    modalDetalhes.style.display = "flex";
 }
 
-function fecharModal(){
-    modalDetalhes.style.display = "none";
-}
-
-/* ================== editar dentro do modal ================== */
-function enterModalEditMode() {
+/* entra em modo edição dentro do modal (substitui spans por inputs) */
+function enterModalEditMode(){
+    if(!registroSelecionado) return;
+    modalEditMode = true;
     const r = registroSelecionado;
 
-    modalEditMode = true;
-
+    // substitui o conteúdo por inputs
     modalFields.innerHTML = `
-      <div class="tech-field"><strong>ID:</strong> ${r[0]}</div>
-      <div class="tech-field"><label>Data</label><input type="date" id="edit_data" value="${r[1]}"></div>
-      <div class="tech-field"><label>Executante</label><input id="edit_nome" value="${r[2]}"></div>
-      <div class="tech-field"><label>Matrícula</label><input id="edit_matricula" value="${r[3]}" readonly></div>
-      <div class="tech-field"><label>Equipamento</label><input id="edit_equip" value="${r[4]}"></div>
-      <div class="tech-field"><label>Acionamento</label><input type="time" id="edit_acion" value="${r[5]}"></div>
-      <div class="tech-field"><label>Problema</label><textarea id="edit_prob">${r[6]}</textarea></div>
-      <div class="tech-field"><label>Solução</label><textarea id="edit_sol">${r[7]}</textarea></div>
-      <div class="tech-field"><label>Encerramento</label><input type="time" id="edit_enc" value="${r[8]}"></div>
+      <div class="tech-field"><strong>ID:</strong> ${escapeHtml(r[0])}</div>
+
+      <div class="tech-field"><label>Data</label><input type="date" id="edit_data" value="${formatDateForInput(r[1])}"></div>
+      <div class="tech-field"><label>Executante</label><input type="text" id="edit_nome" value="${escapeHtml(r[2])}"></div>
+      <div class="tech-field"><label>Matrícula</label><input type="text" id="edit_matricula" value="${escapeHtml(r[3])}" readonly></div>
+      <div class="tech-field"><label>Equipamento</label><input type="text" id="edit_equip" value="${escapeHtml(r[4])}"></div>
+      <div class="tech-field"><label>Acionamento</label><input type="time" id="edit_acion" value="${formatTimeForInput(r[5])}"></div>
+      <div class="tech-field"><label>Problema</label><textarea id="edit_prob">${escapeHtml(r[6])}</textarea></div>
+      <div class="tech-field"><label>Solução</label><textarea id="edit_sol">${escapeHtml(r[7])}</textarea></div>
+      <div class="tech-field"><label>Encerramento</label><input type="time" id="edit_enc" value="${formatTimeForInput(r[8])}"></div>
     `;
 
+    // botões de edição: cancelar / salvar
     modalButtons.innerHTML = "";
 
-    const cancel = document.createElement("button");
-    cancel.textContent = "Cancelar";
-    cancel.style.background = "#6c757d";
-    cancel.onclick = () => abrirModal(r);
-    modalButtons.appendChild(cancel);
+    const btnCancelar = document.createElement("button");
+    btnCancelar.textContent = "Cancelar";
+    btnCancelar.style.background = "#6c757d";
+    btnCancelar.addEventListener("click", () => {
+        modalEditMode = false;
+        abrirModal(registroSelecionado); // reabre em modo visual
+    });
+    modalButtons.appendChild(btnCancelar);
 
-    const save = document.createElement("button");
-    save.textContent = "Salvar";
-    save.style.background = "#2d6a4f";
-    save.onclick = salvarEdicao;
-    modalButtons.appendChild(save);
+    const btnSalvar = document.createElement("button");
+    btnSalvar.textContent = "Salvar";
+    btnSalvar.style.background = "#2d6a4f";
+    btnSalvar.addEventListener("click", async () => {
+        // monta payload conforme seu GAS espera
+        const payload = {
+            acao: "editarTurno",
+            id: String(registroSelecionado[0]),
+            nome: document.getElementById("edit_nome").value.trim(),
+            matricula: document.getElementById("edit_matricula").value.trim(),
+            data: document.getElementById("edit_data").value || "",
+            equipamento: document.getElementById("edit_equip").value.trim(),
+            acionamento: document.getElementById("edit_acion").value || "",
+            problema: document.getElementById("edit_prob").value.trim(),
+            solucao: document.getElementById("edit_sol").value.trim(),
+            encerramento: document.getElementById("edit_enc").value || ""
+        };
+        try {
+            const res = await callGAS(payload);
+            if(res && res.success){
+                alert("Registro atualizado com sucesso!");
+                location.reload(); // conforme solicitado: atualiza a página inteira
+            } else {
+                alert("Erro ao atualizar: " + (res && res.message ? res.message : "desconhecido"));
+            }
+        } catch(e) {
+            alert("Falha na requisição de edição.");
+        }
+    });
+    modalButtons.appendChild(btnSalvar);
 }
 
-/* salvar edição */
-async function salvarEdicao(){
-    const id = registroSelecionado[0];
-
-    const payload = {
-        acao: "editar",
-        id,
-        data: document.getElementById("edit_data").value,
-        nome: document.getElementById("edit_nome").value,
-        matricula: document.getElementById("edit_matricula").value,
-        equipamento: document.getElementById("edit_equip").value,
-        acionamento: document.getElementById("edit_acion").value,
-        problema: document.getElementById("edit_prob").value,
-        solucao: document.getElementById("edit_sol").value,
-        encerramento: document.getElementById("edit_enc").value
-    };
-
-    const res = await callGAS(payload);
-
-    if(res.status === "ok"){
-        alert("Registro atualizado!");
-        fecharModal();
-        loadHistory(matricula.value);
-    } else {
-        alert("Erro ao salvar!");
-    }
-}
-
-/* deletar registro */
+/* confirma e deleta (chama GAS) */
 async function confirmAndDelete(){
-    if(!confirm("Excluir permanentemente este registro?")) return;
-
-    const res = await callGAS({acao:"deletar", id: registroSelecionado[0]});
-    if(res.status === "ok"){
-        alert("Registro removido!");
-        fecharModal();
-        loadHistory(matricula.value);
-    } else {
-        alert("Erro ao remover!");
+    if(!registroSelecionado) return;
+    if(!confirm(`Deseja realmente deletar o registro ID ${registroSelecionado[0]}?`)) return;
+    try {
+        const res = await callGAS({acao:"deletarTurno", id: String(registroSelecionado[0]), matricula: String(matricula.value || "")});
+        if(res && res.success){
+            alert("Registro deletado.");
+            location.reload(); // recarrega tudo
+        } else {
+            alert("Erro ao deletar: " + (res && res.message ? res.message : "desconhecido"));
+        }
+    } catch(e) {
+        alert("Falha na requisição de deleção.");
     }
 }
 
-/* ================== REGISTRAR NOVO ================== */
+/* fechar modal */
+function fecharModal(){
+    modalDetalhes.style.display = "none";
+    registroSelecionado = null;
+    modalEditMode = false;
+}
+
+/* ================== REGISTRAR (form principal) ================== */
 turnoForm.onsubmit = async e => {
     e.preventDefault();
-
-    const obj = {
-        acao: "registrar",
-        nome: nome.value,
-        matricula: matricula.value,
-        data: data.value,
-        equipamento: equipamento.value,
-        acionamento: acionamento.value,
-        problema: problema.value,
-        solucao: solucao.value,
-        encerramento: encerramento.value
+    // se estiver em modo edição via form (neste fluxo não usamos form para editar — edição é pelo modal),
+    // então tratamos como novo registro apenas
+    const payload = {
+        acao: "registrarTurno",
+        nome: document.getElementById("nome").value.trim(),
+        matricula: document.getElementById("matricula").value.trim(),
+        data: document.getElementById("data").value || "",
+        equipamento: document.getElementById("equipamento").value.trim(),
+        acionamento: document.getElementById("acionamento").value || "",
+        problema: document.getElementById("problema").value.trim(),
+        solucao: document.getElementById("solucao").value.trim(),
+        encerramento: document.getElementById("encerramento").value || ""
     };
-
-    const res = await callGAS(obj);
-
-    if(res.status === "ok"){
-        alert("Registro salvo!");
-        turnoForm.reset();
-        loadHistory(matricula.value);
-    } else {
-        alert("Erro ao registrar!");
+    try {
+        const res = await callGAS(payload);
+        if(res && res.success){
+            alert("Registro salvo!");
+            // solicitado: recarregar a página inteira
+            location.reload();
+        } else {
+            alert("Erro ao salvar: " + (res && res.message ? res.message : "desconhecido"));
+        }
+    } catch(e) {
+        alert("Falha na requisição de registro.");
     }
-};
-
-/* ================== PDF ================== */
-btnPDF.onclick = () => {
-    const win = window.open("", "_blank");
-    win.document.write("<h1>Histórico</h1>");
-    win.document.write(document.querySelector(".history-wrapper").innerHTML);
-    win.document.close();
-    win.print();
 };
 
 /* ================== WATCHDOG ================== */
-async function watchdog(){
-    try {
-        const r = await callGAS({acao:"watchdog"});
-        watchdogEl.textContent = "Watchdog: " + (r.watchdog ? "ONLINE" : "OFFLINE");
-    }catch(e){
-        watchdogEl.textContent = "Watchdog: ERRO";
+async function atualizarWatchdog(){
+    try{
+        const r = await callGAS({acao:"getWatchdog"});
+        watchdogEl.innerText = "Watchdog: " + (r && r.watchdog !== undefined ? r.watchdog : "OFFLINE");
+    } catch(e) {
+        watchdogEl.innerText = "Watchdog: OFFLINE";
     }
 }
-setInterval(watchdog, 5000);
-watchdog();
+setInterval(atualizarWatchdog, 3000);
+atualizarWatchdog();
+
+/* ================== PDF ================== */
+btnPDF.onclick = async () => {
+    try {
+        const r = await callGAS({acao:"gerarPDF"});
+        if(r && r.url){
+            window.open(r.url, "_blank");
+        } else {
+            alert("Não foi possível gerar PDF.");
+        }
+    } catch(e) {
+        alert("Erro ao solicitar PDF.");
+    }
+};
+
+/* ================== Inicialização ================== */
+loadHistory(""); // carrega tudo ao abrir a página
 
 </script>
 </body>
