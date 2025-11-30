@@ -28,6 +28,7 @@ button:hover{opacity:.95}
 .search-bar{display:flex;gap:10px;margin-bottom:15px}
 .search-bar input{flex:1}
 .pdf-btn{background:#2d6a4f;margin-left:10px}
+.small{font-size:12px;color:#666}
 @media(max-width:1200px){
   .container{width:95%;margin:10px auto;padding:12px;box-shadow:none}
   form{grid-template-columns:1fr}
@@ -68,8 +69,8 @@ button:hover{opacity:.95}
       <div><label>Equipamento *</label><input id="equipamento" required></div>
       <div><label>Acionamento *</label><input type="time" id="acionamento" required></div>
       <div class="full-width"><label>Problema *</label><textarea id="problema" required></textarea></div>
-      <div class="full-width"><label>Solução *</label><textarea id="solucao" required></textarea></div>
-      <div><label>Encerramento *</label><input type="time" id="encerramento" required></div>
+      <div class="full-width"><label>Solução</label><textarea id="solucao"></textarea></div>
+      <div><label>Encerramento</label><input type="time" id="encerramento"></div>
       <div class="full-width">
         <button id="btnSubmit">Registrar</button>
         <button type="button" id="btnLogout" style="background:#ff6b6b;margin-top:8px;">Logout</button>
@@ -102,10 +103,10 @@ button:hover{opacity:.95}
   </div>
 </div>
 
-<!-- MODAL (botões criados dinamicamente via JS) -->
+<!-- MODAL (edição dentro do modal) -->
 <div class="modal" id="modalDetalhes" aria-hidden="true">
   <div class="modal-content" role="dialog" aria-modal="true">
-    <h2>Ficha Técnica</h2>
+    <h2 id="modalTitle">Ficha Técnica</h2>
     <div id="modalFields"></div>
     <div id="modalButtons" style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;"></div>
   </div>
@@ -131,12 +132,9 @@ const logDiv = document.getElementById("logDiv");
 
 let fullHistory = [];
 let registroSelecionado = null;
+let modalEditMode = false; // controla se modal está em modo edição
 
-/* ================== JSONP helper ==================
-   Evita CORS criando <script> que chama callback global
-   callGAS({acao:"getHistorico", matricula:"123"})
-   retorna promessa com o objeto/array do GAS
-================================================== */
+/* ================== JSONP helper ================== */
 function callGAS(params) {
     const callback = "cb_" + Math.random().toString(36).slice(2,12);
     const url = GAS_URL + "?" + new URLSearchParams({...params, callback});
@@ -163,10 +161,8 @@ loginForm.onsubmit = async e => {
     loginDiv.style.display = "none";
     registroDiv.style.display = "block";
     matricula.value = mat;
-    // carrega histórico do usuário
     await loadHistory(mat);
     logDiv.style.display = (mat === "991631240") ? "block" : "none";
-    // registra log de login
     await callGAS({acao:"registrarLog", matricula: mat, acaoTipo:"Login"});
 };
 
@@ -176,7 +172,7 @@ document.getElementById("btnLogout").onclick = async () => {
     loginDiv.style.display = "block";
     turnoForm.reset();
     matricula.value = "";
-    await loadHistory(""); // carrega tudo no logout
+    await loadHistory("");
     logDiv.style.display = "none";
 };
 
@@ -184,7 +180,6 @@ document.getElementById("btnLogout").onclick = async () => {
 async function loadHistory(matriculaFiltro="") {
     try {
         const data = await callGAS({acao:"getHistorico", matricula: matriculaFiltro});
-        // se retornar undefined ou objeto com erro, normalize
         fullHistory = Array.isArray(data) ? data : (data && data.length ? data : []);
     } catch(err) {
         console.error("Erro ao carregar histórico:", err);
@@ -206,16 +201,11 @@ function renderHistory(data) {
     }
     const searchTerm = (searchInput.value || "").toLowerCase();
     data
-      .filter(r => {
-          // garante que cada coluna seja string para busca
-          return r.some(c => String(c || "").toLowerCase().includes(searchTerm));
-      })
+      .filter(r => r.some(c => String(c || "").toLowerCase().includes(searchTerm)))
       .forEach(r => {
-          // tabela desktop
           const tr = document.createElement("tr");
           tr.dataset.id = String(r[0]);
           tr.addEventListener("click", () => abrirModal(r));
-          // exibir apenas colunas relevantes (0..8)
           for (let i=0; i<9; i++){
               const td = document.createElement("td");
               td.textContent = formatCell(r[i]);
@@ -223,7 +213,6 @@ function renderHistory(data) {
           }
           t.appendChild(tr);
 
-          // card mobile
           const card = document.createElement("div");
           card.className = "history-card";
           card.dataset.id = String(r[0]);
@@ -237,13 +226,11 @@ function renderHistory(data) {
 }
 searchInput.oninput = () => renderHistory(fullHistory);
 
-/* ================== UTILITÁRIOS de formatação ================== */
+/* ================== UTILITÁRIOS ================== */
 function formatCell(value){
     if(value === null || value === undefined || value === "") return "";
-    // se for ISO datetime, mostrar data local ou parcial
     const s = String(value);
     if(s.match(/^\d{4}-\d{2}-\d{2}T/)) {
-        // ex: 2025-11-29T03:00:00.000Z -> mostra YYYY-MM-DD HH:MM (UTC->local não obrigatório)
         try {
             const d = new Date(s);
             if(!isNaN(d)){
@@ -251,7 +238,6 @@ function formatCell(value){
             }
         } catch(e){}
     }
-    // se for data no formato com "T" mas sem ano no início (ex: 1899...) ainda retorna string
     return s;
 }
 function escapeHtml(s){
@@ -279,134 +265,168 @@ function formatTimeForInput(raw){
     }catch(e){ return ""; }
 }
 
-/* ================== MODAL (botões gerados por JS; sem onclick inline) ================== */
+/* ================== MODAL (edição dentro do modal) ================== */
 function abrirModal(r){
     registroSelecionado = r;
+    modalEditMode = false;
+    modalTitle = document.getElementById("modalTitle");
+    modalTitle.textContent = `Ficha Técnica - ID ${r[0]}`;
+
     modalFields.innerHTML = `
       <div class="tech-field"><strong>ID:</strong> ${escapeHtml(r[0])}</div>
-      <div class="tech-field"><strong>Data:</strong> ${escapeHtml(formatCell(r[1]))}</div>
-      <div class="tech-field"><strong>Executante:</strong> ${escapeHtml(r[2])}</div>
-      <div class="tech-field"><strong>Matrícula:</strong> ${escapeHtml(r[3])}</div>
-      <div class="tech-field"><strong>Equipamento:</strong> ${escapeHtml(r[4])}</div>
-      <div class="tech-field"><strong>Acionamento:</strong> ${escapeHtml(formatCell(r[5]))}</div>
-      <div class="tech-field"><strong>Problema:</strong><br>${escapeHtml(r[6])}</div>
-      <div class="tech-field"><strong>Solução:</strong><br>${escapeHtml(r[7])}</div>
-      <div class="tech-field"><strong>Encerramento:</strong> ${escapeHtml(formatCell(r[8]))}</div>
+      <div class="tech-field"><strong>Data:</strong> <span id="fld_data">${escapeHtml(formatCell(r[1]))}</span></div>
+      <div class="tech-field"><strong>Executante:</strong> <span id="fld_nome">${escapeHtml(r[2])}</span></div>
+      <div class="tech-field"><strong>Matrícula:</strong> <span id="fld_matricula">${escapeHtml(r[3])}</span></div>
+      <div class="tech-field"><strong>Equipamento:</strong> <span id="fld_equip">${escapeHtml(r[4])}</span></div>
+      <div class="tech-field"><strong>Acionamento:</strong> <span id="fld_acion">${escapeHtml(formatCell(r[5]))}</span></div>
+      <div class="tech-field"><strong>Problema:</strong><div id="fld_prob">${escapeHtml(r[6])}</div></div>
+      <div class="tech-field"><strong>Solução:</strong><div id="fld_sol">${escapeHtml(r[7])}</div></div>
+      <div class="tech-field"><strong>Encerramento:</strong> <span id="fld_enc">${escapeHtml(formatCell(r[8]))}</span></div>
     `;
 
-    // limpa e cria botões sem usar onclick inline
+    // botões
     modalButtons.innerHTML = "";
-
     const btnFechar = document.createElement("button");
     btnFechar.textContent = "Fechar";
     btnFechar.style.background = "#2d6a4f";
     btnFechar.addEventListener("click", fecharModal);
     modalButtons.appendChild(btnFechar);
 
-    // mostra Editar/Deletar apenas se matricula logada == matricula do registro
+    // se matricula logada == do registro, permite editar/deletar
     if (String((matricula.value || "")).trim() === String(r[3]).trim()) {
         const btnEditar = document.createElement("button");
         btnEditar.textContent = "Editar";
         btnEditar.style.background = "#4dabf7";
-        btnEditar.addEventListener("click", () => editarRegistro()); // usa registroSelecionado
+        btnEditar.addEventListener("click", () => enterModalEditMode());
         modalButtons.appendChild(btnEditar);
 
         const btnDeletar = document.createElement("button");
         btnDeletar.textContent = "Deletar";
         btnDeletar.style.background = "#ff6b6b";
-        btnDeletar.addEventListener("click", () => deletarRegistro());
+        btnDeletar.addEventListener("click", () => confirmAndDelete());
         modalButtons.appendChild(btnDeletar);
     }
 
     modalDetalhes.style.display = "flex";
 }
 
+/* entra em modo edição dentro do modal (substitui spans por inputs) */
+function enterModalEditMode(){
+    if(!registroSelecionado) return;
+    modalEditMode = true;
+    const r = registroSelecionado;
+
+    // substitui o conteúdo por inputs
+    modalFields.innerHTML = `
+      <div class="tech-field"><strong>ID:</strong> ${escapeHtml(r[0])}</div>
+
+      <div class="tech-field"><label>Data</label><input type="date" id="edit_data" value="${formatDateForInput(r[1])}"></div>
+      <div class="tech-field"><label>Executante</label><input type="text" id="edit_nome" value="${escapeHtml(r[2])}"></div>
+      <div class="tech-field"><label>Matrícula</label><input type="text" id="edit_matricula" value="${escapeHtml(r[3])}" readonly></div>
+      <div class="tech-field"><label>Equipamento</label><input type="text" id="edit_equip" value="${escapeHtml(r[4])}"></div>
+      <div class="tech-field"><label>Acionamento</label><input type="time" id="edit_acion" value="${formatTimeForInput(r[5])}"></div>
+      <div class="tech-field"><label>Problema</label><textarea id="edit_prob">${escapeHtml(r[6])}</textarea></div>
+      <div class="tech-field"><label>Solução</label><textarea id="edit_sol">${escapeHtml(r[7])}</textarea></div>
+      <div class="tech-field"><label>Encerramento</label><input type="time" id="edit_enc" value="${formatTimeForInput(r[8])}"></div>
+    `;
+
+    // botões de edição: cancelar / salvar
+    modalButtons.innerHTML = "";
+
+    const btnCancelar = document.createElement("button");
+    btnCancelar.textContent = "Cancelar";
+    btnCancelar.style.background = "#6c757d";
+    btnCancelar.addEventListener("click", () => {
+        modalEditMode = false;
+        abrirModal(registroSelecionado); // reabre em modo visual
+    });
+    modalButtons.appendChild(btnCancelar);
+
+    const btnSalvar = document.createElement("button");
+    btnSalvar.textContent = "Salvar";
+    btnSalvar.style.background = "#2d6a4f";
+    btnSalvar.addEventListener("click", async () => {
+        // monta payload conforme seu GAS espera
+        const payload = {
+            acao: "editarTurno",
+            id: String(registroSelecionado[0]),
+            nome: document.getElementById("edit_nome").value.trim(),
+            matricula: document.getElementById("edit_matricula").value.trim(),
+            data: document.getElementById("edit_data").value || "",
+            equipamento: document.getElementById("edit_equip").value.trim(),
+            acionamento: document.getElementById("edit_acion").value || "",
+            problema: document.getElementById("edit_prob").value.trim(),
+            solucao: document.getElementById("edit_sol").value.trim(),
+            encerramento: document.getElementById("edit_enc").value || ""
+        };
+        try {
+            const res = await callGAS(payload);
+            if(res && res.success){
+                alert("Registro atualizado com sucesso!");
+                location.reload(); // conforme solicitado: atualiza a página inteira
+            } else {
+                alert("Erro ao atualizar: " + (res && res.message ? res.message : "desconhecido"));
+            }
+        } catch(e) {
+            alert("Falha na requisição de edição.");
+        }
+    });
+    modalButtons.appendChild(btnSalvar);
+}
+
+/* confirma e deleta (chama GAS) */
+async function confirmAndDelete(){
+    if(!registroSelecionado) return;
+    if(!confirm(`Deseja realmente deletar o registro ID ${registroSelecionado[0]}?`)) return;
+    try {
+        const res = await callGAS({acao:"deletarTurno", id: String(registroSelecionado[0]), matricula: String(matricula.value || "")});
+        if(res && res.success){
+            alert("Registro deletado.");
+            location.reload(); // recarrega tudo
+        } else {
+            alert("Erro ao deletar: " + (res && res.message ? res.message : "desconhecido"));
+        }
+    } catch(e) {
+        alert("Falha na requisição de deleção.");
+    }
+}
+
 /* fechar modal */
 function fecharModal(){
     modalDetalhes.style.display = "none";
+    registroSelecionado = null;
+    modalEditMode = false;
 }
 
-/* ================== REGISTRAR / EDITAR via formulário ================== */
+/* ================== REGISTRAR (form principal) ================== */
 turnoForm.onsubmit = async e => {
     e.preventDefault();
-
-    // monta payload a partir dos campos
-    const p = {
+    // se estiver em modo edição via form (neste fluxo não usamos form para editar — edição é pelo modal),
+    // então tratamos como novo registro apenas
+    const payload = {
+        acao: "registrarTurno",
         nome: document.getElementById("nome").value.trim(),
         matricula: document.getElementById("matricula").value.trim(),
-        data: document.getElementById("data").value,
+        data: document.getElementById("data").value || "",
         equipamento: document.getElementById("equipamento").value.trim(),
-        acionamento: document.getElementById("acionamento").value,
+        acionamento: document.getElementById("acionamento").value || "",
         problema: document.getElementById("problema").value.trim(),
         solucao: document.getElementById("solucao").value.trim(),
-        encerramento: document.getElementById("encerramento").value
+        encerramento: document.getElementById("encerramento").value || ""
     };
-
-    // se está no modo edição
-    const editId = turnoForm.getAttribute("data-edit-id");
-    if(editId) {
-        // envia edição
-        const payload = {...p, acao:"editarTurno", id: editId};
+    try {
         const res = await callGAS(payload);
-        if(res && res.success) {
-            alert("Registro atualizado!");
-            turnoForm.reset();
-            turnoForm.removeAttribute("data-edit-id");
-            document.getElementById("btnSubmit").innerText = "Registrar";
-            await loadHistory(matricula.value || "");
+        if(res && res.success){
+            alert("Registro salvo!");
+            // solicitado: recarregar a página inteira
+            location.reload();
         } else {
-            alert("Erro ao atualizar: " + (res && res.message ? res.message : "desconhecido"));
+            alert("Erro ao salvar: " + (res && res.message ? res.message : "desconhecido"));
         }
-        return;
-    }
-
-    // modo inserir
-    const r = await callGAS({...p, acao:"registrarTurno"});
-    if(r && r.success){
-        alert("Registro salvo!");
-        turnoForm.reset();
-        await loadHistory(document.getElementById("matricula").value || "");
-    } else {
-        alert("Erro: " + (r && r.message ? r.message : "Falha desconhecida"));
+    } catch(e) {
+        alert("Falha na requisição de registro.");
     }
 };
-
-/* ================== editarRegistro (abre formulário preenchido) ================== */
-function editarRegistro(){
-    if(!registroSelecionado) return alert("Nenhum registro selecionado.");
-    const r = registroSelecionado;
-
-    // Preenche formulário com campos do registro
-    document.getElementById("nome").value = r[2] || "";
-    document.getElementById("matricula").value = r[3] || "";
-    document.getElementById("data").value = formatDateForInput(r[1]) || "";
-    document.getElementById("equipamento").value = r[4] || "";
-    document.getElementById("acionamento").value = formatTimeForInput(r[5]) || "";
-    document.getElementById("problema").value = r[6] || "";
-    document.getElementById("solucao").value = r[7] || "";
-    document.getElementById("encerramento").value = formatTimeForInput(r[8]) || "";
-
-    // fecha modal e coloca form em modo edição
-    fecharModal();
-    turnoForm.setAttribute("data-edit-id", String(r[0]));
-    document.getElementById("btnSubmit").innerText = "Salvar Alterações";
-    // garante que o usuário veja o formulário
-    registroDiv.style.display = "block";
-}
-
-/* ================== deletarRegistro ================== */
-async function deletarRegistro(){
-    if(!registroSelecionado) return alert("Nenhum registro selecionado.");
-    if(!confirm(`Deseja realmente deletar o registro ID ${registroSelecionado[0]}?`)) return;
-    const r = await callGAS({acao:"deletarTurno", id: registroSelecionado[0], matricula: matricula.value || ""});
-    if(r && r.success){
-        alert("Registro deletado.");
-        fecharModal();
-        await loadHistory(matricula.value || "");
-    } else {
-        alert("Erro ao deletar: " + (r && r.message ? r.message : "desconhecido"));
-    }
-}
 
 /* ================== WATCHDOG ================== */
 async function atualizarWatchdog(){
@@ -435,8 +455,7 @@ btnPDF.onclick = async () => {
 };
 
 /* ================== Inicialização ================== */
-/* Carrega tudo ao abrir a página (padrão) */
-loadHistory("");
+loadHistory(""); // carrega tudo ao abrir a página
 
 </script>
 </body>
