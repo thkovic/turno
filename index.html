@@ -301,7 +301,14 @@ function abrirModal(r){
     btnFechar.addEventListener("click", fecharModal);
     modalButtons.appendChild(btnFechar);
 
-    if (String((matricula.value || "")).trim() === String(r[3]).trim()) {
+    // comparação corrigida para evitar espaços ou tipos diferentes
+    if ((matricula.value || "").trim() == (r[3] || "").trim()) {
+        const btnEditar = document.createElement("button");
+        btnEditar.textContent = "Editar";
+        btnEditar.style.background = "#4dabf7";
+        btnEditar.addEventListener("click", () => enterModalEditMode(r));
+        modalButtons.appendChild(btnEditar);
+
         const btnDeletar = document.createElement("button");
         btnDeletar.textContent = "Deletar";
         btnDeletar.style.background = "#ff6b6b";
@@ -312,27 +319,65 @@ function abrirModal(r){
     modalDetalhes.style.display = "flex";
 }
 
-function fecharModal(){
-    modalDetalhes.style.display = "none";
-    registroSelecionado = null;
-}
+/* ================== MODO EDIÇÃO ================== */
+function enterModalEditMode(r){
+    modalFields.innerHTML = `
+      <div class="tech-field"><label>Data:</label>
+        <input type="date" id="editData" value="${new Date(r[1]).toISOString().split('T')[0]}">
+      </div>
+      <div class="tech-field"><label>Equipamento:</label>
+        <input id="editEquipamento" value="${escapeHtml(r[4])}">
+      </div>
+      <div class="tech-field"><label>Acionamento:</label>
+        <input type="time" id="editAcionamento" value="${r[5] ? new Date(r[5]).toISOString().substring(11,16) : ''}">
+      </div>
+      <div class="tech-field"><label>Problema:</label>
+        <textarea id="editProblema">${escapeHtml(r[6])}</textarea>
+      </div>
+      <div class="tech-field"><label>Solução:</label>
+        <textarea id="editSolucao">${escapeHtml(r[7])}</textarea>
+      </div>
+      <div class="tech-field"><label>Encerramento:</label>
+        <input type="time" id="editEncerramento" value="${r[8] ? new Date(r[8]).toISOString().substring(11,16) : ''}">
+      </div>
+    `;
 
-/* ================== DELETAR ================== */
-async function confirmAndDelete(){
-    if(!registroSelecionado) return;
-    if(!confirm(`Deseja realmente deletar o registro ID ${registroSelecionado[0]}?`)) return;
-    try {
-        const res = await callGAS({acao:"deletarTurno", id: String(registroSelecionado[0]), matricula: String(matricula.value || "")});
-        if(res && res.success){
-            alert("Registro deletado.");
-            await loadHistory(matricula.value);
-            fecharModal();
-        } else {
-            alert("Erro ao deletar: " + (res && res.message ? res.message : "desconhecido"));
+    modalButtons.innerHTML = "";
+    const btnSalvar = document.createElement("button");
+    btnSalvar.textContent = "Salvar";
+    btnSalvar.style.background = "#2d6a4f";
+    btnSalvar.addEventListener("click", async () => {
+        try {
+            const payload = {
+                acao: "editarTurno",
+                id: String(r[0]),
+                matricula: matricula.value,
+                data: document.getElementById("editData").value,
+                equipamento: document.getElementById("editEquipamento").value,
+                acionamento: document.getElementById("editAcionamento").value,
+                problema: document.getElementById("editProblema").value,
+                solucao: document.getElementById("editSolucao").value,
+                encerramento: document.getElementById("editEncerramento").value
+            };
+            const res = await callGAS(payload);
+            if(res && res.success){
+                alert("Registro atualizado!");
+                await loadHistory(matricula.value);
+                fecharModal();
+            } else {
+                alert("Erro ao atualizar: " + (res && res.message ? res.message : "desconhecido"));
+            }
+        } catch(e) {
+            alert("Falha na requisição de edição.");
         }
-    } catch(e) {
-        alert("Falha na requisição de deleção.");
-    }
+    });
+    modalButtons.appendChild(btnSalvar);
+
+    const btnCancelar = document.createElement("button");
+    btnCancelar.textContent = "Cancelar";
+    btnCancelar.style.background = "#ff6b6b";
+    btnCancelar.addEventListener("click", fecharModal);
+    modalButtons.appendChild(btnCancelar);
 }
 
 /* ================== REGISTRAR ================== */
