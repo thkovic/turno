@@ -216,14 +216,19 @@ function abrirModal(r){
 <div class="tech-field"><strong>Problema:</strong><br>${r[6]}</div>
 <div class="tech-field"><strong>Solução:</strong><br>${r[7]}</div>
 <div class="tech-field"><strong>Encerramento:</strong> ${r[8]}</div>`;
+
     modalButtons.innerHTML=`<button onclick="fecharModal()" style="background:#2d6a4f;">Fechar</button>`;
-    if(matricula.value===r[3]){
-        modalButtons.innerHTML+=`<button onclick="editarRegistro()" style="background:#4dabf7;">Editar</button>
-<button onclick="deletarRegistro()" style="background:#ff6b6b;">Deletar</button>`;
+
+    // 🔧 Correção aqui ↓↓↓
+    if (String(matricula.value).trim() === String(r[3]).trim()) {
+        modalButtons.innerHTML += `
+            <button onclick="editarRegistro()" style="background:#4dabf7;">Editar</button>
+            <button onclick="deletarRegistro()" style="background:#ff6b6b;">Deletar</button>
+        `;
     }
+
     modalDetalhes.style.display="flex";
 }
-function fecharModal(){ modalDetalhes.style.display="none"; }
 
 // ----------------- REGISTRAR -----------------
 turnoForm.onsubmit = async e => {
