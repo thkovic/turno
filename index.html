@@ -160,7 +160,7 @@ loginForm.onsubmit = async e => {
     matricula.value = mat;
     await loadHistory(mat);
     logDiv.style.display = (mat === "991631240") ? "block" : "none";
-    await callGAS({acao:"registrarLog    :"Login"});
+    await callGAS({acao:"registrarLog:"Login"});
 };
 
 /* LOGOUT */
