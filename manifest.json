@@ -1,18 +1,19 @@
 {
   "name": "Sistema de Histórico",
   "short_name": "Histórico",
-  "start_url": "index.html",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#000000",
+  "theme_color": "#2d6a4f",
+  "orientation": "portrait",
   "icons": [
     {
-      "src": "icons/icon-192.png",
+      "src": "iicon-192.png",
       "sizes": "192x192",
       "type": "image/png"
-    },
+    }
     {
-      "src": "icons/icon-512.png",
+      "src": "icon-92.png",
       "sizes": "512x512",
       "type": "image/png"
     }
