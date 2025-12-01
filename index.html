@@ -103,7 +103,11 @@ button:hover{opacity:.95}
     <div id="mobileHistory"></div>
   </div>
 </div>
-
+  // copia matrícula para o campo readonly
+  matriculaInput.value = mat;
+  loginDiv.style.display = "none";
+  registroDiv.style.display = "block";
+};
 <!-- MODAL -->
 <div class="modal" id="modalDetalhes" aria-hidden="true">
   <div class="modal-content" role="dialog" aria-modal="true">
