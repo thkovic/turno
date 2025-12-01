@@ -3,9 +3,7 @@ const urlsToCache = [
   "/",
   "/index.html",
   "/manifest.json",
-  "/sw.js",
-  "/style.css",
-  "/script.js"
+  "/sw.js"
 ];
 
 // Instala o service worker e adiciona arquivos ao cache
