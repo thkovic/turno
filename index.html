@@ -458,6 +458,12 @@ btnPDF.onclick = async () => {
 
 /* Inicialização */
 loadHistory(""); // carrega tudo ao abrir a página
+   // Registro do Service Worker
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("sw.js")
+      .then(() => console.log("Service Worker registrado!"))
+      .catch(err => console.error("Erro ao registrar SW:", err));
+  }
 </script>
 </body>
 </html>
