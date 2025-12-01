@@ -1,15 +1,19 @@
 const CACHE_NAME = "historico-cache-v1";
 const urlsToCache = [
-  "/",
-  "/index.html",
-  "/manifest.json",
-  "/sw.js"
+  "./index.html",
+  "./manifest.json"
 ];
 
 // Instala o service worker e adiciona arquivos ao cache
 self.addEventListener("install", event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache))
+    caches.open(CACHE_NAME).then(cache => {
+      return Promise.all(
+        urlsToCache.map(url =>
+          cache.add(url).catch(err => console.warn("Falha ao adicionar:", url, err))
+        )
+      );
+    })
   );
 });
 
