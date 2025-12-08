@@ -444,7 +444,7 @@ async function atualizarWatchdog(){
 setInterval(atualizarWatchdog, 3000);
 atualizarWatchdog();
 
-/* PDF - FUNÇÃO CORRIGIDA */
+// Atualize a função btnPDF.onclick no HTML:
 btnPDF.onclick = async () => {
     // Prevenir múltiplos cliques
     if (isGeneratingPDF) {
@@ -457,48 +457,65 @@ btnPDF.onclick = async () => {
     btnPDF.disabled = true;
     
     try {
-        // Adicionar parâmetro de data atual para evitar cache
-        const dataAtual = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+        // Perguntar se quer filtrar por data específica
+        const filtroData = confirm("Deseja gerar relatório para uma data específica?") ?
+            prompt("Digite a data (YYYY-MM-DD) ou deixe em branco para todos:", 
+                   new Date().toISOString().split('T')[0]) : "";
+        
         const params = {
             acao: "gerarPDF",
-            data: dataAtual,
-            timestamp: Date.now() // Para evitar cache
+            filtroData: filtroData || null,
+            timestamp: Date.now()
         };
         
         const r = await callGAS(params);
         
-        if (r && r.url) {
+        if (r && r.success && r.url) {
             // Abrir em nova aba para evitar sobreposição
             const newWindow = window.open(r.url, '_blank');
             if (!newWindow || newWindow.closed || typeof newWindow.closed == 'undefined') {
-                // Se popup for bloqueado, avisar usuário
-                alert("Popup bloqueado! Para visualizar o PDF, permita popups para este site ou clique no link manualmente.");
-                // Criar link para download manual
+                // Se popup for bloqueado, criar link para download manual
                 const downloadLink = document.createElement('a');
                 downloadLink.href = r.url;
                 downloadLink.target = '_blank';
-                downloadLink.textContent = 'Clique aqui para abrir o PDF';
+                downloadLink.textContent = '📄 Clique aqui para abrir o PDF';
                 downloadLink.style.display = 'block';
                 downloadLink.style.marginTop = '10px';
-                downloadLink.style.padding = '10px';
+                downloadLink.style.padding = '12px';
                 downloadLink.style.backgroundColor = '#2d6a4f';
                 downloadLink.style.color = 'white';
                 downloadLink.style.textDecoration = 'none';
                 downloadLink.style.borderRadius = '5px';
                 downloadLink.style.textAlign = 'center';
+                downloadLink.style.fontWeight = 'bold';
                 
                 // Adicionar temporariamente ao DOM
-                document.querySelector('.search-bar').appendChild(downloadLink);
+                const container = document.querySelector('.search-bar');
+                container.appendChild(downloadLink);
+                
+                // Remover após 15 segundos
                 setTimeout(() => {
                     if (downloadLink.parentNode) {
                         downloadLink.parentNode.removeChild(downloadLink);
                     }
-                }, 10000);
+                }, 15000);
             }
+            
+            // Registrar log de geração de PDF
+            try {
+                await callGAS({
+                    acao: "registrarLog", 
+                    matricula: matricula.value || "000", 
+                    acaoTipo: `Gerar PDF${filtroData ? ' - Data: ' + filtroData : ''}`
+                });
+            } catch(e) {
+                console.error("Erro ao registrar log:", e);
+            }
+            
         } else if (r && r.error) {
             alert(`Erro ao gerar PDF: ${r.error}`);
         } else {
-            alert("Não foi possível gerar PDF. Verifique se a função no Google Apps Script está configurada corretamente.");
+            alert("Não foi possível gerar PDF. Verifique as permissões do Google Drive.");
         }
     } catch(e) {
         console.error("Erro ao solicitar PDF:", e);
