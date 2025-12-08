@@ -74,11 +74,14 @@ table th {
     justify-content: space-between;
     margin-top: 20px;
 }
-
 </style>
 
-<!-- SheetJS para gerar Excel -->
+<!-- Excel -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.19.3/xlsx.full.min.js"></script>
+
+<!-- jsPDF + autoTable -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
 
 </head>
 <body>
@@ -86,16 +89,14 @@ table th {
 <div class="container">
     <h1>Sistema de Histórico</h1>
 
-    <!-- Campo de busca -->
     <input type="text" id="busca" placeholder="Buscar no histórico..." oninput="filtrarHistorico()">
 
-    <!-- Botões -->
     <div class="actions">
         <button onclick="carregarHistorico()">Atualizar Histórico</button>
         <button onclick="gerarExcel()">Gerar Excel</button>
+        <button onclick="gerarPDF()">Gerar PDF</button>
     </div>
 
-    <!-- Tabela -->
     <table id="tabelaHistorico">
         <thead>
             <tr>
@@ -118,10 +119,6 @@ table th {
 
 <script>
 
-// =========================
-// 1. BUSCAR HISTÓRICO (API)
-// =========================
-
 const API_URL = "https://script.google.com/macros/s/AKfycbyjN_7typwQ8yFu-4CW6uRV9U4U6z1386BcGz3YAl_-di_KXedC2FFg3NEAIDjuL4ir/exec";
 
 async function carregarHistorico() {
@@ -138,16 +135,13 @@ async function carregarHistorico() {
         preencherTabela(dados);
 
     } catch (e) {
-        console.error("Erro:", e);
         document.getElementById("conteudoTabela").innerHTML =
             "<tr><td colspan='9'>Erro ao carregar dados</td></tr>";
     }
 }
 
-// Preencher tabela
 function preencherTabela(lista) {
     let html = "";
-
     lista.forEach(linha => {
         html += `
             <tr>
@@ -163,13 +157,8 @@ function preencherTabela(lista) {
             </tr>
         `;
     });
-
     document.getElementById("conteudoTabela").innerHTML = html;
 }
-
-// ============================
-// 2. BUSCA / FILTRO NA TABELA
-// ============================
 
 function filtrarHistorico() {
     let termo = document.getElementById("busca").value.toLowerCase();
@@ -181,33 +170,23 @@ function filtrarHistorico() {
     });
 }
 
-// ============================
-// 3. GERAR EXCEL AUTOMÁTICO
-// ============================
-
 function gerarExcel() {
-
     let linhas = document.querySelectorAll("#tabelaHistorico tbody tr");
     let dadosExcel = [];
 
-    // Ler somente linhas visíveis (filtradas)
     linhas.forEach(linha => {
         if (linha.style.display !== "none") {
             let colunas = linha.querySelectorAll("td");
             let registro = [];
-
             colunas.forEach(col => registro.push(col.innerText));
-
             dadosExcel.push(registro);
         }
     });
 
-    // Se não houver filtro → gerar histórico completo via API
     if (dadosExcel.length === 0) {
         return gerarExcelCompleto();
     }
 
-    // Cabeçalho
     dadosExcel.unshift([
         "ID","Data","Executante","Matrícula","Equipamento",
         "Acionamento","Problema","Solução","Encerramento"
@@ -221,13 +200,7 @@ function gerarExcel() {
     XLSX.writeFile(wb, "historico_filtrado.xlsx");
 }
 
-
-// ============================
-// 4. GERAR EXCEL COMPLETO
-// ============================
-
 async function gerarExcelCompleto() {
-
     const resposta = await fetch(API_URL + "?acao=buscarTudo");
     const dados = await resposta.json();
 
@@ -249,6 +222,41 @@ async function gerarExcelCompleto() {
     XLSX.utils.book_append_sheet(wb, plan, "Histórico Completo");
 
     XLSX.writeFile(wb, "historico_completo.xlsx");
+}
+
+/* ============================
+   PDF COM QUEBRA DE LINHA
+   ============================ */
+function gerarPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('l', 'pt', 'a4'); // horizontal para caber mais conteúdo
+    
+    doc.text("Histórico Completo", 40, 40);
+
+    doc.autoTable({
+        html: '#tabelaHistorico',
+        startY: 60,
+        theme: 'grid',
+        styles: {
+            fontSize: 8,
+            cellPadding: 4,
+            valign: 'top',
+            overflow: 'linebreak'
+        },
+        columnStyles: {
+            0: { cellWidth: 40 },
+            1: { cellWidth: 60 },
+            2: { cellWidth: 80 },
+            3: { cellWidth: 60 },
+            4: { cellWidth: 80 },
+            5: { cellWidth: 80 },
+            6: { cellWidth: 150 }, 
+            7: { cellWidth: 150 }, 
+            8: { cellWidth: 80 }
+        }
+    });
+
+    doc.save("historico.pdf");
 }
 
 window.onload = carregarHistorico;
