@@ -1,502 +1,231 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt-br">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Sistema de Histórico — Versão Otimizada (GitHub Pages)</title>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#2d6a4f">
-  <style>
-    :root{--brand:#2d6a4f;--accent:#95d5b2;--danger:#ff6b6b;--muted:#888}
-    *{box-sizing:border-box}
-    body{font-family:Inter, system-ui, Arial, sans-serif;margin:0;background:#fff;color:#222}
-    .container{max-width:1000px;margin:28px auto;padding:18px;border-radius:10px}
-    header{text-align:center;margin-bottom:18px}
-    h1{margin:0;color:var(--brand)}
-    form{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-    label{font-weight:600;font-size:13px}
-    input,textarea,select,button{font-family:inherit}
-    input,textarea,select{width:100%;padding:8px;border:1px solid #ddd;border-radius:6px}
-    textarea{min-height:80px}
-    .full{grid-column:1/-1}
-    .btn{background:var(--accent);color:#fff;border:none;padding:10px 12px;border-radius:8px;cursor:pointer}
-    .btn.secondary{background:#4dabf7}
-    .btn.danger{background:var(--danger)}
-    .watchdog{position:fixed;right:12px;top:12px;background:var(--accent);color:#fff;padding:6px 10px;border-radius:8px;font-weight:700}
-    .history{margin-top:18px}
-    table{width:100%;border-collapse:collapse;font-size:13px}
-    th,td{padding:8px;border:1px solid #eee;text-align:left;max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    th{background:#f1fbf6;color:var(--brand)}
-    .card{display:none}
-    .searchbar{display:flex;gap:8px;margin:12px 0}
-    .searchbar input{flex:1}
-    @media(max-width:800px){
-      form{grid-template-columns:1fr}
-      table{display:none}
-      .card{display:block}
-      .container{padding:12px}
-      .btn{width:100%}
-      .searchbar{flex-direction:column}
-    }
-    /* modal simples */
-    .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);align-items:center;justify-content:center;padding:16px}
-    .modal .inner{background:#fff;border-radius:10px;padding:16px;max-width:720px;width:100%;max-height:90vh;overflow:auto}
-  </style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Sistema de Histórico</title>
+
+  <!-- jsPDF para gerar PDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<style>
+/* estilos resumidos apenas para manter tudo igual */
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background: #f0f4f1;
+  color: #1b4332;
+}
+.container {
+  max-width: 1100px;
+  margin: 20px auto;
+  padding: 20px;
+}
+h1 {
+  text-align: center;
+  color: #2d6a4f;
+  margin-bottom: 20px;
+}
+.form-box, .history-box {
+  background: #fff;
+  padding: 20px;
+  margin-bottom: 20px;
+  border-radius: 12px;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+}
+label { font-weight: bold; }
+input, select, textarea {
+  width: 100%;
+  padding: 10px;
+  margin-top: 6px;
+  margin-bottom: 15px;
+  border-radius: 6px;
+  border: 1px solid #b7e4c7;
+}
+button {
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+}
+.save-btn { background: #2d6a4f; color: white; }
+.save-btn:hover { background: #1b4332; }
+.pdf-btn { background: #40916c; color: white; }
+.pdf-btn:hover { background: #2d6a4f; }
+.logout-btn { background: #e63946; color: white; float:right; }
+.history-item {
+  padding: 12px;
+  border-bottom: 1px solid #ccc;
+}
+.history-item strong { color: #1b4332; }
+</style>
 </head>
+
 <body>
-  <div class="watchdog" id="watchdog">Watchdog: --</div>
-  <div class="container">
-    <header>
-      <h1>📝 Sistema de Histórico</h1>
-      <small style="color:var(--muted)">Versão otimizada para GitHub Pages (single file)</small>
-    </header>
+<div class="container">
 
-    <!-- LOGIN -->
-    <section id="loginSection">
-      <h3>🔐 Login</h3>
-      <form id="loginForm" class="full">
-        <div>
-          <label for="loginMatricula">Matrícula</label>
-          <input id="loginMatricula" name="matricula" required autocomplete="off" />
-        </div>
-        <div>
-          <button class="btn" type="submit">Entrar</button>
-        </div>
-      </form>
-    </section>
+  <h1>Sistema de Histórico</h1>
 
-    <!-- REGISTRO -->
-    <section id="appSection" style="display:none">
-      <form id="turnoForm">
-        <div>
-          <label>Nome *</label>
-          <input id="nome" required />
-        </div>
-        <div>
-          <label>Matrícula *</label>
-          <input id="matricula" readonly required />
-        </div>
-        <div>
-          <label>Data *</label>
-          <input type="date" id="data" required />
-        </div>
-        <div>
-          <label>Equipamento *</label>
-          <input id="equipamento" required />
-        </div>
-        <div>
-          <label>Acionamento *</label>
-          <input type="time" id="acionamento" required />
-        </div>
-        <div class="full">
-          <label>Problema *</label>
-          <textarea id="problema" required></textarea>
-        </div>
-        <div class="full">
-          <label>Solução</label>
-          <textarea id="solucao"></textarea>
-        </div>
-        <div>
-          <label>Encerramento</label>
-          <input type="time" id="encerramento" />
-        </div>
+  <button class="logout-btn" onclick="logout()">Sair</button>
 
-        <div class="full" style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn" id="btnSubmit">Registrar</button>
-          <button type="button" class="btn secondary" id="btnLogout">Logout</button>
-          <button type="button" class="btn" id="btnLog" style="background:#1d3557;display:none">📜 Sistema de Log</button>
-        </div>
-      </form>
+  <div class="form-box">
+    <h2>Novo Registro</h2>
 
-      <div class="searchbar">
-        <input id="searchInput" placeholder="Buscar histórico (ID, nome, equipamento, data)" />
-        <button class="btn" id="btnPDF">📄 Gerar PDF</button>
-      </div>
+    <label>Executante:</label>
+    <input type="text" id="executante">
 
-      <div class="history">
-        <h3>📊 Histórico</h3>
-        <table id="historyTable" aria-live="polite">
-          <thead>
-            <tr><th>ID</th><th>Data</th><th>Executante</th><th>Matrícula</th><th>Equipamento</th><th>Acionamento</th><th>Problema</th><th>Solução</th><th>Encerramento</th></tr>
-          </thead>
-          <tbody><tr><td colspan="9">Carregando...</td></tr></tbody>
-        </table>
+    <label>Matrícula:</label>
+    <input type="text" id="matricula">
 
-        <div id="mobileCards" aria-hidden="true"></div>
-      </div>
-    </section>
+    <label>Equipamento:</label>
+    <input type="text" id="equipamento">
 
+    <label>Acionamento:</label>
+    <input type="datetime-local" id="acionamento">
+
+    <label>Problema:</label>
+    <textarea id="problema"></textarea>
+
+    <label>Solução:</label>
+    <textarea id="solucao"></textarea>
+
+    <label>Encerramento:</label>
+    <input type="datetime-local" id="encerramento">
+
+    <button class="save-btn" id="btnSalvar">Salvar Registro</button>
   </div>
 
-  <!-- Modal -->
-  <div class="modal" id="modal" role="dialog" aria-hidden="true">
-    <div class="inner" id="modalInner"></div>
+  <div class="history-box">
+    <h2>Histórico</h2>
+
+    <button class="pdf-btn" id="btnPDF">📄 Gerar PDF</button>
+
+    <div id="historyList">Carregando...</div>
   </div>
 
-  <script>
-  /* ========== CONFIG ========== */
-  const GAS_URL = "https://script.google.com/macros/s/AKfycbyjN_7typwQ8yFu-4CW6uRV9U4U6z1386BcGz3YAl_-di_KXedC2FFg3NEAIDjuL4ir/exec"; // keep existing
+</div>
 
-  /* ========== ELEMENTS ========== */
-  const loginForm = document.getElementById('loginForm');
-  const loginSection = document.getElementById('loginSection');
-  const appSection = document.getElementById('appSection');
-  const matriculaEl = document.getElementById('matricula');
-  const turnoForm = document.getElementById('turnoForm');
-  const searchInput = document.getElementById('searchInput');
-  const btnPDF = document.getElementById('btnPDF');
-  const watchdogEl = document.getElementById('watchdog');
-  const historyTableBody = document.querySelector('#historyTable tbody');
-  const mobileCards = document.getElementById('mobileCards');
-  const btnLogout = document.getElementById('btnLogout');
-  const btnLog = document.getElementById('btnLog');
-  const modal = document.getElementById('modal');
-  const modalInner = document.getElementById('modalInner');
+<script>
+/* ---- VARIÁVEIS ---- */
+let fullHistory = [];
 
-  let fullHistory = [];
-  let selected = null;
-  let busy = false; // evita double submit
+/* ---- FORMATADORES ---- */
+function formatDate(d) {
+    if (!d) return "";
+    return new Date(d).toLocaleDateString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+}
 
-  /* ========== UTILIDADES ========== */
-  function safeText(s){ return s == null ? '' : String(s); }
+function formatTime(d) {
+    if (!d) return "";
+    return new Date(d).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+}
 
-  // tenta parse flexível: ISO ou dd/mm/yyyy
-  function parseFlexibleDate(v){
-    if(!v) return null;
-    // ISO-like
-    const iso = new Date(v);
-    if(!isNaN(iso)) return iso;
-    // dd/mm/yyyy
-    const m = String(v).match(/^(\d{2})\/(\d{2})\/(\d{4})/);
-    if(m){ return new Date(`${m[3]}-${m[2]}-${m[1]}T00:00:00`); }
-    return new Date(v); // fallback
-  }
+/* ---- SALVAR ---- */
+document.getElementById("btnSalvar").addEventListener("click", () => {
+    alert("Registro salvo! (Simulação — integre ao GAS)");
+});
 
-  function formatDate(v){ const d = parseFlexibleDate(v); return d && !isNaN(d) ? d.toLocaleDateString('pt-BR') : ''; }
-  function formatTime(v){ const d = parseFlexibleDate(v); return d && !isNaN(d) ? new Date(d).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) : (v?String(v):''); }
+/* ---- CARREGAR HISTÓRICO (simulado) ---- */
+function loadHistory() {
+    fullHistory = [
+        [1, "2025-12-08T10:00", "Carlos", "238721", "Motor 01", "2025-12-08T09:00", "Ruído", "Apertado parafusos", "2025-12-08T10:30"],
+        [2, "2025-12-07T15:00", "Joana", "998172", "Bomba 02", "2025-12-07T14:00", "Vazamento", "Trocado vedação", "2025-12-07T15:20"],
+    ];
 
-  // JSONP helper (mantive compatibilidade com seu GAS)
-  function jsonpRequest(params, timeout = 8000){
-    return new Promise((resolve,reject)=>{
-      const cb = 'cb_' + Math.random().toString(36).slice(2,10);
-      params.callback = cb;
-      const url = GAS_URL + '?' + new URLSearchParams(params).toString();
-      let script = document.createElement('script');
-      let timed = setTimeout(()=>{ cleanup(); reject(new Error('timeout')) }, timeout);
-      window[cb] = function(data){ cleanup(); resolve(data); };
-      function cleanup(){ clearTimeout(timed); try{ delete window[cb]; }catch(e){} if(script){ script.remove(); script=null;} }
-      script.src = url; script.onerror = ()=>{ cleanup(); reject(new Error('network')); };
-      document.body.appendChild(script);
-    });
-  }
-
-  // Tratamento de erros padronizado
-  function showError(msg){ alert(msg || 'Erro desconhecido'); }
-
-  /* ========== CORE ========== */
-  async function loadHistory(matriculaFilter=''){
-    historyTableBody.innerHTML = '<tr><td colspan="9">Carregando...</td></tr>';
-    mobileCards.innerHTML = '';
-    try{
-      const data = await jsonpRequest({acao:'getHistorico', matricula:matriculaFilter});
-      fullHistory = Array.isArray(data) ? data.reverse() : [];
-    }catch(e){
-      console.error('loadHistory', e);
-      fullHistory = [];
-      showError('Falha ao carregar histórico.');
-    }
     renderHistory();
-  }
+}
+loadHistory();
 
-  // debounce simples
-  function debounce(fn, ms=300){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); } }
+/* ---- RENDERIZAR HISTÓRICO ---- */
+function renderHistory() {
+    const div = document.getElementById("historyList");
+    div.innerHTML = "";
 
-  function matchesSearch(row, term){
-    if(!term) return true;
-    term = term.toLowerCase();
-    return row.some((cell,idx)=>{
-      const v = safeText(cell).toLowerCase();
-      if([1,5,8].includes(idx)){ // possíveis datas/horas
-        const d = parseFlexibleDate(cell);
-        if(!isNaN(d)){
-          if(d.toLocaleDateString('pt-BR').toLowerCase().includes(term)) return true;
-          if(d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}).toLowerCase().includes(term)) return true;
-        }
-      }
-      return v.includes(term);
+    if (fullHistory.length === 0) {
+        div.innerHTML = "<p>Sem registros.</p>";
+        return;
+    }
+
+    fullHistory.forEach(r => {
+        div.innerHTML += `
+            <div class="history-item">
+                <strong>ID:</strong> ${r[0]}<br>
+                <strong>Data:</strong> ${formatDate(r[1])}<br>
+                <strong>Executante:</strong> ${r[2]}<br>
+                <strong>Matrícula:</strong> ${r[3]}<br>
+                <strong>Equipamento:</strong> ${r[4]}<br>
+                <strong>Acionamento:</strong> ${formatTime(r[5])}<br>
+                <strong>Problema:</strong> ${r[6]}<br>
+                <strong>Solução:</strong> ${r[7]}<br>
+                <strong>Encerramento:</strong> ${formatTime(r[8])}
+            </div>
+        `;
     });
-  }
+}
 
-  function renderHistory(){
-    const term = (searchInput.value||'').trim();
-    const data = fullHistory.filter(r=>matchesSearch(r, term));
-    if(!data.length){ historyTableBody.innerHTML = '<tr><td colspan="9">Sem registros</td></tr>'; mobileCards.innerHTML = '<p style="text-align:center;color:var(--muted)">Sem registros</p>'; return; }
-    historyTableBody.innerHTML = '';
-    mobileCards.innerHTML = '';
-    for(const r of data){
-      const tr = document.createElement('tr');
-      tr.tabIndex = 0;
-      tr.addEventListener('click',()=>openModal(r));
-      tr.innerHTML = `
-        <td>${escapeHtml(r[0])}</td>
-        <td>${formatDate(r[1])}</td>
-        <td>${escapeHtml(r[2])}</td>
-        <td>${escapeHtml(r[3])}</td>
-        <td>${escapeHtml(r[4])}</td>
-        <td>${formatTime(r[5])}</td>
-        <td>${escapeHtml(r[6])}</td>
-        <td>${escapeHtml(r[7])}</td>
-        <td>${formatTime(r[8])}</td>
-      `;
-      historyTableBody.appendChild(tr);
+/* ---- GERAR PDF ---- */
+document.getElementById("btnPDF").addEventListener("click", () => {
 
-      // mobile card
-      const card = document.createElement('div');
-      card.className = 'card';
-      card.style.padding = '12px';
-      card.style.margin = '8px 0';
-      card.style.background = '#fbfbfb';
-      card.style.borderRadius = '10px';
-      card.addEventListener('click',()=>openModal(r));
-      card.innerHTML = `<strong>ID: ${escapeHtml(r[0])}</strong><div>${formatDate(r[1])} — ${escapeHtml(r[2])}</div><div>${escapeHtml(r[4])}</div>`;
-      mobileCards.appendChild(card);
-    }
-  }
-
-  function escapeHtml(s){ if(s==null) return ''; return String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
-
-  /* ========== MODAL / EDIT / DELETE ========== */
-  function openModal(r){
-    selected = r;
-    modalInner.innerHTML = '';
-    const wrapper = document.createElement('div');
-    wrapper.innerHTML = `
-      <h3>Ficha - ID ${escapeHtml(r[0])}</h3>
-      <div><strong>Data:</strong> ${formatDate(r[1])}</div>
-      <div><strong>Executante:</strong> ${escapeHtml(r[2])}</div>
-      <div><strong>Matrícula:</strong> ${escapeHtml(r[3])}</div>
-      <div><strong>Equipamento:</strong> ${escapeHtml(r[4])}</div>
-      <div><strong>Acionamento:</strong> ${formatTime(r[5])}</div>
-      <div style="margin-top:8px"><strong>Problema:</strong><div>${escapeHtml(r[6])}</div></div>
-      <div style="margin-top:8px"><strong>Solução:</strong><div>${escapeHtml(r[7])}</div></div>
-      <div style="margin-top:8px"><strong>Encerramento:</strong> ${formatTime(r[8])}</div>
-    `;
-
-    const btns = document.createElement('div');
-    btns.style.marginTop = '12px';
-    const closeBtn = document.createElement('button'); closeBtn.textContent='Fechar'; closeBtn.className='btn'; closeBtn.onclick = closeModal; btns.appendChild(closeBtn);
-
-    // somente dono pode editar/deletar
-    if(String(matriculaEl.value || '').trim() === String(r[3] || '').trim()){
-      const edit = document.createElement('button'); edit.textContent='Editar'; edit.className='btn secondary'; edit.onclick = ()=>enterEditMode(r); btns.appendChild(edit);
-      const del = document.createElement('button'); del.textContent='Deletar'; del.className='btn danger'; del.onclick = ()=>confirmDelete(); btns.appendChild(del);
+    if (!fullHistory || fullHistory.length === 0) {
+        alert("Sem registros para gerar PDF.");
+        return;
     }
 
-    wrapper.appendChild(btns);
-    modalInner.appendChild(wrapper);
-    modal.style.display = 'flex';
-    modal.setAttribute('aria-hidden','false');
-  }
-  function closeModal(){ modal.style.display='none'; modal.setAttribute('aria-hidden','true'); selected=null; }
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ orientation: "landscape" });
 
-  function enterEditMode(r){
-    modalInner.innerHTML = '';
-    const form = document.createElement('div');
-    form.innerHTML = `
-      <h3>Editar — ID ${escapeHtml(r[0])}</h3>
-      <div><label>Executante</label><input id="_editExecutante" value="${escapeHtml(r[2])}"></div>
-      <div><label>Data</label><input type="date" id="_editData" value="${toInputDate(r[1])}"></div>
-      <div><label>Equipamento</label><input id="_editEquip" value="${escapeHtml(r[4])}"></div>
-      <div><label>Acionamento</label><input type="time" id="_editAcion" value="${toInputTime(r[5])}"></div>
-      <div><label>Problema</label><textarea id="_editProb">${escapeHtml(r[6])}</textarea></div>
-      <div><label>Solução</label><textarea id="_editSol">${escapeHtml(r[7])}</textarea></div>
-      <div><label>Encerramento</label><input type="time" id="_editEnc" value="${toInputTime(r[8])}"></div>
-    `;
-    const actions = document.createElement('div'); actions.style.marginTop='10px';
-    const save = document.createElement('button'); save.textContent='Salvar'; save.className='btn'; save.onclick = async ()=>{
-      if(busy) return; busy=true; save.disabled=true;
-      try{
-        const payload = {
-          acao:'editarTurno', id:String(r[0]), matricula:matriculaEl.value,
-          executante:document.getElementById('_editExecutante').value,
-          data:document.getElementById('_editData').value,
-          equipamento:document.getElementById('_editEquip').value,
-          acionamento:document.getElementById('_editAcion').value,
-          problema:document.getElementById('_editProb').value,
-          solucao:document.getElementById('_editSol').value,
-          encerramento:document.getElementById('_editEnc').value
-        };
-        const res = await jsonpRequest(payload);
-        if(res && res.success){ alert('Registro atualizado!'); await loadHistory(matriculaEl.value); closeModal(); } else showError(res && res.message ? res.message : 'Erro ao atualizar');
-      }catch(e){ showError('Falha na requisição de edição.'); }
-      busy=false; save.disabled=false;
-    };
-    const cancel = document.createElement('button'); cancel.textContent='Cancelar'; cancel.className='btn danger'; cancel.onclick=closeModal;
-    actions.appendChild(save); actions.appendChild(cancel);
-    modalInner.appendChild(form); modalInner.appendChild(actions);
-  }
+    pdf.setFontSize(14);
+    pdf.text("Histórico de Registros", 14, 10);
 
-  function toInputDate(v){ const d=parseFlexibleDate(v); if(!d||isNaN(d)) return ''; return d.toISOString().split('T')[0]; }
-  function toInputTime(v){ const d=parseFlexibleDate(v); if(!d||isNaN(d)) return (v?String(v):''); return new Date(d).toISOString().substring(11,16); }
+    let y = 20;
 
-  async function confirmDelete(){
-    if(!selected) return; if(!confirm(`Deseja deletar ID ${selected[0]}?`)) return;
-    try{
-      const res = await jsonpRequest({acao:'deletarTurno', id:String(selected[0]), matricula:String(matriculaEl.value||'')});
-      if(res && res.success){ alert('Registro deletado'); await loadHistory(matriculaEl.value); closeModal(); } else showError(res && res.message ? res.message : 'Erro ao deletar');
-    }catch(e){ showError('Falha na requisição de deleção.'); }
-  }
+    const header = [
+        "ID", "Data", "Executante", "Matrícula", "Equipamento",
+        "Acionamento", "Problema", "Solução", "Encerramento"
+    ];
 
-  /* ========== REGISTRAR NOVO ========== */
-  turnoForm.addEventListener('submit', async (ev)=>{
-    ev.preventDefault(); if(busy) return; busy=true; document.getElementById('btnSubmit').disabled=true;
-    const payload = {
-      acao:'registrarTurno',
-      nome:document.getElementById('nome').value.trim(),
-      matricula:matriculaEl.value.trim(),
-      data:document.getElementById('data').value || '',
-      equipamento:document.getElementById('equipamento').value.trim(),
-      acionamento:document.getElementById('acionamento').value || '',
-      problema:document.getElementById('problema').value.trim(),
-      solucao:document.getElementById('solucao').value.trim(),
-      encerramento:document.getElementById('encerramento').value || ''
-    };
-    try{
-      const res = await jsonpRequest(payload);
-      if(res && res.success){ alert('Registro salvo!'); turnoForm.reset(); await loadHistory(matriculaEl.value); }
-      else showError(res && res.message ? res.message : 'Erro ao salvar');
-    }catch(e){ showError('Falha na requisição de registro.'); }
-    busy=false; document.getElementById('btnSubmit').disabled=false;
-  });
+    pdf.setFontSize(10);
 
-  /* ========== LOGIN / LOGOUT ========== */
-  loginForm.addEventListener('submit', async (ev)=>{
-    ev.preventDefault(); const mat = document.getElementById('loginMatricula').value.trim(); if(!mat){ alert('Informe a matrícula'); return; }
-    // EXIBIÇÃO local — não bloqueamos a interface caso GAS falhe; mas tentamos registrar log
-    loginSection.style.display='none'; appSection.style.display='block'; matriculaEl.value=mat; await loadHistory(mat);
-    // mostrar botão log para matrícula específica (se desejar manter regra)
-    btnLog.style.display = (mat === '991631240') ? 'inline-block' : 'none';
-    try{ await jsonpRequest({acao:'registrarLog', matricula:mat, acaoTipo:'Login'}); }catch(e){ console.warn('registrer log falhou'); }
-  });
+    function addRow(arr) {
+        arr.forEach((txt, i) => {
+            pdf.text(String(txt).substring(0, 40), 14 + (i * 30), y);
+        });
+        y += 8;
 
-  btnLogout.addEventListener('click', async ()=>{
-    try{ await jsonpRequest({acao:'registrarLog', matricula:matriculaEl.value, acaoTipo:'Logout'}); }catch(e){}
-    appSection.style.display='none'; loginSection.style.display='block'; turnoForm.reset(); matriculaEl.value=''; await loadHistory(''); btnLog.style.display='none';
-  });
-
-  /* ========== WATCHDOG & PDF ========== */
-  async function updateWatchdog(){ try{ const r = await jsonpRequest({acao:'getWatchdog'}); watchdogEl.textContent = 'Watchdog: ' + (r && r.watchdog !== undefined ? r.watchdog : 'OFFLINE'); }catch(e){ watchdogEl.textContent='Watchdog: OFFLINE'; } }
-  setInterval(updateWatchdog, 3000); updateWatchdog();
-
-  btnPDF.addEventListener('click', async ()=>{ try{ const r = await jsonpRequest({acao:'gerarPDF'}); if(r && r.url) window.open(r.url,'_blank'); else showError('Não foi possível gerar PDF'); }catch(e){ showError('Erro ao solicitar PDF'); } });
-
-  /* ========== BUSCA (debounce) ========== */
-  searchInput.addEventListener('input', debounce(()=>renderHistory(), 250));
-
-  /* ========== UTIL: register service worker (se existir sw.js) ========== */
-  if('serviceWorker' in navigator){
-    navigator.serviceWorker.register('/sw.js').then(()=>console.log('Service Worker registrado')).catch(()=>console.warn('SW não encontrado ou falhou')); }
-
-  // carrega tudo na inicialização
-  loadHistory('');
-  
-/* NOVA FUNÇÃO PDF (sobrescreve a anterior) */
-btnPDF.onclick = async () => {
-  try {
-    const res = await callGAS({ acao: "gerarPDF" });
-    if (res && res.url) {
-      window.open(res.url, "_blank");
-      return;
-    }
-  } catch (err) {
-    console.warn("gerarPDF via GAS falhou, fallback local:", err);
-  }
-
-  try {
-    if (!Array.isArray(fullHistory) || fullHistory.length === 0) {
-      alert("Não há registros para gerar PDF.");
-      return;
+        if (y > 190) {
+            pdf.addPage();
+            y = 20;
+        }
     }
 
-    const rowsHtml = fullHistory.map(r => {
-      return `<tr>
-        <td style="padding:6px;border:1px solid #ddd">${escapeHtml(String(r[0] ?? ""))}</td>
-        <td style="padding:6px;border:1px solid #ddd">${escapeHtml(formatDate(r[1]))}</td>
-        <td style="padding:6px;border:1px solid #ddd">${escapeHtml(String(r[2] ?? ""))}</td>
-        <td style="padding:6px;border:1px solid #ddd">${escapeHtml(String(r[3] ?? ""))}</td>
-        <td style="padding:6px;border:1px solid #ddd">${escapeHtml(String(r[4] ?? ""))}</td>
-        <td style="padding:6px;border:1px solid #ddd">${escapeHtml(formatTime(r[5]))}</td>
-        <td style="padding:6px;border:1px solid #ddd">${escapeHtml(String(r[6] ?? ""))}</td>
-        <td style="padding:6px;border:1px solid #ddd">${escapeHtml(String(r[7] ?? ""))}</td>
-        <td style="padding:6px;border:1px solid #ddd">${escapeHtml(formatTime(r[8]))}</td>
-      </tr>`;
-    }).join("");
+    addRow(header);
 
-    const html = `
-      <!doctype html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <title>Histórico — Impressão</title>
-        <style>
-          body{font-family:Arial,Helvetica,sans-serif;margin:20px;color:#222}
-          h1{color:#2d6a4f;font-size:18px;margin-bottom:6px}
-          table{border-collapse:collapse;width:100%;font-size:12px}
-          th,td{border:1px solid #ddd;padding:6px;text-align:left}
-          th{background:#e9f5ef;color:#2d6a4f}
-          thead{display:table-header-group}
-          @media print { button{display:none} body{margin:8mm} }
-        </style>
-      </head>
-      <body>
-        <h1>📊 Histórico de Registros</h1>
-        <p>Gerado em: ${new Date().toLocaleString('pt-BR')}</p>
-        <table>
-          <thead>
-            <tr>
-              <th>ID</th><th>Data</th><th>Executante</th><th>Matrícula</th><th>Equipamento</th>
-              <th>Acionamento</th><th>Problema</th><th>Solução</th><th>Encerramento</th>
-            </tr>
-          </thead>
-          <tbody>${rowsHtml}</tbody>
-        </table>
-        <div style="margin-top:12px">
-          <button onclick="window.print()" style="padding:8px 12px;background:#2d6a4f;color:#fff;border:none;border-radius:6px;cursor:pointer">Imprimir / Salvar como PDF</button>
-        </div>
-      </body>
-      </html>`;
+    fullHistory.forEach(r => {
+        addRow([
+            r[0],
+            formatDate(r[1]),
+            r[2],
+            r[3],
+            r[4],
+            formatTime(r[5]),
+            r[6],
+            r[7],
+            formatTime(r[8])
+        ]);
+    });
 
-    const w = window.open("", "_blank", "noopener,noreferrer");
-    if (!w) {
-      alert("Bloqueador de pop-ups impediu a abertura da janela.");
-      return;
-    }
-    w.document.open();
-    w.document.write(html);
-    w.document.close();
+    pdf.save("historico.pdf");
+});
 
-    setTimeout(() => { try { w.focus(); w.print(); } catch (_) {} }, 600);
-
-  } catch (err) {
-    console.error("Erro no fallback de geração de PDF:", err);
-    alert("Não foi possível gerar o PDF.");
-  }
-};
-
+/* ---- LOGOUT ---- */
+function logout() {
+    alert("Logout executado!");
+}
 </script>
 
-  <!--
-    INSTRUÇÕES IMPORTANTES:
-    - Este arquivo é a versão otimizada para GitHub Pages (single file).
-    - Mantive compatibilidade com seu endpoint GAS usando JSONP (callback), assim funciona sem CORS.
-    - No final do arquivo original (abaixo) há um exemplo de conteúdo para sw.js: copie e salve como /sw.js no seu repositório para ativar PWA básico.
-
-    Exemplo de sw.js (salvar em arquivo separado sw.js):
-    ---------------------------------------------------
-    // conteúdo exemplo (salvar em sw.js):
-    // self.addEventListener('install', e => { e.waitUntil(caches.open('v1').then(c => c.addAll(['/','/index.html']))); });
-    // self.addEventListener('fetch', e => { e.respondWith(caches.match(e.request).then(r => r || fetch(e.request))); });
-    ---------------------------------------------------
-  -->
 </body>
 </html>
