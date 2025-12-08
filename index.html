@@ -1,470 +1,418 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-br">
 <head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Sistema de Histórico — Versão Otimizada (GitHub Pages)</title>
   <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#2d6a4f">
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Sistema de Histórico</title>
-<style>
-/* estilos resumidos para clareza */
-body{font-family:Arial;margin:0;padding:0;background:#fff;color:#333}
-.container{max-width:1000px;margin:40px auto;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.1);border-radius:8px}
-h1{text-align:center;color:#2d6a4f;margin-bottom:20px}
-form{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
-label{font-weight:600}
-input,textarea{width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;box-sizing:border-box}
-textarea{min-height:70px;resize:vertical}
-.full-width{grid-column:1/-1}
-button{background:#95d5b2;color:#fff;border:none;padding:10px 14px;border-radius:6px;cursor:pointer}
-button:hover{opacity:.95}
-#watchdog{position:fixed;top:10px;right:10px;background:#95d5b2;color:#fff;padding:6px 10px;border-radius:6px;font-weight:bold}
-.history table{width:100%;border-collapse:collapse;font-size:13px}
-.history th,.history td{border:1px solid #ddd;padding:8px;text-align:left;max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.history th{background:#e9f5ef;color:#2d6a4f}
-#mobileHistory{display:none}
-.history-card{background:#f7f7f7;padding:14px;margin:12px 0;border-radius:10px;box-shadow:0 2px 4px rgba(0,0,0,.15)}
-.modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);justify-content:center;align-items:center;z-index:1000}
-.modal-content{background:#fff;padding:20px;border-radius:10px;max-width:700px;width:95%;max-height:90%;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.2)}
-.tech-field{margin-bottom:12px}
-.search-bar{display:flex;gap:10px;margin-bottom:15px}
-.search-bar input{flex:1}
-.pdf-btn{background:#2d6a4f;margin-left:10px}
-@media(max-width:800px){
-  .container{width:95%;margin:10px auto;padding:12px;box-shadow:none}
-  form{grid-template-columns:1fr}
-  button{width:100%;padding:14px;font-size:16px}
-  #historyTable{display:none}
-  #mobileHistory{display:block}
-  .search-bar{flex-direction:column}
-  .pdf-btn{margin-left:0;width:100%}
-}
-</style>
+  <meta name="theme-color" content="#2d6a4f">
+  <style>
+    :root{--brand:#2d6a4f;--accent:#95d5b2;--danger:#ff6b6b;--muted:#888}
+    *{box-sizing:border-box}
+    body{font-family:Inter, system-ui, Arial, sans-serif;margin:0;background:#fff;color:#222}
+    .container{max-width:1000px;margin:28px auto;padding:18px;border-radius:10px}
+    header{text-align:center;margin-bottom:18px}
+    h1{margin:0;color:var(--brand)}
+    form{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    label{font-weight:600;font-size:13px}
+    input,textarea,select,button{font-family:inherit}
+    input,textarea,select{width:100%;padding:8px;border:1px solid #ddd;border-radius:6px}
+    textarea{min-height:80px}
+    .full{grid-column:1/-1}
+    .btn{background:var(--accent);color:#fff;border:none;padding:10px 12px;border-radius:8px;cursor:pointer}
+    .btn.secondary{background:#4dabf7}
+    .btn.danger{background:var(--danger)}
+    .watchdog{position:fixed;right:12px;top:12px;background:var(--accent);color:#fff;padding:6px 10px;border-radius:8px;font-weight:700}
+    .history{margin-top:18px}
+    table{width:100%;border-collapse:collapse;font-size:13px}
+    th,td{padding:8px;border:1px solid #eee;text-align:left;max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    th{background:#f1fbf6;color:var(--brand)}
+    .card{display:none}
+    .searchbar{display:flex;gap:8px;margin:12px 0}
+    .searchbar input{flex:1}
+    @media(max-width:800px){
+      form{grid-template-columns:1fr}
+      table{display:none}
+      .card{display:block}
+      .container{padding:12px}
+      .btn{width:100%}
+      .searchbar{flex-direction:column}
+    }
+    /* modal simples */
+    .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);align-items:center;justify-content:center;padding:16px}
+    .modal .inner{background:#fff;border-radius:10px;padding:16px;max-width:720px;width:100%;max-height:90vh;overflow:auto}
+  </style>
 </head>
 <body>
-<div id="watchdog">Watchdog: --</div>
-<div class="container">
-  <h1>📝 Sistema de Histórico</h1>
+  <div class="watchdog" id="watchdog">Watchdog: --</div>
+  <div class="container">
+    <header>
+      <h1>📝 Sistema de Histórico</h1>
+      <small style="color:var(--muted)">Versão otimizada para GitHub Pages (single file)</small>
+    </header>
 
-  <!-- LOGIN -->
-  <div id="loginDiv">
-    <h3>🔐 Login</h3>
-    <form id="loginForm" class="full-width">
-      <div class="full-width">
-        <label>Matrícula</label>
-        <input id="loginMatricula" required>
+    <!-- LOGIN -->
+    <section id="loginSection">
+      <h3>🔐 Login</h3>
+      <form id="loginForm" class="full">
+        <div>
+          <label for="loginMatricula">Matrícula</label>
+          <input id="loginMatricula" name="matricula" required autocomplete="off" />
+        </div>
+        <div>
+          <button class="btn" type="submit">Entrar</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- REGISTRO -->
+    <section id="appSection" style="display:none">
+      <form id="turnoForm">
+        <div>
+          <label>Nome *</label>
+          <input id="nome" required />
+        </div>
+        <div>
+          <label>Matrícula *</label>
+          <input id="matricula" readonly required />
+        </div>
+        <div>
+          <label>Data *</label>
+          <input type="date" id="data" required />
+        </div>
+        <div>
+          <label>Equipamento *</label>
+          <input id="equipamento" required />
+        </div>
+        <div>
+          <label>Acionamento *</label>
+          <input type="time" id="acionamento" required />
+        </div>
+        <div class="full">
+          <label>Problema *</label>
+          <textarea id="problema" required></textarea>
+        </div>
+        <div class="full">
+          <label>Solução</label>
+          <textarea id="solucao"></textarea>
+        </div>
+        <div>
+          <label>Encerramento</label>
+          <input type="time" id="encerramento" />
+        </div>
+
+        <div class="full" style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn" id="btnSubmit">Registrar</button>
+          <button type="button" class="btn secondary" id="btnLogout">Logout</button>
+          <button type="button" class="btn" id="btnLog" style="background:#1d3557;display:none">📜 Sistema de Log</button>
+        </div>
+      </form>
+
+      <div class="searchbar">
+        <input id="searchInput" placeholder="Buscar histórico (ID, nome, equipamento, data)" />
+        <button class="btn" id="btnPDF">📄 Gerar PDF</button>
       </div>
-      <div class="full-width">
-        <button>Entrar</button>
+
+      <div class="history">
+        <h3>📊 Histórico</h3>
+        <table id="historyTable" aria-live="polite">
+          <thead>
+            <tr><th>ID</th><th>Data</th><th>Executante</th><th>Matrícula</th><th>Equipamento</th><th>Acionamento</th><th>Problema</th><th>Solução</th><th>Encerramento</th></tr>
+          </thead>
+          <tbody><tr><td colspan="9">Carregando...</td></tr></tbody>
+        </table>
+
+        <div id="mobileCards" aria-hidden="true"></div>
       </div>
-    </form>
+    </section>
+
   </div>
 
-  <!-- REGISTRO -->
-  <div id="registroDiv" style="display:none;">
-    <h3>Registrar Passagem</h3>
-    <form id="turnoForm">
-      <div><label>Nome *</label><input id="nome" required></div>
-      <div><label>Matrícula *</label><input id="matricula" readonly required></div>
-      <div><label>Data *</label><input type="date" id="data" required></div>
-      <div><label>Equipamento *</label><input id="equipamento" required></div>
-      <div><label>Acionamento *</label><input type="time" id="acionamento" required></div>
-      <div class="full-width"><label>Problema *</label><textarea id="problema" required></textarea></div>
-      <div class="full-width"><label>Solução</label><textarea id="solucao"></textarea></div>
-      <div><label>Encerramento</label><input type="time" id="encerramento"></div>
-      <div class="full-width">
-        <button id="btnSubmit">Registrar</button>
-        <button type="button" id="btnLogout" style="background:#ff6b6b;margin-top:8px;">Logout</button>
-      </div>
-    </form>
+  <!-- Modal -->
+  <div class="modal" id="modal" role="dialog" aria-hidden="true">
+    <div class="inner" id="modalInner"></div>
   </div>
 
-  <div id="logDiv" style="display:none; margin-top:15px;">
-    <button id="btnLog" style="background:#1d3557;">📜 Sistema de Log</button>
-  </div>
+  <script>
+  /* ========== CONFIG ========== */
+  const GAS_URL = "https://script.google.com/macros/s/AKfycbyjN_7typwQ8yFu-4CW6uRV9U4U6z1386BcGz3YAl_-di_KXedC2FFg3NEAIDjuL4ir/exec"; // keep existing
 
-  <div class="search-bar">
-    <input type="text" id="searchInput" placeholder="Buscar histórico (ID, nome, equipamento, data)">
-    <button class="pdf-btn" id="btnPDF">📄 Gerar PDF</button>
-  </div>
+  /* ========== ELEMENTS ========== */
+  const loginForm = document.getElementById('loginForm');
+  const loginSection = document.getElementById('loginSection');
+  const appSection = document.getElementById('appSection');
+  const matriculaEl = document.getElementById('matricula');
+  const turnoForm = document.getElementById('turnoForm');
+  const searchInput = document.getElementById('searchInput');
+  const btnPDF = document.getElementById('btnPDF');
+  const watchdogEl = document.getElementById('watchdog');
+  const historyTableBody = document.querySelector('#historyTable tbody');
+  const mobileCards = document.getElementById('mobileCards');
+  const btnLogout = document.getElementById('btnLogout');
+  const btnLog = document.getElementById('btnLog');
+  const modal = document.getElementById('modal');
+  const modalInner = document.getElementById('modalInner');
 
-  <div class="history">
-    <h3>📊 Histórico de Registros</h3>
-    <table id="historyTable">
-      <thead>
-        <tr>
-          <th>ID</th><th>Data</th><th>Executante</th><th>Matrícula</th><th>Equipamento</th><th>Acionamento</th><th>Problema</th><th>Solução</th><th>Encerramento</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr><td colspan="9">Carregando...</td></tr>
-      </tbody>
-    </table>
-    <div id="mobileHistory"></div>
-  </div>
-</div>
+  let fullHistory = [];
+  let selected = null;
+  let busy = false; // evita double submit
 
-<!-- MODAL -->
-<div class="modal" id="modalDetalhes" aria-hidden="true">
-  <div class="modal-content" role="dialog" aria-modal="true">
-    <h2 id="modalTitle">Ficha Técnica</h2>
-    <div id="modalFields"></div>
-    <div id="modalButtons" style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;"></div>
-  </div>
-</div>
+  /* ========== UTILIDADES ========== */
+  function safeText(s){ return s == null ? '' : String(s); }
 
-<script>
-const GAS_URL = "https://script.google.com/macros/s/AKfycbyjN_7typwQ8yFu-4CW6uRV9U4U6z1386BcGz3YAl_-di_KXedC2FFg3NEAIDjuL4ir/exec";
-
-const loginForm = document.getElementById("loginForm");
-const loginDiv = document.getElementById("loginDiv");
-const registroDiv = document.getElementById("registroDiv");
-const matricula = document.getElementById("matricula");
-const turnoForm = document.getElementById("turnoForm");
-const searchInput = document.getElementById("searchInput");
-const btnPDF = document.getElementById("btnPDF");
-const modalDetalhes = document.getElementById("modalDetalhes");
-const modalFields = document.getElementById("modalFields");
-const modalButtons = document.getElementById("modalButtons");
-const watchdogEl = document.getElementById("watchdog");
-const logDiv = document.getElementById("logDiv");
-
-let fullHistory = [];
-let registroSelecionado = null;
-
-/* JSONP helper */
-function callGAS(params) {
-    const callback = "cb_" + Math.random().toString(36).slice(2,12);
-    const url = GAS_URL + "?" + new URLSearchParams({...params, callback});
-    return new Promise((resolve, reject) => {
-        window[callback] = (data) => {
-            resolve(data);
-            try { delete window[callback]; } catch(e){}
-        };
-        const script = document.createElement("script");
-        script.src = url;
-        script.onerror = () => {
-            reject(new Error("Falha na requisição JSONP"));
-            try { delete window[callback]; } catch(e){}
-        };
-        document.body.appendChild(script);
-    });
-}
-
-/* LOGIN */
-loginForm.onsubmit = async (e) => {
-    e.preventDefault();
-    const mat = document.getElementById("loginMatricula").value.trim();
-    if (!mat) {
-        alert("Informe a matrícula.");
-        return;
-    }
-    loginDiv.style.display = "none";
-    registroDiv.style.display = "block";
-    matricula.value = mat;
-    await loadHistory(mat);
-    logDiv.style.display = (mat === "991631240") ? "block" : "none";
-    try {
-        await callGAS({acao:"registrarLog", matricula: mat, acaoTipo:"Login"});
-    } catch (err) {
-        console.error("Erro ao registrar log de login:", err);
-    }
-};
-
-/* LOGOUT */
-document.getElementById("btnLogout").onclick = async () => {
-    await callGAS({acao:"registrarLog", matricula: matricula.value, acaoTipo:"Logout"});
-    registroDiv.style.display = "none";
-    loginDiv.style.display = "block";
-    turnoForm.reset();
-    matricula.value = "";
-    await loadHistory("");
-    logDiv.style.display = "none";
-};
-
-/* FUNÇÕES DE FORMATO */
-function formatDate(value){
-    if(!value) return "";
-    const d = new Date(value);
-    return isNaN(d) ? "" : d.toLocaleDateString("pt-BR");
-}
-function formatTime(value){
-    if(!value) return "";
-    const d = new Date(value);
-    return isNaN(d) ? "" : d.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
-}
-function escapeHtml(s){
-    if(s === null || s === undefined) return "";
-    return String(s)
-      .replaceAll("&","&amp;")
-      .replaceAll("<","&lt;")
-      .replaceAll(">","&gt;")
-      .replaceAll('"',"&quot;");
-}
-
-/* CARREGAR HISTÓRICO */
-async function loadHistory(matriculaFiltro="") {
-    try {
-        const data = await callGAS({acao:"getHistorico", matricula: matriculaFiltro});
-        fullHistory = Array.isArray(data) ? data.reverse() : [];
-    } catch(err) {
-        console.error("Erro ao carregar histórico:", err);
-        fullHistory = [];
-    }
-    renderHistory(fullHistory);
-    return fullHistory;
-}
-
-/* RENDER HISTÓRICO */
-function renderHistory(data) {
-    const t = document.querySelector("#historyTable tbody");
-    const m = document.getElementById("mobileHistory");
-    t.innerHTML = ""; m.innerHTML = "";
-    if(!Array.isArray(data) || data.length === 0) {
-        t.innerHTML = '<tr><td colspan="9">Sem registros</td></tr>';
-        m.innerHTML = '<p style="text-align:center;color:#888;">Sem registros</p>';
-        return;
-    }
-    const searchTerm = (searchInput.value || "").toLowerCase();
-
-    data
-      .filter(r => {
-          return r.some((c, idx) => {
-              let val = String(c || "").toLowerCase();
-              if ([1,5,8].includes(idx)) {
-                  const d = new Date(c);
-                  if (!isNaN(d)) {
-                      const dataStr = d.toLocaleDateString("pt-BR").toLowerCase();
-                      const horaStr = d.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}).toLowerCase();
-                      return dataStr.includes(searchTerm) || horaStr.includes(searchTerm);
-                  }
-              }
-              return val.includes(searchTerm);
-          });
-      })
-      .forEach(r => {
-          const tr = document.createElement("tr");
-          tr.dataset.id = String(r[0]);
-          tr.addEventListener("click", () => abrirModal(r));
-          tr.innerHTML = `
-            <td>${escapeHtml(r[0])}</td>
-            <td>${formatDate(r[1])}</td>
-            <td>${escapeHtml(r[2])}</td>
-            <td>${escapeHtml(r[3])}</td>
-            <td>${escapeHtml(r[4])}</td>
-            <td>${formatTime(r[5])}</td>
-            <td>${escapeHtml(r[6])}</td>
-            <td>${escapeHtml(r[7])}</td>
-            <td>${formatTime(r[8])}</td>
-          `;
-          t.appendChild(tr);
-
-          const card = document.createElement("div");
-          card.className = "history-card";
-          card.dataset.id = String(r[0]);
-          card.addEventListener("click", () => abrirModal(r));
-          card.innerHTML = `<p><strong>ID:</strong> ${r[0]}</p>
-                            <p><strong>Data:</strong> ${formatDate(r[1])}</p>
-                            <p><strong>Executante:</strong> ${escapeHtml(r[2])}</p>
-                            <p><strong>Equipamento:</strong> ${escapeHtml(r[4])}</p>`;
-          m.appendChild(card);
-      });
-}
-searchInput.oninput = () => renderHistory(fullHistory);
-
-/* MODAL */
-function abrirModal(r){
-    registroSelecionado = r;
-    document.getElementById("modalTitle").textContent = `Ficha Técnica - ID ${r[0]}`;
-
-    modalFields.innerHTML = `
-      <div class="tech-field"><strong>ID:</strong> ${escapeHtml(r[0])}</div>
-      <div class="tech-field"><strong>Data:</strong> ${formatDate(r[1])}</div>
-      <div class="tech-field"><strong>Executante:</strong> ${escapeHtml(r[2])}</div>
-      <div class="tech-field"><strong>Matrícula:</strong> ${escapeHtml(r[3])}</div>
-      <div class="tech-field"><strong>Equipamento:</strong> ${escapeHtml(r[4])}</div>
-      <div class="tech-field"><strong>Acionamento:</strong> ${formatTime(r[5])}</div>
-      <div class="tech-field"><strong>Problema:</strong><div>${escapeHtml(r[6])}</div></div>
-      <div class="tech-field"><strong>Solução:</strong><div>${escapeHtml(r[7])}</div></div>
-      <div class="tech-field"><strong>Encerramento:</strong> ${formatTime(r[8])}</div>
-    `;
-
-    modalButtons.innerHTML = "";
-    const btnFechar = document.createElement("button");
-    btnFechar.textContent = "Fechar";
-    btnFechar.style.background = "#2d6a4f";
-    btnFechar.addEventListener("click", fecharModal);
-    modalButtons.appendChild(btnFechar);
-
-    // ✅ Correção: converter para string antes de trim()
-    if (String(matricula.value || "").trim() === String(r[3] || "").trim()) {
-        const btnEditar = document.createElement("button");
-        btnEditar.textContent = "Editar";
-        btnEditar.style.background = "#4dabf7";
-        btnEditar.addEventListener("click", () => enterModalEditMode(r));
-        modalButtons.appendChild(btnEditar);
-
-        const btnDeletar = document.createElement("button");
-        btnDeletar.textContent = "Deletar";
-        btnDeletar.style.background = "#ff6b6b";
-        btnDeletar.addEventListener("click", () => confirmAndDelete());
-        modalButtons.appendChild(btnDeletar);
-    }
-
-    modalDetalhes.style.display = "flex";
-}
-
-function fecharModal(){
-    modalDetalhes.style.display = "none";
-    registroSelecionado = null;
-}
-
-/* EDIÇÃO */
-function enterModalEditMode(r){
-    modalFields.innerHTML = `
-      <div class="tech-field"><label>Executante:</label>
-        <input id="editExecutante" value="${escapeHtml(r[2])}">
-      </div>
-      <div class="tech-field"><label>Data:</label>
-        <input type="date" id="editData" value="${new Date(r[1]).toISOString().split('T')[0]}">
-      </div>
-      <div class="tech-field"><label>Equipamento:</label>
-        <input id="editEquipamento" value="${escapeHtml(r[4])}">
-      </div>
-      <div class="tech-field"><label>Acionamento:</label>
-        <input type="time" id="editAcionamento" value="${r[5] ? new Date(r[5]).toISOString().substring(11,16) : ''}">
-      </div>
-      <div class="tech-field"><label>Problema:</label>
-        <textarea id="editProblema">${escapeHtml(r[6])}</textarea>
-      </div>
-      <div class="tech-field"><label>Solução:</label>
-        <textarea id="editSolucao">${escapeHtml(r[7])}</textarea>
-      </div>
-      <div class="tech-field"><label>Encerramento:</label>
-        <input type="time" id="editEncerramento" value="${r[8] ? new Date(r[8]).toISOString().substring(11,16) : ''}">
-      </div>
-    `;
-
-    modalButtons.innerHTML = "";
-    const btnSalvar = document.createElement("button");
-    btnSalvar.textContent = "Salvar";
-    btnSalvar.style.background = "#2d6a4f";
-    btnSalvar.addEventListener("click", async () => {
-        try {
-            const payload = {
-                acao: "editarTurno",
-                id: String(r[0]),
-                matricula: matricula.value,
-                executante: document.getElementById("editExecutante").value, // ✅ novo campo
-                data: document.getElementById("editData").value,
-                equipamento: document.getElementById("editEquipamento").value,
-                acionamento: document.getElementById("editAcionamento").value,
-                problema: document.getElementById("editProblema").value,
-                solucao: document.getElementById("editSolucao").value,
-                encerramento: document.getElementById("editEncerramento").value
-            };
-            const res = await callGAS(payload);
-            if(res && res.success){
-                alert("Registro atualizado!");
-                await loadHistory(matricula.value);
-                fecharModal();
-            } else {
-                alert("Erro ao atualizar: " + (res && res.message ? res.message : "desconhecido"));
-            }
-        } catch(e) {
-            alert("Falha na requisição de edição.");
-        }
-    });
-    modalButtons.appendChild(btnSalvar);
-
-    const btnCancelar = document.createElement("button");
-    btnCancelar.textContent = "Cancelar";
-    btnCancelar.style.background = "#ff6b6b";
-    btnCancelar.addEventListener("click", fecharModal);
-    modalButtons.appendChild(btnCancelar);
-}
-
-/* DELETAR */
-async function confirmAndDelete(){
-    if(!registroSelecionado) return;
-    if(!confirm(`Deseja realmente deletar o registro ID ${registroSelecionado[0]}?`)) return;
-    try {
-        const res = await callGAS({acao:"deletarTurno", id: String(registroSelecionado[0]), matricula: String(matricula.value || "")});
-        if(res && res.success){
-            alert("Registro deletado.");
-            await loadHistory(matricula.value);
-            fecharModal();
-        } else {
-            alert("Erro ao deletar: " + (res && res.message ? res.message : "desconhecido"));
-        }
-    } catch(e) {
-        alert("Falha na requisição de deleção.");
-    }
-}
-
-/* REGISTRAR */
-turnoForm.onsubmit = async e => {
-    e.preventDefault();
-    const payload = {
-        acao: "registrarTurno",
-        nome: document.getElementById("nome").value.trim(),
-        matricula: document.getElementById("matricula").value.trim(),
-        data: document.getElementById("data").value || "",
-        equipamento: document.getElementById("equipamento").value.trim(),
-        acionamento: document.getElementById("acionamento").value || "",
-        problema: document.getElementById("problema").value.trim(),
-        solucao: document.getElementById("solucao").value.trim(),
-        encerramento: document.getElementById("encerramento").value || ""
-    };
-    try {
-        const res = await callGAS(payload);
-        if(res && res.success){
-            alert("Registro salvo!");
-            await loadHistory(matricula.value);
-            turnoForm.reset();
-        } else {
-            alert("Erro ao salvar: " + (res && res.message ? res.message : "desconhecido"));
-        }
-    } catch(e) {
-        alert("Falha na requisição de registro.");
-    }
-};
-
-/* WATCHDOG */
-async function atualizarWatchdog(){
-    try{
-        const r = await callGAS({acao:"getWatchdog"});
-        watchdogEl.innerText = "Watchdog: " + (r && r.watchdog !== undefined ? r.watchdog : "OFFLINE");
-    } catch(e) {
-        watchdogEl.innerText = "Watchdog: OFFLINE";
-    }
-}
-setInterval(atualizarWatchdog, 3000);
-atualizarWatchdog();
-
-/* PDF */
-btnPDF.onclick = async () => {
-    try {
-        const r = await callGAS({acao:"gerarPDF"});
-        if(r && r.url){
-            window.open(r.url, "_blank");
-        } else {
-            alert("Não foi possível gerar PDF.");
-        }
-    } catch(e) {
-        alert("Erro ao solicitar PDF.");
-    }
-};
-
-/* Inicialização */
-loadHistory(""); // carrega tudo ao abrir a página
-   // Registro do Service Worker
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("sw.js")
-      .then(() => console.log("Service Worker registrado!"))
-      .catch(err => console.error("Erro ao registrar SW:", err));
+  // tenta parse flexível: ISO ou dd/mm/yyyy
+  function parseFlexibleDate(v){
+    if(!v) return null;
+    // ISO-like
+    const iso = new Date(v);
+    if(!isNaN(iso)) return iso;
+    // dd/mm/yyyy
+    const m = String(v).match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+    if(m){ return new Date(`${m[3]}-${m[2]}-${m[1]}T00:00:00`); }
+    return new Date(v); // fallback
   }
-</script>
+
+  function formatDate(v){ const d = parseFlexibleDate(v); return d && !isNaN(d) ? d.toLocaleDateString('pt-BR') : ''; }
+  function formatTime(v){ const d = parseFlexibleDate(v); return d && !isNaN(d) ? new Date(d).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) : (v?String(v):''); }
+
+  // JSONP helper (mantive compatibilidade com seu GAS)
+  function jsonpRequest(params, timeout = 8000){
+    return new Promise((resolve,reject)=>{
+      const cb = 'cb_' + Math.random().toString(36).slice(2,10);
+      params.callback = cb;
+      const url = GAS_URL + '?' + new URLSearchParams(params).toString();
+      let script = document.createElement('script');
+      let timed = setTimeout(()=>{ cleanup(); reject(new Error('timeout')) }, timeout);
+      window[cb] = function(data){ cleanup(); resolve(data); };
+      function cleanup(){ clearTimeout(timed); try{ delete window[cb]; }catch(e){} if(script){ script.remove(); script=null;} }
+      script.src = url; script.onerror = ()=>{ cleanup(); reject(new Error('network')); };
+      document.body.appendChild(script);
+    });
+  }
+
+  // Tratamento de erros padronizado
+  function showError(msg){ alert(msg || 'Erro desconhecido'); }
+
+  /* ========== CORE ========== */
+  async function loadHistory(matriculaFilter=''){
+    historyTableBody.innerHTML = '<tr><td colspan="9">Carregando...</td></tr>';
+    mobileCards.innerHTML = '';
+    try{
+      const data = await jsonpRequest({acao:'getHistorico', matricula:matriculaFilter});
+      fullHistory = Array.isArray(data) ? data.reverse() : [];
+    }catch(e){
+      console.error('loadHistory', e);
+      fullHistory = [];
+      showError('Falha ao carregar histórico.');
+    }
+    renderHistory();
+  }
+
+  // debounce simples
+  function debounce(fn, ms=300){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms); } }
+
+  function matchesSearch(row, term){
+    if(!term) return true;
+    term = term.toLowerCase();
+    return row.some((cell,idx)=>{
+      const v = safeText(cell).toLowerCase();
+      if([1,5,8].includes(idx)){ // possíveis datas/horas
+        const d = parseFlexibleDate(cell);
+        if(!isNaN(d)){
+          if(d.toLocaleDateString('pt-BR').toLowerCase().includes(term)) return true;
+          if(d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}).toLowerCase().includes(term)) return true;
+        }
+      }
+      return v.includes(term);
+    });
+  }
+
+  function renderHistory(){
+    const term = (searchInput.value||'').trim();
+    const data = fullHistory.filter(r=>matchesSearch(r, term));
+    if(!data.length){ historyTableBody.innerHTML = '<tr><td colspan="9">Sem registros</td></tr>'; mobileCards.innerHTML = '<p style="text-align:center;color:var(--muted)">Sem registros</p>'; return; }
+    historyTableBody.innerHTML = '';
+    mobileCards.innerHTML = '';
+    for(const r of data){
+      const tr = document.createElement('tr');
+      tr.tabIndex = 0;
+      tr.addEventListener('click',()=>openModal(r));
+      tr.innerHTML = `
+        <td>${escapeHtml(r[0])}</td>
+        <td>${formatDate(r[1])}</td>
+        <td>${escapeHtml(r[2])}</td>
+        <td>${escapeHtml(r[3])}</td>
+        <td>${escapeHtml(r[4])}</td>
+        <td>${formatTime(r[5])}</td>
+        <td>${escapeHtml(r[6])}</td>
+        <td>${escapeHtml(r[7])}</td>
+        <td>${formatTime(r[8])}</td>
+      `;
+      historyTableBody.appendChild(tr);
+
+      // mobile card
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.style.padding = '12px';
+      card.style.margin = '8px 0';
+      card.style.background = '#fbfbfb';
+      card.style.borderRadius = '10px';
+      card.addEventListener('click',()=>openModal(r));
+      card.innerHTML = `<strong>ID: ${escapeHtml(r[0])}</strong><div>${formatDate(r[1])} — ${escapeHtml(r[2])}</div><div>${escapeHtml(r[4])}</div>`;
+      mobileCards.appendChild(card);
+    }
+  }
+
+  function escapeHtml(s){ if(s==null) return ''; return String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+
+  /* ========== MODAL / EDIT / DELETE ========== */
+  function openModal(r){
+    selected = r;
+    modalInner.innerHTML = '';
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = `
+      <h3>Ficha - ID ${escapeHtml(r[0])}</h3>
+      <div><strong>Data:</strong> ${formatDate(r[1])}</div>
+      <div><strong>Executante:</strong> ${escapeHtml(r[2])}</div>
+      <div><strong>Matrícula:</strong> ${escapeHtml(r[3])}</div>
+      <div><strong>Equipamento:</strong> ${escapeHtml(r[4])}</div>
+      <div><strong>Acionamento:</strong> ${formatTime(r[5])}</div>
+      <div style="margin-top:8px"><strong>Problema:</strong><div>${escapeHtml(r[6])}</div></div>
+      <div style="margin-top:8px"><strong>Solução:</strong><div>${escapeHtml(r[7])}</div></div>
+      <div style="margin-top:8px"><strong>Encerramento:</strong> ${formatTime(r[8])}</div>
+    `;
+
+    const btns = document.createElement('div');
+    btns.style.marginTop = '12px';
+    const closeBtn = document.createElement('button'); closeBtn.textContent='Fechar'; closeBtn.className='btn'; closeBtn.onclick = closeModal; btns.appendChild(closeBtn);
+
+    // somente dono pode editar/deletar
+    if(String(matriculaEl.value || '').trim() === String(r[3] || '').trim()){
+      const edit = document.createElement('button'); edit.textContent='Editar'; edit.className='btn secondary'; edit.onclick = ()=>enterEditMode(r); btns.appendChild(edit);
+      const del = document.createElement('button'); del.textContent='Deletar'; del.className='btn danger'; del.onclick = ()=>confirmDelete(); btns.appendChild(del);
+    }
+
+    wrapper.appendChild(btns);
+    modalInner.appendChild(wrapper);
+    modal.style.display = 'flex';
+    modal.setAttribute('aria-hidden','false');
+  }
+  function closeModal(){ modal.style.display='none'; modal.setAttribute('aria-hidden','true'); selected=null; }
+
+  function enterEditMode(r){
+    modalInner.innerHTML = '';
+    const form = document.createElement('div');
+    form.innerHTML = `
+      <h3>Editar — ID ${escapeHtml(r[0])}</h3>
+      <div><label>Executante</label><input id="_editExecutante" value="${escapeHtml(r[2])}"></div>
+      <div><label>Data</label><input type="date" id="_editData" value="${toInputDate(r[1])}"></div>
+      <div><label>Equipamento</label><input id="_editEquip" value="${escapeHtml(r[4])}"></div>
+      <div><label>Acionamento</label><input type="time" id="_editAcion" value="${toInputTime(r[5])}"></div>
+      <div><label>Problema</label><textarea id="_editProb">${escapeHtml(r[6])}</textarea></div>
+      <div><label>Solução</label><textarea id="_editSol">${escapeHtml(r[7])}</textarea></div>
+      <div><label>Encerramento</label><input type="time" id="_editEnc" value="${toInputTime(r[8])}"></div>
+    `;
+    const actions = document.createElement('div'); actions.style.marginTop='10px';
+    const save = document.createElement('button'); save.textContent='Salvar'; save.className='btn'; save.onclick = async ()=>{
+      if(busy) return; busy=true; save.disabled=true;
+      try{
+        const payload = {
+          acao:'editarTurno', id:String(r[0]), matricula:matriculaEl.value,
+          executante:document.getElementById('_editExecutante').value,
+          data:document.getElementById('_editData').value,
+          equipamento:document.getElementById('_editEquip').value,
+          acionamento:document.getElementById('_editAcion').value,
+          problema:document.getElementById('_editProb').value,
+          solucao:document.getElementById('_editSol').value,
+          encerramento:document.getElementById('_editEnc').value
+        };
+        const res = await jsonpRequest(payload);
+        if(res && res.success){ alert('Registro atualizado!'); await loadHistory(matriculaEl.value); closeModal(); } else showError(res && res.message ? res.message : 'Erro ao atualizar');
+      }catch(e){ showError('Falha na requisição de edição.'); }
+      busy=false; save.disabled=false;
+    };
+    const cancel = document.createElement('button'); cancel.textContent='Cancelar'; cancel.className='btn danger'; cancel.onclick=closeModal;
+    actions.appendChild(save); actions.appendChild(cancel);
+    modalInner.appendChild(form); modalInner.appendChild(actions);
+  }
+
+  function toInputDate(v){ const d=parseFlexibleDate(v); if(!d||isNaN(d)) return ''; return d.toISOString().split('T')[0]; }
+  function toInputTime(v){ const d=parseFlexibleDate(v); if(!d||isNaN(d)) return (v?String(v):''); return new Date(d).toISOString().substring(11,16); }
+
+  async function confirmDelete(){
+    if(!selected) return; if(!confirm(`Deseja deletar ID ${selected[0]}?`)) return;
+    try{
+      const res = await jsonpRequest({acao:'deletarTurno', id:String(selected[0]), matricula:String(matriculaEl.value||'')});
+      if(res && res.success){ alert('Registro deletado'); await loadHistory(matriculaEl.value); closeModal(); } else showError(res && res.message ? res.message : 'Erro ao deletar');
+    }catch(e){ showError('Falha na requisição de deleção.'); }
+  }
+
+  /* ========== REGISTRAR NOVO ========== */
+  turnoForm.addEventListener('submit', async (ev)=>{
+    ev.preventDefault(); if(busy) return; busy=true; document.getElementById('btnSubmit').disabled=true;
+    const payload = {
+      acao:'registrarTurno',
+      nome:document.getElementById('nome').value.trim(),
+      matricula:matriculaEl.value.trim(),
+      data:document.getElementById('data').value || '',
+      equipamento:document.getElementById('equipamento').value.trim(),
+      acionamento:document.getElementById('acionamento').value || '',
+      problema:document.getElementById('problema').value.trim(),
+      solucao:document.getElementById('solucao').value.trim(),
+      encerramento:document.getElementById('encerramento').value || ''
+    };
+    try{
+      const res = await jsonpRequest(payload);
+      if(res && res.success){ alert('Registro salvo!'); turnoForm.reset(); await loadHistory(matriculaEl.value); }
+      else showError(res && res.message ? res.message : 'Erro ao salvar');
+    }catch(e){ showError('Falha na requisição de registro.'); }
+    busy=false; document.getElementById('btnSubmit').disabled=false;
+  });
+
+  /* ========== LOGIN / LOGOUT ========== */
+  loginForm.addEventListener('submit', async (ev)=>{
+    ev.preventDefault(); const mat = document.getElementById('loginMatricula').value.trim(); if(!mat){ alert('Informe a matrícula'); return; }
+    // EXIBIÇÃO local — não bloqueamos a interface caso GAS falhe; mas tentamos registrar log
+    loginSection.style.display='none'; appSection.style.display='block'; matriculaEl.value=mat; await loadHistory(mat);
+    // mostrar botão log para matrícula específica (se desejar manter regra)
+    btnLog.style.display = (mat === '991631240') ? 'inline-block' : 'none';
+    try{ await jsonpRequest({acao:'registrarLog', matricula:mat, acaoTipo:'Login'}); }catch(e){ console.warn('registrer log falhou'); }
+  });
+
+  btnLogout.addEventListener('click', async ()=>{
+    try{ await jsonpRequest({acao:'registrarLog', matricula:matriculaEl.value, acaoTipo:'Logout'}); }catch(e){}
+    appSection.style.display='none'; loginSection.style.display='block'; turnoForm.reset(); matriculaEl.value=''; await loadHistory(''); btnLog.style.display='none';
+  });
+
+  /* ========== WATCHDOG & PDF ========== */
+  async function updateWatchdog(){ try{ const r = await jsonpRequest({acao:'getWatchdog'}); watchdogEl.textContent = 'Watchdog: ' + (r && r.watchdog !== undefined ? r.watchdog : 'OFFLINE'); }catch(e){ watchdogEl.textContent='Watchdog: OFFLINE'; } }
+  setInterval(updateWatchdog, 3000); updateWatchdog();
+
+  btnPDF.addEventListener('click', async ()=>{ try{ const r = await jsonpRequest({acao:'gerarPDF'}); if(r && r.url) window.open(r.url,'_blank'); else showError('Não foi possível gerar PDF'); }catch(e){ showError('Erro ao solicitar PDF'); } });
+
+  /* ========== BUSCA (debounce) ========== */
+  searchInput.addEventListener('input', debounce(()=>renderHistory(), 250));
+
+  /* ========== UTIL: register service worker (se existir sw.js) ========== */
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.register('/sw.js').then(()=>console.log('Service Worker registrado')).catch(()=>console.warn('SW não encontrado ou falhou')); }
+
+  // carrega tudo na inicialização
+  loadHistory('');
+  </script>
+
+  <!--
+    INSTRUÇÕES IMPORTANTES:
+    - Este arquivo é a versão otimizada para GitHub Pages (single file).
+    - Mantive compatibilidade com seu endpoint GAS usando JSONP (callback), assim funciona sem CORS.
+    - No final do arquivo original (abaixo) há um exemplo de conteúdo para sw.js: copie e salve como /sw.js no seu repositório para ativar PWA básico.
+
+    Exemplo de sw.js (salvar em arquivo separado sw.js):
+    ---------------------------------------------------
+    // conteúdo exemplo (salvar em sw.js):
+    // self.addEventListener('install', e => { e.waitUntil(caches.open('v1').then(c => c.addAll(['/','/index.html']))); });
+    // self.addEventListener('fetch', e => { e.respondWith(caches.match(e.request).then(r => r || fetch(e.request))); });
+    ---------------------------------------------------
+  -->
 </body>
 </html>
-
