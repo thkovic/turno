@@ -444,7 +444,11 @@ async function atualizarWatchdog(){
 setInterval(atualizarWatchdog, 3000);
 atualizarWatchdog();
 
-// Atualize a função btnPDF.onclick no HTML:
+  // Registrar log de geração de PDF
+            try {
+                await callGAS({
+                    acao: "registrarLog", // Atualize a função btnPDF.onclick no HTML:
+// No seu HTML, substitua a função btnPDF.onclick por:
 btnPDF.onclick = async () => {
     // Prevenir múltiplos cliques
     if (isGeneratingPDF) {
@@ -453,73 +457,49 @@ btnPDF.onclick = async () => {
     
     isGeneratingPDF = true;
     const originalText = btnPDF.textContent;
-    btnPDF.textContent = "⏳ Gerando...";
+    btnPDF.textContent = "⏳ Gerando PDF...";
     btnPDF.disabled = true;
     
     try {
-        // Perguntar se quer filtrar por data específica
-        const filtroData = confirm("Deseja gerar relatório para uma data específica?") ?
-            prompt("Digite a data (YYYY-MM-DD) ou deixe em branco para todos:", 
-                   new Date().toISOString().split('T')[0]) : "";
-        
         const params = {
             acao: "gerarPDF",
-            filtroData: filtroData || null,
             timestamp: Date.now()
         };
         
+        console.log("Solicitando PDF...");
         const r = await callGAS(params);
+        console.log("Resposta:", r);
         
-        if (r && r.success && r.url) {
-            // Abrir em nova aba para evitar sobreposição
-            const newWindow = window.open(r.url, '_blank');
-            if (!newWindow || newWindow.closed || typeof newWindow.closed == 'undefined') {
-                // Se popup for bloqueado, criar link para download manual
-                const downloadLink = document.createElement('a');
-                downloadLink.href = r.url;
-                downloadLink.target = '_blank';
-                downloadLink.textContent = '📄 Clique aqui para abrir o PDF';
-                downloadLink.style.display = 'block';
-                downloadLink.style.marginTop = '10px';
-                downloadLink.style.padding = '12px';
-                downloadLink.style.backgroundColor = '#2d6a4f';
-                downloadLink.style.color = 'white';
-                downloadLink.style.textDecoration = 'none';
-                downloadLink.style.borderRadius = '5px';
-                downloadLink.style.textAlign = 'center';
-                downloadLink.style.fontWeight = 'bold';
+        if (r && r.success && r.url && r.url !== '#PDF_AQUI') {
+            // Verificar se é uma URL válida
+            if (r.url.startsWith('https://drive.google.com/')) {
+                // Abrir em nova aba
+                window.open(r.url, '_blank', 'noopener,noreferrer');
                 
-                // Adicionar temporariamente ao DOM
-                const container = document.querySelector('.search-bar');
-                container.appendChild(downloadLink);
+                // Registrar log
+                try {
+                    await callGAS({
+                        acao: "registrarLog", 
+                        matricula: matricula.value || "sistema", 
+                        acaoTipo: "Gerar PDF"
+                    });
+                } catch(e) {
+                    console.error("Erro ao registrar log:", e);
+                }
                 
-                // Remover após 15 segundos
-                setTimeout(() => {
-                    if (downloadLink.parentNode) {
-                        downloadLink.parentNode.removeChild(downloadLink);
-                    }
-                }, 15000);
+                // Mostrar mensagem de sucesso
+                alert(`✅ PDF gerado com sucesso!\n\nArquivo: ${r.nome || 'relatorio.pdf'}\n\nO PDF foi aberto em uma nova aba.`);
+            } else {
+                alert("URL do PDF inválida: " + r.url);
             }
-            
-            // Registrar log de geração de PDF
-            try {
-                await callGAS({
-                    acao: "registrarLog", 
-                    matricula: matricula.value || "000", 
-                    acaoTipo: `Gerar PDF${filtroData ? ' - Data: ' + filtroData : ''}`
-                });
-            } catch(e) {
-                console.error("Erro ao registrar log:", e);
-            }
-            
         } else if (r && r.error) {
-            alert(`Erro ao gerar PDF: ${r.error}`);
+            alert(`❌ Erro ao gerar PDF: ${r.error}`);
         } else {
-            alert("Não foi possível gerar PDF. Verifique as permissões do Google Drive.");
+            alert("❌ Não foi possível gerar o PDF. Verifique as permissões do script.");
         }
     } catch(e) {
-        console.error("Erro ao solicitar PDF:", e);
-        alert("Erro ao conectar com o servidor para gerar PDF.");
+        console.error("Erro completo:", e);
+        alert("❌ Erro ao conectar com o servidor: " + e.message);
     } finally {
         // Restaurar estado do botão
         isGeneratingPDF = false;
@@ -527,7 +507,6 @@ btnPDF.onclick = async () => {
         btnPDF.disabled = false;
     }
 };
-
 /* Inicialização */
 loadHistory(""); // carrega tudo ao abrir a página
    // Registro do Service Worker
