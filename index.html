@@ -399,7 +399,91 @@
 
   // carrega tudo na inicialização
   loadHistory('');
-  </script>
+  
+/* NOVA FUNÇÃO PDF (sobrescreve a anterior) */
+btnPDF.onclick = async () => {
+  try {
+    const res = await callGAS({ acao: "gerarPDF" });
+    if (res && res.url) {
+      window.open(res.url, "_blank");
+      return;
+    }
+  } catch (err) {
+    console.warn("gerarPDF via GAS falhou, fallback local:", err);
+  }
+
+  try {
+    if (!Array.isArray(fullHistory) || fullHistory.length === 0) {
+      alert("Não há registros para gerar PDF.");
+      return;
+    }
+
+    const rowsHtml = fullHistory.map(r => {
+      return `<tr>
+        <td style="padding:6px;border:1px solid #ddd">${escapeHtml(String(r[0] ?? ""))}</td>
+        <td style="padding:6px;border:1px solid #ddd">${escapeHtml(formatDate(r[1]))}</td>
+        <td style="padding:6px;border:1px solid #ddd">${escapeHtml(String(r[2] ?? ""))}</td>
+        <td style="padding:6px;border:1px solid #ddd">${escapeHtml(String(r[3] ?? ""))}</td>
+        <td style="padding:6px;border:1px solid #ddd">${escapeHtml(String(r[4] ?? ""))}</td>
+        <td style="padding:6px;border:1px solid #ddd">${escapeHtml(formatTime(r[5]))}</td>
+        <td style="padding:6px;border:1px solid #ddd">${escapeHtml(String(r[6] ?? ""))}</td>
+        <td style="padding:6px;border:1px solid #ddd">${escapeHtml(String(r[7] ?? ""))}</td>
+        <td style="padding:6px;border:1px solid #ddd">${escapeHtml(formatTime(r[8]))}</td>
+      </tr>`;
+    }).join("");
+
+    const html = `
+      <!doctype html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Histórico — Impressão</title>
+        <style>
+          body{font-family:Arial,Helvetica,sans-serif;margin:20px;color:#222}
+          h1{color:#2d6a4f;font-size:18px;margin-bottom:6px}
+          table{border-collapse:collapse;width:100%;font-size:12px}
+          th,td{border:1px solid #ddd;padding:6px;text-align:left}
+          th{background:#e9f5ef;color:#2d6a4f}
+          thead{display:table-header-group}
+          @media print { button{display:none} body{margin:8mm} }
+        </style>
+      </head>
+      <body>
+        <h1>📊 Histórico de Registros</h1>
+        <p>Gerado em: ${new Date().toLocaleString('pt-BR')}</p>
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th><th>Data</th><th>Executante</th><th>Matrícula</th><th>Equipamento</th>
+              <th>Acionamento</th><th>Problema</th><th>Solução</th><th>Encerramento</th>
+            </tr>
+          </thead>
+          <tbody>${rowsHtml}</tbody>
+        </table>
+        <div style="margin-top:12px">
+          <button onclick="window.print()" style="padding:8px 12px;background:#2d6a4f;color:#fff;border:none;border-radius:6px;cursor:pointer">Imprimir / Salvar como PDF</button>
+        </div>
+      </body>
+      </html>`;
+
+    const w = window.open("", "_blank", "noopener,noreferrer");
+    if (!w) {
+      alert("Bloqueador de pop-ups impediu a abertura da janela.");
+      return;
+    }
+    w.document.open();
+    w.document.write(html);
+    w.document.close();
+
+    setTimeout(() => { try { w.focus(); w.print(); } catch (_) {} }, 600);
+
+  } catch (err) {
+    console.error("Erro no fallback de geração de PDF:", err);
+    alert("Não foi possível gerar o PDF.");
+  }
+};
+
+</script>
 
   <!--
     INSTRUÇÕES IMPORTANTES:
