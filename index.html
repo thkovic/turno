@@ -30,6 +30,7 @@ button:hover{opacity:.95}
 .search-bar{display:flex;gap:10px;margin-bottom:15px}
 .search-bar input{flex:1}
 .pdf-btn{background:#2d6a4f;margin-left:10px}
+.pdf-btn:disabled{background:#ccc;cursor:not-allowed}
 @media(max-width:800px){
   .container{width:95%;margin:10px auto;padding:12px;box-shadow:none}
   form{grid-template-columns:1fr}
@@ -131,6 +132,7 @@ const logDiv = document.getElementById("logDiv");
 
 let fullHistory = [];
 let registroSelecionado = null;
+let isGeneratingPDF = false; // Flag para controlar geração de PDF
 
 /* JSONP helper */
 function callGAS(params) {
@@ -432,49 +434,91 @@ turnoForm.onsubmit = async e => {
 
 /* WATCHDOG */
 async function atualizarWatchdog(){
-    try {
-        const r = await callGAS({ acao: "getWatchdog" });
-
-        watchdogEl.innerText =
-            "Watchdog: " +
-            (r && r.watchdog !== undefined ? r.watchdog : "OFFLINE");
-
-    } catch (e) {
+    try{
+        const r = await callGAS({acao:"getWatchdog"});
+        watchdogEl.innerText = "Watchdog: " + (r && r.watchdog !== undefined ? r.watchdog : "OFFLINE");
+    } catch(e) {
         watchdogEl.innerText = "Watchdog: OFFLINE";
     }
 }
 setInterval(atualizarWatchdog, 3000);
 atualizarWatchdog();
 
-
-/* BOTÃO EXCEL (substituiu o PDF) */
+/* PDF - FUNÇÃO CORRIGIDA */
 btnPDF.onclick = async () => {
+    // Prevenir múltiplos cliques
+    if (isGeneratingPDF) {
+        return;
+    }
+    
+    isGeneratingPDF = true;
+    const originalText = btnPDF.textContent;
+    btnPDF.textContent = "⏳ Gerando...";
+    btnPDF.disabled = true;
+    
     try {
-        const r = await callGAS({ acao: "gerarExcel" });
-
+        // Adicionar parâmetro de data atual para evitar cache
+        const dataAtual = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+        const params = {
+            acao: "gerarPDF",
+            data: dataAtual,
+            timestamp: Date.now() // Para evitar cache
+        };
+        
+        const r = await callGAS(params);
+        
         if (r && r.url) {
-            window.open(r.url, "_blank");
+            // Abrir em nova aba para evitar sobreposição
+            const newWindow = window.open(r.url, '_blank');
+            if (!newWindow || newWindow.closed || typeof newWindow.closed == 'undefined') {
+                // Se popup for bloqueado, avisar usuário
+                alert("Popup bloqueado! Para visualizar o PDF, permita popups para este site ou clique no link manualmente.");
+                // Criar link para download manual
+                const downloadLink = document.createElement('a');
+                downloadLink.href = r.url;
+                downloadLink.target = '_blank';
+                downloadLink.textContent = 'Clique aqui para abrir o PDF';
+                downloadLink.style.display = 'block';
+                downloadLink.style.marginTop = '10px';
+                downloadLink.style.padding = '10px';
+                downloadLink.style.backgroundColor = '#2d6a4f';
+                downloadLink.style.color = 'white';
+                downloadLink.style.textDecoration = 'none';
+                downloadLink.style.borderRadius = '5px';
+                downloadLink.style.textAlign = 'center';
+                
+                // Adicionar temporariamente ao DOM
+                document.querySelector('.search-bar').appendChild(downloadLink);
+                setTimeout(() => {
+                    if (downloadLink.parentNode) {
+                        downloadLink.parentNode.removeChild(downloadLink);
+                    }
+                }, 10000);
+            }
+        } else if (r && r.error) {
+            alert(`Erro ao gerar PDF: ${r.error}`);
         } else {
-            alert("Não foi possível gerar o arquivo Excel.");
+            alert("Não foi possível gerar PDF. Verifique se a função no Google Apps Script está configurada corretamente.");
         }
-
-    } catch (e) {
-        alert("Erro ao solicitar geração do Excel.");
+    } catch(e) {
+        console.error("Erro ao solicitar PDF:", e);
+        alert("Erro ao conectar com o servidor para gerar PDF.");
+    } finally {
+        // Restaurar estado do botão
+        isGeneratingPDF = false;
+        btnPDF.textContent = originalText;
+        btnPDF.disabled = false;
     }
 };
 
-
 /* Inicialização */
-loadHistory(""); // Carrega registros ao abrir
-
-
-/* SERVICE WORKER */
-if ("serviceWorker" in navigator) {
-    navigator.serviceWorker
-        .register("sw.js")
-        .then(() => console.log("Service Worker registrado!"))
-        .catch(err => console.error("Erro ao registrar SW:", err));
-}
+loadHistory(""); // carrega tudo ao abrir a página
+   // Registro do Service Worker
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("sw.js")
+      .then(() => console.log("Service Worker registrado!"))
+      .catch(err => console.error("Erro ao registrar SW:", err));
+  }
 </script>
 </body>
 </html>
