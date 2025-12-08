@@ -1,502 +1,259 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#2d6a4f">
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Sistema de Histórico</title>
-  <style>
-    /* estilos resumidos para clareza */
-    body{font-family:Arial;margin:0;padding:0;background:#fff;color:#333}
-    .container{max-width:1000px;margin:40px auto;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.1);border-radius:8px}
-    h1{text-align:center;color:#2d6a4f;margin-bottom:20px}
-    form{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
-    label{font-weight:600}
-    input,textarea{width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;box-sizing:border-box}
-    textarea{min-height:70px;resize:vertical}
-    .full-width{grid-column:1/-1}
-    button{background:#95d5b2;color:#fff;border:none;padding:10px 14px;border-radius:6px;cursor:pointer}
-    button:hover{opacity:.95}
-    #watchdog{position:fixed;top:10px;right:10px;background:#95d5b2;color:#fff;padding:6px 10px;border-radius:6px;font-weight:bold}
-    .history table{width:100%;border-collapse:collapse;font-size:13px}
-    .history th,.history td{border:1px solid #ddd;padding:8px;text-align:left;max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .history th{background:#e9f5ef;color:#2d6a4f}
-    #mobileHistory{display:none}
-    .history-card{background:#f7f7f7;padding:14px;margin:12px 0;border-radius:10px;box-shadow:0 2px 4px rgba(0,0,0,.15)}
-    .modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);justify-content:center;align-items:center;z-index:1000}
-    .modal-content{background:#fff;padding:20px;border-radius:10px;max-width:700px;width:95%;max-height:90%;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.2)}
-    .tech-field{margin-bottom:12px}
-    .search-bar{display:flex;gap:10px;margin-bottom:15px}
-    .search-bar input{flex:1}
-    .pdf-btn{background:#2d6a4f;margin-left:10px}
-    @media(max-width:800px){
-      .container{width:95%;margin:10px auto;padding:12px;box-shadow:none}
-      form{grid-template-columns:1fr}
-      button{width:100%;padding:14px;font-size:16px}
-      #historyTable{display:none}
-      #mobileHistory{display:block}
-      .search-bar{flex-direction:column}
-      .pdf-btn{margin-left:0;width:100%}
-    }
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Sistema de Histórico</title>
 
-  <!-- Import jsPDF -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background: #f5f5f5;
+}
+.container {
+    max-width: 1150px;
+    margin: 30px auto;
+    background: #fff;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 0 12px rgba(0,0,0,0.2);
+}
+
+h1 {
+    text-align: center;
+    color: #2d6a4f;
+}
+
+input, select, button {
+    padding: 8px;
+    margin: 5px 0;
+    width: 100%;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+}
+
+button {
+    cursor: pointer;
+    background: #2d6a4f;
+    color: white;
+    border: none;
+    transition: 0.3s;
+}
+
+button:hover {
+    background: #1b4634;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+table th, table td {
+    border: 1px solid #ccc;
+    padding: 8px;
+    text-align: center;
+    font-size: 14px;
+}
+
+table th {
+    background: #2d6a4f;
+    color: white;
+}
+
+#busca {
+    margin-top: 20px;
+    width: 300px;
+}
+
+.actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+}
+
+</style>
+
+<!-- SheetJS para gerar Excel -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.19.3/xlsx.full.min.js"></script>
+
 </head>
 <body>
-  <div id="watchdog">Watchdog: --</div>
-  <div class="container">
-    <h1>📝 Sistema de Histórico</h1>
 
-    <!-- LOGIN -->
-    <div id="loginDiv">
-      <h3>🔐 Login</h3>
-      <form id="loginForm" class="full-width">
-        <div class="full-width">
-          <label>Matrícula</label>
-          <input id="loginMatricula" required>
-        </div>
-        <div class="full-width">
-          <button>Entrar</button>
-        </div>
-      </form>
+<div class="container">
+    <h1>Sistema de Histórico</h1>
+
+    <!-- Campo de busca -->
+    <input type="text" id="busca" placeholder="Buscar no histórico..." oninput="filtrarHistorico()">
+
+    <!-- Botões -->
+    <div class="actions">
+        <button onclick="carregarHistorico()">Atualizar Histórico</button>
+        <button onclick="gerarExcel()">Gerar Excel</button>
     </div>
 
-    <!-- REGISTRO -->
-    <div id="registroDiv" style="display:none;">
-      <h3>Registrar Passagem</h3>
-      <form id="turnoForm">
-        <div><label>Nome *</label><input id="nome" required></div>
-        <div><label>Matrícula *</label><input id="matricula" readonly required></div>
-        <div><label>Data *</label><input type="date" id="data" required></div>
-        <div><label>Equipamento *</label><input id="equipamento" required></div>
-        <div><label>Acionamento *</label><input type="time" id="acionamento" required></div>
-        <div class="full-width"><label>Problema *</label><textarea id="problema" required></textarea></div>
-        <div class="full-width"><label>Solução</label><textarea id="solucao"></textarea></div>
-        <div><label>Encerramento</label><input type="time" id="encerramento"></div>
-        <div class="full-width">
-          <button id="btnSubmit">Registrar</button>
-          <button type="button" id="btnLogout" style="background:#ff6b6b;margin-top:8px;">Logout</button>
-        </div>
-      </form>
-    </div>
-
-    <div id="logDiv" style="display:none; margin-top:15px;">
-      <button id="btnLog" style="background:#1d3557;">📜 Sistema de Log</button>
-    </div>
-
-    <div class="search-bar">
-      <input type="text" id="searchInput" placeholder="Buscar histórico (ID, nome, equipamento, data)">
-      <button class="pdf-btn" id="btnPDF">📄 Gerar PDF</button>
-    </div>
-
-    <div class="history">
-      <h3>📊 Histórico de Registros</h3>
-      <table id="historyTable">
+    <!-- Tabela -->
+    <table id="tabelaHistorico">
         <thead>
-          <tr>
-            <th>ID</th><th>Data</th><th>Executante</th><th>Matrícula</th><th>Equipamento</th><th>Acionamento</th><th>Problema</th><th>Solução</th><th>Encerramento</th>
-          </tr>
+            <tr>
+                <th>ID</th>
+                <th>Data</th>
+                <th>Executante</th>
+                <th>Matrícula</th>
+                <th>Equipamento</th>
+                <th>Acionamento</th>
+                <th>Problema</th>
+                <th>Solução</th>
+                <th>Encerramento</th>
+            </tr>
         </thead>
-        <tbody>
-          <tr><td colspan="9">Carregando...</td></tr>
+        <tbody id="conteudoTabela">
+            <tr><td colspan="9">Carregando…</td></tr>
         </tbody>
-      </table>
-      <div id="mobileHistory"></div>
-    </div>
+    </table>
+</div>
 
-  </div>
+<script>
 
-  <!-- MODAL -->
-  <div class="modal" id="modalDetalhes" aria-hidden="true">
-    <div class="modal-content" role="dialog" aria-modal="true">
-      <h2 id="modalTitle">Ficha Técnica</h2>
-      <div id="modalFields"></div>
-      <div id="modalButtons" style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;"></div>
-    </div>
-  </div>
+// =========================
+// 1. BUSCAR HISTÓRICO (API)
+// =========================
 
-  <script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbyjN_7typwQ8yFu-4CW6uRV9U4U6z1386BcGz3YAl_-di_KXedC2FFg3NEAIDjuL4ir/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbyjN_7typwQ8yFu-4CW6uRV9U4U6z1386BcGz3YAl_-di_KXedC2FFg3NEAIDjuL4ir/exec";
 
-    const loginForm = document.getElementById("loginForm");
-    const loginDiv = document.getElementById("loginDiv");
-    const registroDiv = document.getElementById("registroDiv");
-    const matricula = document.getElementById("matricula");
-    const turnoForm = document.getElementById("turnoForm");
-    const searchInput = document.getElementById("searchInput");
-    const btnPDF = document.getElementById("btnPDF");
-    const modalDetalhes = document.getElementById("modalDetalhes");
-    const modalFields = document.getElementById("modalFields");
-    const modalButtons = document.getElementById("modalButtons");
-    const watchdogEl = document.getElementById("watchdog");
-    const logDiv = document.getElementById("logDiv");
+async function carregarHistorico() {
+    try {
+        const resposta = await fetch(API_URL + "?acao=buscarTudo");
+        const dados = await resposta.json();
 
-    let fullHistory = [];
-    let registroSelecionado = null;
-
-    /* JSONP helper */
-    function callGAS(params) {
-      const callback = "cb_" + Math.random().toString(36).slice(2,12);
-      const url = GAS_URL + "?" + new URLSearchParams({...params, callback});
-      return new Promise((resolve, reject) => {
-        window[callback] = (data) => {
-          resolve(data);
-          try { delete window[callback]; } catch(e){}
-        };
-        const script = document.createElement("script");
-        script.src = url;
-        script.onerror = () => {
-          reject(new Error("Falha na requisição JSONP"));
-          try { delete window[callback]; } catch(e){}
-        };
-        document.body.appendChild(script);
-      });
-    }
-
-    /* LOGIN */
-    loginForm.onsubmit = async (e) => {
-      e.preventDefault();
-      const mat = document.getElementById("loginMatricula").value.trim();
-      if (!mat) {
-        alert("Informe a matrícula.");
-        return;
-      }
-      loginDiv.style.display = "none";
-      registroDiv.style.display = "block";
-      matricula.value = mat;
-      await loadHistory(mat);
-      logDiv.style.display = (mat === "991631240") ? "block" : "none";
-      try {
-        await callGAS({acao:"registrarLog", matricula: mat, acaoTipo:"Login"});
-      } catch (err) {
-        console.error("Erro ao registrar log de login:", err);
-      }
-    };
-
-    /* LOGOUT */
-    document.getElementById("btnLogout").onclick = async () => {
-      await callGAS({acao:"registrarLog", matricula: matricula.value, acaoTipo:"Logout"});
-      registroDiv.style.display = "none";
-      loginDiv.style.display = "block";
-      turnoForm.reset();
-      matricula.value = "";
-      await loadHistory("");
-      logDiv.style.display = "none";
-    };
-
-    /* FUNÇÕES DE FORMATO */
-    function formatDate(value){
-      if(!value) return "";
-      const d = new Date(value);
-      return isNaN(d) ? "" : d.toLocaleDateString("pt-BR");
-    }
-    function formatTime(value){
-      if(!value) return "";
-      const d = new Date(value);
-      return isNaN(d) ? "" : d.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
-    }
-    function escapeHtml(s){
-      if(s === null || s === undefined) return "";
-      return String(s)
-        .replaceAll("&","&amp;")
-        .replaceAll("<","&lt;")
-        .replaceAll(">","&gt;")
-        .replaceAll('"',"&quot;");
-    }
-
-    /* CARREGAR HISTÓRICO */
-    async function loadHistory(matriculaFiltro="") {
-      try {
-        const data = await callGAS({acao:"getHistorico", matricula: matriculaFiltro});
-        fullHistory = Array.isArray(data) ? data.reverse() : [];
-      } catch(err) {
-        console.error("Erro ao carregar histórico:", err);
-        fullHistory = [];
-      }
-      renderHistory(fullHistory);
-      return fullHistory;
-    }
-
-    /* RENDER HISTÓRICO */
-    function renderHistory(data) {
-      const t = document.querySelector("#historyTable tbody");
-      const m = document.getElementById("mobileHistory");
-      t.innerHTML = ""; m.innerHTML = "";
-      if(!Array.isArray(data) || data.length === 0) {
-        t.innerHTML = '<tr><td colspan="9">Sem registros</td></tr>';
-        m.innerHTML = '<p style="text-align:center;color:#888;">Sem registros</p>';
-        return;
-      }
-      const searchTerm = (searchInput.value || "").toLowerCase();
-
-      data
-        .filter(r => {
-          return r.some((c, idx) => {
-            let val = String(c || "").toLowerCase();
-            if ([1,5,8].includes(idx)) {
-              const d = new Date(c);
-              if (!isNaN(d)) {
-                const dataStr = d.toLocaleDateString("pt-BR").toLowerCase();
-                const horaStr = d.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}).toLowerCase();
-                return dataStr.includes(searchTerm) || horaStr.includes(searchTerm);
-              }
-            }
-            return val.includes(searchTerm);
-          });
-        })
-        .forEach(r => {
-          const tr = document.createElement("tr");
-          tr.dataset.id = String(r[0]);
-          tr.addEventListener("click", () => abrirModal(r));
-          tr.innerHTML = `
-            <td>${escapeHtml(r[0])}</td>
-            <td>${formatDate(r[1])}</td>
-            <td>${escapeHtml(r[2])}</td>
-            <td>${escapeHtml(r[3])}</td>
-            <td>${escapeHtml(r[4])}</td>
-            <td>${formatTime(r[5])}</td>
-            <td>${escapeHtml(r[6])}</td>
-            <td>${escapeHtml(r[7])}</td>
-            <td>${formatTime(r[8])}</td>
-          `;
-          t.appendChild(tr);
-
-          const card = document.createElement("div");
-          card.className = "history-card";
-          card.dataset.id = String(r[0]);
-          card.addEventListener("click", () => abrirModal(r));
-          card.innerHTML = `<p><strong>ID:</strong> ${r[0]}</p>
-                            <p><strong>Data:</strong> ${formatDate(r[1])}</p>
-                            <p><strong>Executante:</strong> ${escapeHtml(r[2])}</p>
-                            <p><strong>Equipamento:</strong> ${escapeHtml(r[4])}</p>`;
-          m.appendChild(card);
-        });
-    }
-    searchInput.oninput = () => renderHistory(fullHistory);
-
-    /* MODAL */
-    function abrirModal(r){
-      registroSelecionado = r;
-      document.getElementById("modalTitle").textContent = `Ficha Técnica - ID ${r[0]}`;
-
-      modalFields.innerHTML = `
-        <div class="tech-field"><strong>ID:</strong> ${escapeHtml(r[0])}</div>
-        <div class="tech-field"><strong>Data:</strong> ${formatDate(r[1])}</div>
-        <div class="tech-field"><strong>Executante:</strong> ${escapeHtml(r[2])}</div>
-        <div class="tech-field"><strong>Matrícula:</strong> ${escapeHtml(r[3])}</div>
-        <div class="tech-field"><strong>Equipamento:</strong> ${escapeHtml(r[4])}</div>
-        <div class="tech-field"><strong>Acionamento:</strong> ${formatTime(r[5])}</div>
-        <div class="tech-field"><strong>Problema:</strong><div>${escapeHtml(r[6])}</div></div>
-        <div class="tech-field"><strong>Solução:</strong><div>${escapeHtml(r[7])}</div></div>
-        <div class="tech-field"><strong>Encerramento:</strong> ${formatTime(r[8])}</div>
-      `;
-
-      modalButtons.innerHTML = "";
-      const btnFechar = document.createElement("button");
-      btnFechar.textContent = "Fechar";
-      btnFechar.style.background = "#2d6a4f";
-      btnFechar.addEventListener("click", fecharModal);
-      modalButtons.appendChild(btnFechar);
-
-      if (String(matricula.value || "").trim() === String(r[3] || "").trim()) {
-        const btnEditar = document.createElement("button");
-        btnEditar.textContent = "Editar";
-        btnEditar.style.background = "#4dabf7";
-        btnEditar.addEventListener("click", () => enterModalEditMode(r));
-        modalButtons.appendChild(btnEditar);
-
-        const btnDeletar = document.createElement("button");
-        btnDeletar.textContent = "Deletar";
-        btnDeletar.style.background = "#ff6b6b";
-        btnDeletar.addEventListener("click", () => confirmAndDelete());
-        modalButtons.appendChild(btnDeletar);
-      }
-
-      modalDetalhes.style.display = "flex";
-    }
-
-    function fecharModal(){
-      modalDetalhes.style.display = "none";
-      registroSelecionado = null;
-    }
-
-    /* EDIÇÃO */
-    function enterModalEditMode(r){
-      modalFields.innerHTML = `
-        <div class="tech-field"><label>Executante:</label>
-          <input id="editExecutante" value="${escapeHtml(r[2])}">
-        </div>
-        <div class="tech-field"><label>Data:</label>
-          <input type="date" id="editData" value="${new Date(r[1]).toISOString().split('T')[0]}">
-        </div>
-        <div class="tech-field"><label>Equipamento:</label>
-          <input id="editEquipamento" value="${escapeHtml(r[4])}">
-        </div>
-        <div class="tech-field"><label>Acionamento:</label>
-          <input type="time" id="editAcionamento" value="${r[5] ? new Date(r[5]).toISOString().substring(11,16) : ''}">
-        </div>
-        <div class="tech-field"><label>Problema:</label>
-          <textarea id="editProblema">${escapeHtml(r[6])}</textarea>
-        </div>
-        <div class="tech-field"><label>Solução:</label>
-          <textarea id="editSolucao">${escapeHtml(r[7])}</textarea>
-        </div>
-        <div class="tech-field"><label>Encerramento:</label>
-          <input type="time" id="editEncerramento" value="${r[8] ? new Date(r[8]).toISOString().substring(11,16) : ''}">
-        </div>
-      `;
-
-      modalButtons.innerHTML = "";
-      const btnSalvar = document.createElement("button");
-      btnSalvar.textContent = "Salvar";
-      btnSalvar.style.background = "#2d6a4f";
-      btnSalvar.addEventListener("click", async () => {
-        try {
-          const payload = {
-            acao: "editarTurno",
-            id: String(r[0]),
-            matricula: matricula.value,
-            executante: document.getElementById("editExecutante").value,
-            data: document.getElementById("editData").value,
-            equipamento: document.getElementById("editEquipamento").value,
-            acionamento: document.getElementById("editAcionamento").value,
-            problema: document.getElementById("editProblema").value,
-            solucao: document.getElementById("editSolucao").value,
-            encerramento: document.getElementById("editEncerramento").value
-          };
-          const res = await callGAS(payload);
-          if(res && res.success){
-            alert("Registro atualizado!");
-            await loadHistory(matricula.value);
-            fecharModal();
-          } else {
-            alert("Erro ao atualizar: " + (res && res.message ? res.message : "desconhecido"));
-          }
-        } catch(e) {
-          alert("Falha na requisição de edição.");
+        if (!dados || !Array.isArray(dados)) {
+            document.getElementById("conteudoTabela").innerHTML =
+                "<tr><td colspan='9'>Nenhum registro encontrado</td></tr>";
+            return;
         }
-      });
-      modalButtons.appendChild(btnSalvar);
 
-      const btnCancelar = document.createElement("button");
-      btnCancelar.textContent = "Cancelar";
-      btnCancelar.style.background = "#ff6b6b";
-      btnCancelar.addEventListener("click", fecharModal);
-      modalButtons.appendChild(btnCancelar);
+        preencherTabela(dados);
+
+    } catch (e) {
+        console.error("Erro:", e);
+        document.getElementById("conteudoTabela").innerHTML =
+            "<tr><td colspan='9'>Erro ao carregar dados</td></tr>";
     }
+}
 
-    /* DELETAR */
-    async function confirmAndDelete(){
-      if(!registroSelecionado) return;
-      if(!confirm(`Deseja realmente deletar o registro ID ${registroSelecionado[0]}?`)) return;
-      try {
-        const res = await callGAS({acao:"deletarTurno", id: String(registroSelecionado[0]), matricula: String(matricula.value || "")});
-        if(res && res.success){
-          alert("Registro deletado.");
-          await loadHistory(matricula.value);
-          fecharModal();
-        } else {
-          alert("Erro ao deletar: " + (res && res.message ? res.message : "desconhecido"));
-        }
-      } catch(e) {
-        alert("Falha na requisição de deleção.");
-      }
-    }
+// Preencher tabela
+function preencherTabela(lista) {
+    let html = "";
 
-    /* REGISTRAR */
-    turnoForm.onsubmit = async e => {
-      e.preventDefault();
-      const payload = {
-        acao: "registrarTurno",
-        nome: document.getElementById("nome").value.trim(),
-        matricula: document.getElementById("matricula").value.trim(),
-        data: document.getElementById("data").value || "",
-        equipamento: document.getElementById("equipamento").value.trim(),
-        acionamento: document.getElementById("acionamento").value || "",
-        problema: document.getElementById("problema").value.trim(),
-        solucao: document.getElementById("solucao").value.trim(),
-        encerramento: document.getElementById("encerramento").value || ""
-      };
-      try {
-        const res = await callGAS(payload);
-        if(res && res.success){
-          alert("Registro salvo!");
-          await loadHistory(matricula.value);
-          turnoForm.reset();
-        } else {
-          alert("Erro ao salvar: " + (res && res.message ? res.message : "desconhecido"));
-        }
-      } catch(e) {
-        alert("Falha na requisição de registro.");
-      }
-    };
-
-    /* WATCHDOG */
-    async function atualizarWatchdog(){
-      try{
-        const r = await callGAS({acao:"getWatchdog"});
-        watchdogEl.innerText = "Watchdog: " + (r && r.watchdog !== undefined ? r.watchdog : "OFFLINE");
-      } catch(e) {
-        watchdogEl.innerText = "Watchdog: OFFLINE";
-      }
-    }
-    setInterval(atualizarWatchdog, 3000);
-    atualizarWatchdog();
-
-    /* PDF — novo: gera PDF no navegador */
-    btnPDF.addEventListener("click", () => {
-      if (!fullHistory || fullHistory.length === 0) {
-        alert("Sem registros para gerar PDF.");
-        return;
-      }
-
-      const { jsPDF } = window.jspdf;
-      const pdf = new jsPDF({ orientation: "landscape" });
-      pdf.setFontSize(14);
-      pdf.text("Histórico de Registros", 14, 10);
-
-      let y = 20;
-      const header = ["ID","Data","Executante","Matrícula","Equipamento","Acionamento","Problema","Solução","Encerramento"];
-      pdf.setFontSize(10);
-
-      function addRow(arr) {
-        arr.forEach((txt, i) => {
-          pdf.text(String(txt).substring(0, 40), 14 + (i * 30), y);
-        });
-        y += 8;
-        if (y > 190) {
-          pdf.addPage();
-          y = 20;
-        }
-      }
-
-      addRow(header);
-      fullHistory.forEach(r => {
-        addRow([
-          r[0],
-          formatDate(r[1]),
-          r[2],
-          r[3],
-          r[4],
-          formatTime(r[5]),
-          r[6],
-          r[7],
-          formatTime(r[8])
-        ]);
-      });
-
-      pdf.save("historico.pdf");
+    lista.forEach(linha => {
+        html += `
+            <tr>
+                <td>${linha.ID}</td>
+                <td>${linha.Data}</td>
+                <td>${linha.Executante}</td>
+                <td>${linha.Matricula}</td>
+                <td>${linha.Equipamento}</td>
+                <td>${linha.Acionamento}</td>
+                <td>${linha.Problema}</td>
+                <td>${linha.Solucao}</td>
+                <td>${linha.Encerramento}</td>
+            </tr>
+        `;
     });
 
-    /* Inicialização */
-    loadHistory(""); // carrega tudo ao abrir a página
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("sw.js")
-        .then(() => console.log("Service Worker registrado!"))
-        .catch(err => console.error("Erro ao registrar SW:", err));
+    document.getElementById("conteudoTabela").innerHTML = html;
+}
+
+// ============================
+// 2. BUSCA / FILTRO NA TABELA
+// ============================
+
+function filtrarHistorico() {
+    let termo = document.getElementById("busca").value.toLowerCase();
+    let linhas = document.querySelectorAll("#tabelaHistorico tbody tr");
+
+    linhas.forEach(linha => {
+        let texto = linha.innerText.toLowerCase();
+        linha.style.display = texto.includes(termo) ? "" : "none";
+    });
+}
+
+// ============================
+// 3. GERAR EXCEL AUTOMÁTICO
+// ============================
+
+function gerarExcel() {
+
+    let linhas = document.querySelectorAll("#tabelaHistorico tbody tr");
+    let dadosExcel = [];
+
+    // Ler somente linhas visíveis (filtradas)
+    linhas.forEach(linha => {
+        if (linha.style.display !== "none") {
+            let colunas = linha.querySelectorAll("td");
+            let registro = [];
+
+            colunas.forEach(col => registro.push(col.innerText));
+
+            dadosExcel.push(registro);
+        }
+    });
+
+    // Se não houver filtro → gerar histórico completo via API
+    if (dadosExcel.length === 0) {
+        return gerarExcelCompleto();
     }
-  </script>
+
+    // Cabeçalho
+    dadosExcel.unshift([
+        "ID","Data","Executante","Matrícula","Equipamento",
+        "Acionamento","Problema","Solução","Encerramento"
+    ]);
+
+    let planilha = XLSX.utils.aoa_to_sheet(dadosExcel);
+    let wb = XLSX.utils.book_new();
+
+    XLSX.utils.book_append_sheet(wb, planilha, "Filtrado");
+
+    XLSX.writeFile(wb, "historico_filtrado.xlsx");
+}
+
+
+// ============================
+// 4. GERAR EXCEL COMPLETO
+// ============================
+
+async function gerarExcelCompleto() {
+
+    const resposta = await fetch(API_URL + "?acao=buscarTudo");
+    const dados = await resposta.json();
+
+    let linhas = [
+        ["ID","Data","Executante","Matrícula","Equipamento",
+        "Acionamento","Problema","Solução","Encerramento"]
+    ];
+
+    dados.forEach(l => {
+        linhas.push([
+            l.ID, l.Data, l.Executante, l.Matricula, l.Equipamento,
+            l.Acionamento, l.Problema, l.Solucao, l.Encerramento
+        ]);
+    });
+
+    let plan = XLSX.utils.aoa_to_sheet(linhas);
+    let wb = XLSX.utils.book_new();
+
+    XLSX.utils.book_append_sheet(wb, plan, "Histórico Completo");
+
+    XLSX.writeFile(wb, "historico_completo.xlsx");
+}
+
+window.onload = carregarHistorico;
+
+</script>
+
 </body>
 </html>
