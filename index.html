@@ -326,38 +326,200 @@ function fecharModal(){
     registroSelecionado = null;
 }
 
-/* Edição */
-function enterModalEditMode(r){ ... } // (segue igual ao código que você já tinha)
+/* EDIÇÃO */
+function enterModalEditMode(r){
+    modalFields.innerHTML = `
+      <div class="tech-field"><label>Executante:</label>
+        <input id="editExecutante" value="${escapeHtml(r[2])}">
+      </div>
+      <div class="tech-field"><label>Data:</label>
+        <input type="date" id="editData" value="${new Date(r[1]).toISOString().split('T')[0]}">
+      </div>
+      <div class="tech-field"><label>Equipamento:</label>
+        <input id="editEquipamento" value="${escapeHtml(r[4])}">
+      </div>
+      <div class="tech-field"><label>Acionamento:</label>
+        <input type="time" id="editAcionamento" value="${r[5] ? new Date(r[5]).toISOString().substring(11,16) : ''}">
+      </div>
+      <div class="tech-field"><label>Problema:</label>
+        <textarea id="editProblema">${escapeHtml(r[6])}</textarea>
+      </div>
+      <div class="tech-field"><label>Solução:</label>
+        <textarea id="editSolucao">${escapeHtml(r[7])}</textarea>
+      </div>
+      <div class="tech-field"><label>Encerramento:</label>
+        <input type="time" id="editEncerramento" value="${r[8] ? new Date(r[8]).toISOString().substring(11,16) : ''}">
+      </div>
+    `;
 
-/* Deletar */
-async function confirmAndDelete(){ ... }
+    modalButtons.innerHTML = "";
+    const btnSalvar = document.createElement("button");
+    btnSalvar.textContent = "Salvar";
+    btnSalvar.style.background = "#2d6a4f";
+    btnSalvar.addEventListener("click", async () => {
+        try {
+            const payload = {
+                acao: "editarTurno",
+                id: String(r[0]),
+                matricula: matricula.value,
+                executante: document.getElementById("editExecutante").value, // ✅ novo campo
+                data: document.getElementById("editData").value,
+                equipamento: document.getElementById("editEquipamento").value,
+                acionamento: document.getElementById("editAcionamento").value,
+                problema: document.getElementById("editProblema").value,
+                solucao: document.getElementById("editSolucao").value,
+                encerramento: document.getElementById("editEncerramento").value
+            };
+            const res = await callGAS(payload);
+            if(res && res.success){
+                alert("Registro atualizado!");
+                await loadHistory(matricula.value);
+                fecharModal();
+            } else {
+                alert("Erro ao atualizar: " + (res && res.message ? res.message : "desconhecido"));
+            }
+        } catch(e) {
+            alert("Falha na requisição de edição.");
+        }
+    });
+    modalButtons.appendChild(btnSalvar);
 
-/* Registrar */
-turnoForm.onsubmit = async e => { ... };
+    const btnCancelar = document.createElement("button");
+    btnCancelar.textContent = "Cancelar";
+    btnCancelar.style.background = "#ff6b6b";
+    btnCancelar.addEventListener("click", fecharModal);
+    modalButtons.appendChild(btnCancelar);
+}
 
-/* Watchdog */
-async function atualizarWatchdog(){ ... }
+/* DELETAR */
+async function confirmAndDelete(){
+    if(!registroSelecionado) return;
+    if(!confirm(`Deseja realmente deletar o registro ID ${registroSelecionado[0]}?`)) return;
+    try {
+        const res = await callGAS({acao:"deletarTurno", id: String(registroSelecionado[0]), matricula: String(matricula.value || "")});
+        if(res && res.success){
+            alert("Registro deletado.");
+            await loadHistory(matricula.value);
+            fecharModal();
+        } else {
+            alert("Erro ao deletar: " + (res && res.message ? res.message : "desconhecido"));
+        }
+    } catch(e) {
+        alert("Falha na requisição de deleção.");
+    }
+}
+
+/* REGISTRAR */
+turnoForm.onsubmit = async e => {
+    e.preventDefault();
+    const payload = {
+        acao: "registrarTurno",
+        nome: document.getElementById("nome").value.trim(),
+        matricula: document.getElementById("matricula").value.trim(),
+        data: document.getElementById("data").value || "",
+        equipamento: document.getElementById("equipamento").value.trim(),
+        acionamento: document.getElementById("acionamento").value || "",
+        problema: document.getElementById("problema").value.trim(),
+        solucao: document.getElementById("solucao").value.trim(),
+        encerramento: document.getElementById("encerramento").value || ""
+    };
+    try {
+        const res = await callGAS(payload);
+        if(res && res.success){
+            alert("Registro salvo!");
+            await loadHistory(matricula.value);
+            turnoForm.reset();
+        } else {
+            alert("Erro ao salvar: " + (res && res.message ? res.message : "desconhecido"));
+        }
+    } catch(e) {
+        alert("Falha na requisição de registro.");
+    }
+};
+
+/* WATCHDOG */
+async function atualizarWatchdog(){
+    try{
+        const r = await callGAS({acao:"getWatchdog"});
+        watchdogEl.innerText = "Watchdog: " + (r && r.watchdog !== undefined ? r.watchdog : "OFFLINE");
+    } catch(e) {
+        watchdogEl.innerText = "Watchdog: OFFLINE";
+    }
+}
 setInterval(atualizarWatchdog, 3000);
 atualizarWatchdog();
 
-/* PDF */
-btnPDF.onclick = async () => { ... };
-
-/* Botão Criar Novo Histórico */
-document.getElementById("btnNovoHistorico").onclick = () => {
-  registroDiv.style.display = "block";
-  turnoForm.reset();
+  // Registrar log de geração de PDF
+            try {
+                await callGAS({
+                    acao: "registrarLog", // Atualize a função btnPDF.onclick no HTML:
+// No seu HTML, substitua a função btnPDF.onclick por:
+btnPDF.onclick = async () => {
+    // Prevenir múltiplos cliques
+    if (isGeneratingPDF) {
+        return;
+    }
+    
+    isGeneratingPDF = true;
+    const originalText = btnPDF.textContent;
+    btnPDF.textContent = "⏳ Gerando PDF...";
+    btnPDF.disabled = true;
+    
+    try {
+        const params = {
+            acao: "gerarPDF",
+            timestamp: Date.now()
+        };
+        
+        console.log("Solicitando PDF...");
+        const r = await callGAS(params);
+        console.log("Resposta:", r);
+        
+        if (r && r.success && r.url && r.url !== '#PDF_AQUI') {
+            // Verificar se é uma URL válida
+            if (r.url.startsWith('https://drive.google.com/')) {
+                // Abrir em nova aba
+                window.open(r.url, '_blank', 'noopener,noreferrer');
+                
+                // Registrar log
+                try {
+                    await callGAS({
+                        acao: "registrarLog", 
+                        matricula: matricula.value || "sistema", 
+                        acaoTipo: "Gerar PDF"
+                    });
+                } catch(e) {
+                    console.error("Erro ao registrar log:", e);
+                }
+                
+                // Mostrar mensagem de sucesso
+                alert(`✅ PDF gerado com sucesso!\n\nArquivo: ${r.nome || 'relatorio.pdf'}\n\nO PDF foi aberto em uma nova aba.`);
+            } else {
+                alert("URL do PDF inválida: " + r.url);
+            }
+        } else if (r && r.error) {
+            alert(`❌ Erro ao gerar PDF: ${r.error}`);
+        } else {
+            alert("❌ Não foi possível gerar o PDF. Verifique as permissões do script.");
+        }
+    } catch(e) {
+        console.error("Erro completo:", e);
+        alert("❌ Erro ao conectar com o servidor: " + e.message);
+    } finally {
+        // Restaurar estado do botão
+        isGeneratingPDF = false;
+        btnPDF.textContent = originalText;
+        btnPDF.disabled = false;
+    }
 };
-
 /* Inicialização */
-loadHistory(""); 
-
-/* Service Worker */
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("sw.js")
-    .then(() => console.log("Service Worker registrado!"))
-    .catch(err => console.error("Erro ao registrar SW:", err));
-}
+loadHistory(""); // carrega tudo ao abrir a página
+   // Registro do Service Worker
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("sw.js")
+      .then(() => console.log("Service Worker registrado!"))
+      .catch(err => console.error("Erro ao registrar SW:", err));
+  }
 </script>
 </body>
 </html>
