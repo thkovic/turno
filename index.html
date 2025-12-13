@@ -81,18 +81,20 @@ function callGAS(params) {
   });
 }
 
-/* LOGIN */
+// LOGIN
 document.getElementById("loginForm").onsubmit = async (e) => {
   e.preventDefault();
   const mat = document.getElementById("loginMatricula").value.trim();
-
   const res = await callGAS({acao:"validarMatricula", matricula: mat});
-  console.log("Resposta da validação:", res);
-
   if (!res || !res.success) {
     alert("Matrícula não encontrada. Contate o administrador.");
     return;
   }
+  document.getElementById("matricula").value = mat;
+  if (res.nome) document.getElementById("nome").value = res.nome;
+  document.getElementById("loginDiv").style.display = "none";
+  document.getElementById("registroDiv").style.display = "block";
+};
 
   // Preenche matrícula e nome automaticamente
   document.getElementById("matricula").value = mat;
@@ -105,7 +107,7 @@ document.getElementById("loginForm").onsubmit = async (e) => {
   document.getElementById("registroDiv").style.display = "block";
 };
 
-/* CADASTRO DE MATRÍCULA */
+// CADASTRO DE MATRÍCULA
 document.getElementById("formMatricula").onsubmit = async (e) => {
   e.preventDefault();
   const mat = document.getElementById("novaMatricula").value.trim();
