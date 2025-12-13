@@ -449,10 +449,6 @@ async function atualizarWatchdog(){
 setInterval(atualizarWatchdog, 3000);
 atualizarWatchdog();
 
-  // Registrar log de geração de PDF
-            try {
-                await callGAS({
-                    acao: "registrarLog", // Atualize a função btnPDF.onclick no HTML:
 // No seu HTML, substitua a função btnPDF.onclick por:
 btnPDF.onclick = async () => {
     // Prevenir múltiplos cliques
