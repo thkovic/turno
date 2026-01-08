@@ -621,18 +621,11 @@ atualizarWatchdog();
   
 /* EXCEL */
 btnPDF.onclick = async () => {
-    try {
-        const r = await callGAS({ acao: "gerarExcel" });
-        if (r && r.url) {
-            window.open(r.url, "_blank");
-        } else {
-            alert("Não foi possível gerar o Excel.");
-        }
-    } catch (e) {
-        console.error(e);
-        alert("Erro ao solicitar o Excel.");
-    }
+  const r = await callGAS({ acao: "gerarExcel" });
+  console.log(r);
+  alert(JSON.stringify(r, null, 2));
 };
+
 
 // Inicialização
 loadHistory("");
