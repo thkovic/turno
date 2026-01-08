@@ -63,43 +63,6 @@ button:hover{opacity:.95}
   opacity:.4;
   cursor:not-allowed;
 }
-  .layout {
-  display: flex;
-  gap: 16px;
-}
-
-.ranking {
-  width: 220px;
-  background: #f8f9fa;
-  border-radius: 8px;
-  padding: 12px;
-  font-size: 14px;
-  height: fit-content;
-}
-
-.ranking h3 {
-  margin: 0 0 10px;
-  font-size: 15px;
-  text-align: center;
-}
-
-.ranking ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.ranking li {
-  display: flex;
-  justify-content: space-between;
-  padding: 6px 4px;
-  border-bottom: 1px solid #e0e0e0;
-}
-
-.ranking li span {
-  font-weight: bold;
-  color: #2d6a4f;
-}
 </style>
 </head>
 <body>
@@ -136,17 +99,6 @@ button:hover{opacity:.95}
       <div class="full-width">
         <button id="btnSubmit">Registrar</button>
         <button type="button" id="btnLogout" style="background:#ff6b6b;margin-top:8px;">Logout</button>
-        <div class="layout">
-  <aside class="ranking">
-    <h3>📊 Equipamentos</h3>
-    <ul id="rankingEquipamentos"></ul>
-  </aside>
-
-  <section class="history">
-    <!-- aqui já fica sua tabela / cards -->
-  </section>
-</div>
-
       </div>
     </form>
   </div>
@@ -309,7 +261,6 @@ async function loadHistory(matriculaFiltro="") {
 }
 
 function renderHistory(data) {
-renderRankingEquipamentos(historicoFiltrado);
 
     const t = document.querySelector("#historyTable tbody");
     const m = document.getElementById("mobileHistory");
@@ -340,9 +291,6 @@ renderRankingEquipamentos(historicoFiltrado);
             }
             return val.includes(searchTerm);
         })
-renderPaginacao();
-renderRankingEquipamentos(historicoFiltrado);
-
     );
 
     if (historicoFiltrado.length === 0) {
@@ -619,38 +567,6 @@ loadHistory(""); // carrega tudo ao abrir a página
     paginaAtual = p;
     renderHistory(fullHistory);
 }
-  function renderRankingEquipamentos(lista) {
-    const ul = document.getElementById("rankingEquipamentos");
-    if (!ul) return;
-
-    const contador = {};
-
-    lista.forEach(r => {
-        const equipamento = String(r[4] || "").trim();
-        if (!equipamento) return;
-        contador[equipamento] = (contador[equipamento] || 0) + 1;
-    });
-
-    const ranking = Object.entries(contador)
-        .sort((a, b) => b[1] - a[1]); // maior primeiro
-
-    ul.innerHTML = "";
-
-    if (ranking.length === 0) {
-        ul.innerHTML = "<li>Sem dados</li>";
-        return;
-    }
-
-    ranking.forEach(([nome, qtd]) => {
-        const li = document.createElement("li");
-        li.innerHTML = `
-          <span>${nome}</span>
-          <span>${qtd}</span>
-        `;
-        ul.appendChild(li);
-    });
-}
-
 </script>
 </body>
 </html>
