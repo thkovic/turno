@@ -88,13 +88,29 @@ button:hover{opacity:.95}
 @media(max-width:800px){
   #rankingEquipamentos{display:none;}
 }
+  #rankingGrafico{
+  margin-top:8px;
+}
+.barra{
+  height:10px;
+  background:#2d6a4f;
+  border-radius:4px;
+  margin-bottom:6px;
+  transition:width .3s;
+}
+.barra-label{
+  font-size:11px;
+  margin-bottom:2px;
+  color:#1d3557;
+}
 </style>
 </head>
 <body>
 <div id="watchdog">Watchdog: --</div>
-  <div id="rankingEquipamentos">
-  <strong>Equipamentos com mais chamados:</strong>
+<div id="rankingEquipamentos">
+  <strong>🏆 Ranking de Equipamentos</strong>
   <ul id="rankingLista"></ul>
+  <div id="rankingGrafico"></div>
 </div>
 
 <div class="container">
@@ -609,27 +625,52 @@ function irPagina(p){
 /* ================= RANKING ================= */
 function atualizarRanking(){
   var contagem = {};
+  var total = historicoFiltrado.length;
   var lista = document.getElementById("rankingLista");
-  if (!lista) return;
+  var graf = document.getElementById("rankingGrafico");
+
+  if (!lista || !graf) return;
 
   lista.innerHTML = "";
+  graf.innerHTML = "";
 
-  for (var i=0;i<historicoFiltrado.length;i++){
+  if (total === 0) return;
+
+  // Conta equipamentos
+  for (var i = 0; i < historicoFiltrado.length; i++) {
     var eq = historicoFiltrado[i][4];
     if (!eq) continue;
     contagem[eq] = (contagem[eq] || 0) + 1;
   }
 
-  var itens = Object.keys(contagem).sort(function(a,b){
+  // Ordena
+  var itens = Object.keys(contagem).sort(function(a, b) {
     return contagem[b] - contagem[a];
   });
 
-  for (var j=0;j<itens.length && j<10;j++){
+  // Top 10
+  for (var j = 0; j < itens.length && j < 10; j++) {
+    var eqp = itens[j];
+    var qtd = contagem[eqp];
+    var pct = ((qtd / total) * 100).toFixed(1);
+
+    /* Lista textual */
     var li = document.createElement("li");
     li.innerHTML =
-      "<span>"+escapeHtml(itens[j])+"</span>" +
-      "<span>"+contagem[itens[j]]+"</span>";
+      "<span>" + escapeHtml(eqp) + "</span>" +
+      "<span>" + qtd + " (" + pct + "%)</span>";
     lista.appendChild(li);
+
+    /* Gráfico */
+    var lbl = document.createElement("div");
+    lbl.className = "barra-label";
+    lbl.innerText = eqp + " (" + pct + "%)";
+    graf.appendChild(lbl);
+
+    var barra = document.createElement("div");
+    barra.className = "barra";
+    barra.style.width = pct + "%";
+    graf.appendChild(barra);
   }
 }
 </script>
