@@ -110,6 +110,20 @@ button:hover{opacity:.95}
     <input type="text" id="searchInput" placeholder="Buscar histórico (ID, nome, equipamento, data)">
     <button class="pdf-btn" id="btnPDF">📄 Gerar PDF</button>
   </div>
+/* 🔹 VARIÁVEIS GLOBAIS */
+let paginaAtual = 1;
+const porPagina = 10;
+let historicoFiltrado = [];
+let fullHistory = [];
+
+/* 🔹 ELEMENTO DE BUSCA */
+const searchInput = document.getElementById("searchInput");
+
+/* 🔹 BUSCA COM RESET DE PÁGINA (AQUI 👇) */
+searchInput.oninput = () => {
+    paginaAtual = 1;
+    renderHistory(fullHistory);
+};
 
   <div class="history">
     <h3>📊 Histórico de Registros</h3>
