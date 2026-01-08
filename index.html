@@ -1,251 +1,506 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2d6a4f">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Sistema de Histórico</title>
-
 <style>
-body{font-family:Arial;margin:0;background:#fff;color:#333}
-.container{max-width:900px;margin:20px auto;padding:15px}
-h1{text-align:center;color:#2d6a4f}
-form{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px}
-.full{grid-column:1/-1}
-input,textarea{width:100%;padding:8px;border:1px solid #ccc;border-radius:4px}
-textarea{min-height:70px}
-button{background:#2d6a4f;color:#fff;border:0;padding:10px;border-radius:5px;cursor:pointer}
-button:hover{opacity:.9}
-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:10px}
-th,td{border:1px solid #ddd;padding:6px}
-th{background:#e9f5ef;color:#2d6a4f}
-.modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:#0006;justify-content:center;align-items:center}
-.modal-content{background:#fff;padding:15px;border-radius:8px;width:95%;max-width:600px}
+/* estilos resumidos para clareza */
+body{font-family:Arial;margin:0;padding:0;background:#fff;color:#333}
+.container{max-width:1000px;margin:40px auto;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.1);border-radius:8px}
+h1{text-align:center;color:#2d6a4f;margin-bottom:20px}
+form{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+label{font-weight:600}
+input,textarea{width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;box-sizing:border-box}
+textarea{min-height:70px;resize:vertical}
+.full-width{grid-column:1/-1}
+button{background:#95d5b2;color:#fff;border:none;padding:10px 14px;border-radius:6px;cursor:pointer}
+button:hover{opacity:.95}
+#watchdog{position:fixed;top:10px;right:10px;background:#95d5b2;color:#fff;padding:6px 10px;border-radius:6px;font-weight:bold}
+.history table{width:100%;border-collapse:collapse;font-size:13px}
+.history th,.history td{border:1px solid #ddd;padding:8px;text-align:left;max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.history th{background:#e9f5ef;color:#2d6a4f}
+#mobileHistory{display:none}
+.history-card{background:#f7f7f7;padding:14px;margin:12px 0;border-radius:10px;box-shadow:0 2px 4px rgba(0,0,0,.15)}
+.modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);justify-content:center;align-items:center;z-index:1000}
+.modal-content{background:#fff;padding:20px;border-radius:10px;max-width:700px;width:95%;max-height:90%;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.2)}
+.tech-field{margin-bottom:12px}
+.search-bar{display:flex;gap:10px;margin-bottom:15px}
+.search-bar input{flex:1}
+.pdf-btn{background:#2d6a4f;margin-left:10px}
+@media(max-width:800px){
+  .container{width:95%;margin:10px auto;padding:12px;box-shadow:none}
+  form{grid-template-columns:1fr}
+  button{width:100%;padding:14px;font-size:16px}
+  #historyTable{display:none}
+  #mobileHistory{display:block}
+  .search-bar{flex-direction:column}
+  .pdf-btn{margin-left:0;width:100%}
+}
+  .paginacao{
+  margin-top:10px;
+  display:flex;
+  justify-content:center;
+  gap:5px;
+  flex-wrap:wrap;
+}
+.paginacao button{
+  padding:6px 10px;
+  border:none;
+  border-radius:4px;
+  background:#d8f3dc;
+  cursor:pointer;
+}
+.paginacao button.ativo{
+  background:#2d6a4f;
+  color:#fff;
+  font-weight:bold;
+}
+.paginacao button:disabled{
+  opacity:.4;
+  cursor:not-allowed;
+}
 </style>
 </head>
 <body>
-
+<div id="watchdog">Watchdog: --</div>
 <div class="container">
-<h1>📝 Sistema de Histórico</h1>
+  <h1>📝 Sistema de Histórico</h1>
 
-<!-- LOGIN -->
-<div id="loginDiv">
-  <form id="loginForm" class="full">
-    <div class="full">
-      <label>Matrícula</label>
-      <input id="loginMatricula" required>
-    </div>
-    <button class="full">Entrar</button>
-  </form>
-</div>
+  <!-- LOGIN -->
+  <div id="loginDiv">
+    <h3>🔐 Login</h3>
+    <form id="loginForm" class="full-width">
+      <div class="full-width">
+        <label>Matrícula</label>
+        <input id="loginMatricula" required>
+      </div>
+      <div class="full-width">
+        <button>Entrar</button>
+      </div>
+    </form>
+  </div>
 
-<!-- REGISTRO -->
-<div id="registroDiv" style="display:none;">
-  <form id="turnoForm">
-    <div><label>Nome *</label><input id="nome" required></div>
-    <div><label>Matrícula *</label><input id="matricula" readonly required></div>
-    <div><label>Data *</label><input type="date" id="data" required></div>
-    <div><label>Equipamento *</label><input id="equipamento" required></div>
-    <div><label>Acionamento *</label><input type="time" id="acionamento" required></div>
-    <div class="full"><label>Problema *</label><textarea id="problema" required></textarea></div>
-    <div class="full"><label>Solução</label><textarea id="solucao"></textarea></div>
-    <div><label>Encerramento</label><input type="time" id="encerramento"></div>
-    <button class="full">Registrar</button>
-    <button type="button" id="btnLogout" class="full" style="background:#ff6b6b;">Logout</button>
-  </form>
-</div>
+  <!-- REGISTRO -->
+  <div id="registroDiv" style="display:none;">
+    <h3>Registrar Passagem</h3>
+    <form id="turnoForm">
+      <div><label>Nome *</label><input id="nome" required></div>
+      <div><label>Matrícula *</label><input id="matricula" readonly required></div>
+      <div><label>Data *</label><input type="date" id="data" required></div>
+      <div><label>Equipamento *</label><input id="equipamento" required></div>
+      <div><label>Acionamento *</label><input type="time" id="acionamento" required></div>
+      <div class="full-width"><label>Problema *</label><textarea id="problema" required></textarea></div>
+      <div class="full-width"><label>Solução</label><textarea id="solucao"></textarea></div>
+      <div><label>Encerramento</label><input type="time" id="encerramento"></div>
+      <div class="full-width">
+        <button id="btnSubmit">Registrar</button>
+        <button type="button" id="btnLogout" style="background:#ff6b6b;margin-top:8px;">Logout</button>
+      </div>
+    </form>
+  </div>
 
-<input type="text" id="searchInput" placeholder="Buscar..." style="width:100%;padding:8px;margin-top:15px">
+  <div id="logDiv" style="display:none; margin-top:15px;">
+    <button id="btnLog" style="background:#1d3557;">📜 Sistema de Log</button>
+  </div>
 
-<h3>Histórico</h3>
-<table id="historyTable">
-  <thead>
-    <tr>
-      <th>ID</th><th>Data</th><th>Executante</th><th>Matrícula</th>
-      <th>Equipamento</th><th>Acionamento</th><th>Problema</th>
-      <th>Solução</th><th>Encerramento</th>
-    </tr>
-  </thead>
-  <tbody><tr><td colspan="9">Carregando...</td></tr></tbody>
-</table>
+  <div class="search-bar">
+    <input type="text" id="searchInput" placeholder="Buscar histórico (ID, nome, equipamento, data)">
+    <button class="pdf-btn" id="btnPDF">📄 Gerar PDF</button>
+  </div>
+
+  <div class="history">
+    <h3>📊 Histórico de Registros</h3>
+    <table id="historyTable">
+      <thead>
+        <tr>
+          <th>ID</th><th>Data</th><th>Executante</th><th>Matrícula</th><th>Equipamento</th><th>Acionamento</th><th>Problema</th><th>Solução</th><th>Encerramento</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td colspan="9">Carregando...</td></tr>
+      </tbody>
+    </table>
+    <div id="mobileHistory"></div>
+  </div>
 </div>
 
 <!-- MODAL -->
-<div class="modal" id="modalDetalhes">
-  <div class="modal-content">
-    <h2 id="modalTitle"></h2>
+<div class="modal" id="modalDetalhes" aria-hidden="true">
+  <div class="modal-content" role="dialog" aria-modal="true">
+    <h2 id="modalTitle">Ficha Técnica</h2>
     <div id="modalFields"></div>
-    <div id="modalButtons" style="margin-top:10px;display:flex;gap:10px;"></div>
+    <div id="modalButtons" style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;"></div>
   </div>
 </div>
 
 <script>
-const GAS_URL = "https://script.google.com/macros/s/AKfycby4P-FatKrrKfeaid56NN9SVMniwcL0PP6-saqm5DdSMCpv1qO8lFU8UJnHva1qi_mC/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbyjN_7typwQ8yFu-4CW6uRV9U4U6z1386BcGz3YAl_-di_KXedC2FFg3NEAIDjuL4ir/exec";
+
+const loginForm = document.getElementById("loginForm");
 const loginDiv = document.getElementById("loginDiv");
 const registroDiv = document.getElementById("registroDiv");
 const matricula = document.getElementById("matricula");
 const turnoForm = document.getElementById("turnoForm");
 const searchInput = document.getElementById("searchInput");
+const btnPDF = document.getElementById("btnPDF");
+const modalDetalhes = document.getElementById("modalDetalhes");
+const modalFields = document.getElementById("modalFields");
+const modalButtons = document.getElementById("modalButtons");
+const watchdogEl = document.getElementById("watchdog");
+const logDiv = document.getElementById("logDiv");
+let paginaAtual = 1;
+const porPagina = 10;
+let historicoFiltrado = [];
 
 let fullHistory = [];
 let registroSelecionado = null;
 
-/* JSONP */
-function callGAS(params){
-  const cb = "cb_" + Math.random().toString(36).slice(2);
-  const url = GAS_URL + "?" + new URLSearchParams({...params, callback: cb});
-  return new Promise((resolve)=>{
-    window[cb] = d => { resolve(d); delete window[cb]; };
-    const s = document.createElement("script");
-    s.src = url;
-    document.body.appendChild(s);
-  });
+/* JSONP helper */
+function callGAS(params) {
+    const callback = "cb_" + Math.random().toString(36).slice(2,12);
+    const url = GAS_URL + "?" + new URLSearchParams({...params, callback});
+    return new Promise((resolve, reject) => {
+        window[callback] = (data) => {
+            resolve(data);
+            try { delete window[callback]; } catch(e){}
+        };
+        const script = document.createElement("script");
+        script.src = url;
+        script.onerror = () => {
+            reject(new Error("Falha na requisição JSONP"));
+            try { delete window[callback]; } catch(e){}
+        };
+        document.body.appendChild(script);
+    });
 }
 
 /* LOGIN */
-loginForm.onsubmit = async e => {
-  e.preventDefault();
-  const mat = loginMatricula.value.trim();
-  loginDiv.style.display="none";
-  registroDiv.style.display="block";
-  matricula.value = mat;
-  loadHistory(mat);
+loginForm.onsubmit = async (e) => {
+    e.preventDefault();
+    const mat = document.getElementById("loginMatricula").value.trim();
+    if (!mat) {
+        alert("Informe a matrícula.");
+        return;
+    }
+    loginDiv.style.display = "none";
+    registroDiv.style.display = "block";
+    matricula.value = mat;
+    await loadHistory(mat);
+    logDiv.style.display = (mat === "991631240") ? "block" : "none";
+    try {
+        await callGAS({acao:"registrarLog", matricula: mat, acaoTipo:"Login"});
+    } catch (err) {
+        console.error("Erro ao registrar log de login:", err);
+    }
 };
 
 /* LOGOUT */
-btnLogout.onclick = () => {
-  registroDiv.style.display="none";
-  loginDiv.style.display="block";
-  turnoForm.reset();
-  matricula.value="";
-  loadHistory("");
+document.getElementById("btnLogout").onclick = async () => {
+    await callGAS({acao:"registrarLog", matricula: matricula.value, acaoTipo:"Logout"});
+    registroDiv.style.display = "none";
+    loginDiv.style.display = "block";
+    turnoForm.reset();
+    matricula.value = "";
+    await loadHistory("");
+    logDiv.style.display = "none";
 };
 
+/* FUNÇÕES DE FORMATO */
+function formatDate(value){
+    if(!value) return "";
+    const d = new Date(value);
+    return isNaN(d) ? "" : d.toLocaleDateString("pt-BR");
+}
+function formatTime(value){
+    if(!value) return "";
+    const d = new Date(value);
+    return isNaN(d) ? "" : d.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
+}
+function escapeHtml(s){
+    if(s === null || s === undefined) return "";
+    return String(s)
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;");
+}
+
 /* CARREGAR HISTÓRICO */
-async function loadHistory(filtro=""){
-  const data = await callGAS({acao:"getHistorico", matricula:filtro});
-  fullHistory = Array.isArray(data) ? data.reverse() : [];
-  renderHistory(fullHistory);
+async function loadHistory(matriculaFiltro="") {
+    try {
+        const data = await callGAS({acao:"getHistorico", matricula: matriculaFiltro});
+        fullHistory = Array.isArray(data) ? data.reverse() : [];
+    } catch(err) {
+        console.error("Erro ao carregar histórico:", err);
+        fullHistory = [];
+    }
+    renderHistory(fullHistory);
+    return fullHistory;
 }
 
-/* BUSCA */
-searchInput.oninput = () => renderHistory(fullHistory);
+function renderHistory(data) {
 
-/* RENDER HISTÓRICO */
-function renderHistory(lista){
-  const t = document.querySelector("#historyTable tbody");
-  t.innerHTML = "";
-  const termo = searchInput.value.toLowerCase();
+    historicoFiltrado = data;
 
-  lista
-    .filter(r => r.some(c => String(c).toLowerCase().includes(termo)))
-    .forEach(r => {
-      const tr = document.createElement("tr");
-      tr.onclick = ()=>abrirModal(r);
-      tr.innerHTML = `
-        <td>${r[0]}</td><td>${formatDate(r[1])}</td><td>${r[2]}</td>
-        <td>${r[3]}</td><td>${r[4]}</td><td>${formatTime(r[5])}</td>
-        <td>${r[6]}</td><td>${r[7]}</td><td>${formatTime(r[8])}</td>`;
-      t.appendChild(tr);
-    });
+    const t = document.querySelector("#historyTable tbody");
+    const m = document.getElementById("mobileHistory");
 
-  if (!t.innerHTML) t.innerHTML = `<tr><td colspan="9">Sem registros</td></tr>`;
-}
+    t.innerHTML = "";
+    m.innerHTML = "";
 
-function formatDate(v){ return v ? new Date(v).toLocaleDateString("pt-BR") : ""; }
-function formatTime(v){ return v ? new Date(v).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}) : ""; }
+    if (!Array.isArray(historicoFiltrado) || historicoFiltrado.length === 0) {
+        t.innerHTML = '<tr><td colspan="9">Sem registros</td></tr>';
+        m.innerHTML = '<p style="text-align:center;color:#888;">Sem registros</p>';
+        return;
+    }
+
+    const inicio = (paginaAtual - 1) * porPagina;
+    const fim = inicio + porPagina;
+    const pagina = historicoFiltrado.slice(inicio, fim);
+
+    pagina.forEach(r => {
+
+        const tr = document.createElement("tr");
+        tr.dataset.id = String(r[0]);
+        tr.addEventListener("click", () => abrirModal(r));
+        tr.innerHTML = `
+          <td>${escapeHtml(r[0])}</td>
+          <td>${formatDate(r[1])}</td>
+          <td>${escapeHtml(r[2])}</td>
+          <td>${escapeHtml(r[3])}</td>
+          <td>${escapeHtml(r[4])}</td>
+          <td>${formatTime(r[5])}</td>
+          <td>${escapeHtml(r[6])}</td>
+          <td>${escapeHtml(r[7])}</td>
+          <td>${formatTime(r[8])}</td>
+        `;
+        t.appendChild(tr);
+
+        const card = document.createElement("div");
+        card.className = "history-card";
+        card.dataset.id = String(r[0]);
+        card.addEventListener("click", () => abrirModal(r));
+        card.innerHTML = `
+          <p><strong>ID:</strong> ${r[0]}</p>
+          <p><strong>Data:</s
 
 /* MODAL */
 function abrirModal(r){
-  registroSelecionado = r;
-  modalTitle.textContent = "ID " + r[0];
-  modalFields.innerHTML = `
-    <p><b>Data:</b> ${formatDate(r[1])}</p>
-    <p><b>Executante:</b> ${r[2]}</p>
-    <p><b>Equipamento:</b> ${r[4]}</p>
-    <p><b>Problema:</b> ${r[6]}</p>
-    <p><b>Solução:</b> ${r[7]}</p>
-  `;
+    registroSelecionado = r;
+    document.getElementById("modalTitle").textContent = `Ficha Técnica - ID ${r[0]}`;
 
-  modalButtons.innerHTML = "";
-  const fechar = document.createElement("button");
-  fechar.textContent="Fechar";
-  fechar.onclick = ()=>modalDetalhes.style.display="none";
-  modalButtons.appendChild(fechar);
+    modalFields.innerHTML = `
+      <div class="tech-field"><strong>ID:</strong> ${escapeHtml(r[0])}</div>
+      <div class="tech-field"><strong>Data:</strong> ${formatDate(r[1])}</div>
+      <div class="tech-field"><strong>Executante:</strong> ${escapeHtml(r[2])}</div>
+      <div class="tech-field"><strong>Matrícula:</strong> ${escapeHtml(r[3])}</div>
+      <div class="tech-field"><strong>Equipamento:</strong> ${escapeHtml(r[4])}</div>
+      <div class="tech-field"><strong>Acionamento:</strong> ${formatTime(r[5])}</div>
+      <div class="tech-field"><strong>Problema:</strong><div>${escapeHtml(r[6])}</div></div>
+      <div class="tech-field"><strong>Solução:</strong><div>${escapeHtml(r[7])}</div></div>
+      <div class="tech-field"><strong>Encerramento:</strong> ${formatTime(r[8])}</div>
+    `;
 
-  if (matricula.value === String(r[3])) {
-    const editar = document.createElement("button");
-    editar.textContent="Editar";
-    editar.style.background="#4dabf7";
-    editar.onclick = ()=>editarRegistro(r);
-    modalButtons.appendChild(editar);
+    modalButtons.innerHTML = "";
+    const btnFechar = document.createElement("button");
+    btnFechar.textContent = "Fechar";
+    btnFechar.style.background = "#2d6a4f";
+    btnFechar.addEventListener("click", fecharModal);
+    modalButtons.appendChild(btnFechar);
 
-    const del = document.createElement("button");
-    del.textContent="Deletar";
-    del.style.background="#ff6b6b";
-    del.onclick = ()=>deletarRegistro(r);
-    modalButtons.appendChild(del);
-  }
+    // ✅ Correção: converter para string antes de trim()
+    if (String(matricula.value || "").trim() === String(r[3] || "").trim()) {
+        const btnEditar = document.createElement("button");
+        btnEditar.textContent = "Editar";
+        btnEditar.style.background = "#4dabf7";
+        btnEditar.addEventListener("click", () => enterModalEditMode(r));
+        modalButtons.appendChild(btnEditar);
 
-  modalDetalhes.style.display="flex";
+        const btnDeletar = document.createElement("button");
+        btnDeletar.textContent = "Deletar";
+        btnDeletar.style.background = "#ff6b6b";
+        btnDeletar.addEventListener("click", () => confirmAndDelete());
+        modalButtons.appendChild(btnDeletar);
+    }
+
+    modalDetalhes.style.display = "flex";
 }
 
-/* EDITAR */
-function editarRegistro(r){
-  modalFields.innerHTML = `
-    <label>Executante:</label><input id="e1" value="${r[2]}">
-    <label>Equipamento:</label><input id="e2" value="${r[4]}">
-    <label>Problema:</label><textarea id="e3">${r[6]}</textarea>
-    <label>Solução:</label><textarea id="e4">${r[7]}</textarea>
-  `;
+function fecharModal(){
+    modalDetalhes.style.display = "none";
+    registroSelecionado = null;
+}
 
-  modalButtons.innerHTML = "";
+/* EDIÇÃO */
+function enterModalEditMode(r){
+    modalFields.innerHTML = `
+      <div class="tech-field"><label>Executante:</label>
+        <input id="editExecutante" value="${escapeHtml(r[2])}">
+      </div>
+      <div class="tech-field"><label>Data:</label>
+        <input type="date" id="editData" value="${new Date(r[1]).toISOString().split('T')[0]}">
+      </div>
+      <div class="tech-field"><label>Equipamento:</label>
+        <input id="editEquipamento" value="${escapeHtml(r[4])}">
+      </div>
+      <div class="tech-field"><label>Acionamento:</label>
+        <input type="time" id="editAcionamento" value="${r[5] ? new Date(r[5]).toISOString().substring(11,16) : ''}">
+      </div>
+      <div class="tech-field"><label>Problema:</label>
+        <textarea id="editProblema">${escapeHtml(r[6])}</textarea>
+      </div>
+      <div class="tech-field"><label>Solução:</label>
+        <textarea id="editSolucao">${escapeHtml(r[7])}</textarea>
+      </div>
+      <div class="tech-field"><label>Encerramento:</label>
+        <input type="time" id="editEncerramento" value="${r[8] ? new Date(r[8]).toISOString().substring(11,16) : ''}">
+      </div>
+    `;
 
-  const salvar = document.createElement("button");
-  salvar.textContent="Salvar";
-  salvar.onclick = async ()=>{
-    await callGAS({
-      acao:"editarTurno",
-      id:r[0],
-      executante:e1.value,
-      equipamento:e2.value,
-      problema:e3.value,
-      solucao:e4.value,
+    modalButtons.innerHTML = "";
+    const btnSalvar = document.createElement("button");
+    btnSalvar.textContent = "Salvar";
+    btnSalvar.style.background = "#2d6a4f";
+    btnSalvar.addEventListener("click", async () => {
+        try {
+            const payload = {
+                acao: "editarTurno",
+                id: String(r[0]),
+                matricula: matricula.value,
+                executante: document.getElementById("editExecutante").value, // ✅ novo campo
+                data: document.getElementById("editData").value,
+                equipamento: document.getElementById("editEquipamento").value,
+                acionamento: document.getElementById("editAcionamento").value,
+                problema: document.getElementById("editProblema").value,
+                solucao: document.getElementById("editSolucao").value,
+                encerramento: document.getElementById("editEncerramento").value
+            };
+            const res = await callGAS(payload);
+            if(res && res.success){
+                alert("Registro atualizado!");
+                await loadHistory(matricula.value);
+                fecharModal();
+            } else {
+                alert("Erro ao atualizar: " + (res && res.message ? res.message : "desconhecido"));
+            }
+        } catch(e) {
+            alert("Falha na requisição de edição.");
+        }
     });
-    modalDetalhes.style.display="none";
-    loadHistory(matricula.value);
-  };
+    modalButtons.appendChild(btnSalvar);
 
-  modalButtons.appendChild(salvar);
+    const btnCancelar = document.createElement("button");
+    btnCancelar.textContent = "Cancelar";
+    btnCancelar.style.background = "#ff6b6b";
+    btnCancelar.addEventListener("click", fecharModal);
+    modalButtons.appendChild(btnCancelar);
 }
 
 /* DELETAR */
-async function deletarRegistro(r){
-  if (!confirm("Deletar registro?")) return;
-  await callGAS({acao:"deletarTurno", id:r[0]});
-  modalDetalhes.style.display="none";
-  loadHistory(matricula.value);
+async function confirmAndDelete(){
+    if(!registroSelecionado) return;
+    if(!confirm(`Deseja realmente deletar o registro ID ${registroSelecionado[0]}?`)) return;
+    try {
+        const res = await callGAS({acao:"deletarTurno", id: String(registroSelecionado[0]), matricula: String(matricula.value || "")});
+        if(res && res.success){
+            alert("Registro deletado.");
+            await loadHistory(matricula.value);
+            fecharModal();
+        } else {
+            alert("Erro ao deletar: " + (res && res.message ? res.message : "desconhecido"));
+        }
+    } catch(e) {
+        alert("Falha na requisição de deleção.");
+    }
 }
 
 /* REGISTRAR */
-turnoForm.onsubmit = async e =>{
-  e.preventDefault();
-  await callGAS({
-    acao:"registrarTurno",
-    nome:nome.value,
-    matricula:matricula.value,
-    data:data.value,
-    equipamento:equipamento.value,
-    acionamento:acionamento.value,
-    problema:problema.value,
-    solucao:solucao.value,
-    encerramento:encerramento.value
-  });
-  turnoForm.reset();
-  loadHistory(matricula.value);
+turnoForm.onsubmit = async e => {
+    e.preventDefault();
+    const payload = {
+        acao: "registrarTurno",
+        nome: document.getElementById("nome").value.trim(),
+        matricula: document.getElementById("matricula").value.trim(),
+        data: document.getElementById("data").value || "",
+        equipamento: document.getElementById("equipamento").value.trim(),
+        acionamento: document.getElementById("acionamento").value || "",
+        problema: document.getElementById("problema").value.trim(),
+        solucao: document.getElementById("solucao").value.trim(),
+        encerramento: document.getElementById("encerramento").value || ""
+    };
+    try {
+        const res = await callGAS(payload);
+        if(res && res.success){
+            alert("Registro salvo!");
+            await loadHistory(matricula.value);
+            turnoForm.reset();
+        } else {
+            alert("Erro ao salvar: " + (res && res.message ? res.message : "desconhecido"));
+        }
+    } catch(e) {
+        alert("Falha na requisição de registro.");
+    }
 };
 
-/* Inicial */
-loadHistory("");
+/* WATCHDOG */
+async function atualizarWatchdog(){
+    try{
+        const r = await callGAS({acao:"getWatchdog"});
+        watchdogEl.innerText = "Watchdog: " + (r && r.watchdog !== undefined ? r.watchdog : "OFFLINE");
+    } catch(e) {
+        watchdogEl.innerText = "Watchdog: OFFLINE";
+    }
+}
+setInterval(atualizarWatchdog, 3000);
+atualizarWatchdog();
+
+/* PDF */
+btnPDF.onclick = async () => {
+    try {
+        const r = await callGAS({acao:"gerarPDF"});
+        if(r && r.url){
+            window.open(r.url, "_blank");
+        } else {
+            alert("Não foi possível gerar PDF.");
+        }
+    } catch(e) {
+        alert("Erro ao solicitar PDF.");
+    }
+};
+
+/* Inicialização */
+loadHistory(""); // carrega tudo ao abrir a página
+   // Registro do Service Worker
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("sw.js")
+      .then(() => console.log("Service Worker registrado!"))
+      .catch(err => console.error("Erro ao registrar SW:", err));
+  }
+  function renderPaginacao(){
+    const totalPaginas = Math.ceil(historicoFiltrado.length / porPagina);
+    if (totalPaginas <= 1) return;
+
+    let pag = document.getElementById("paginacao");
+    if (!pag) {
+        pag = document.createElement("div");
+        pag.id = "paginacao";
+        pag.className = "paginacao";
+        document.querySelector(".history").appendChild(pag);
+    }
+
+    pag.innerHTML = `
+      <button ${paginaAtual===1?'disabled':''} onclick="irPagina(${paginaAtual-1})">«</button>
+      ${Array.from({length: totalPaginas}, (_,i)=>`
+        <button class="${paginaAtual===i+1?'ativo':''}" onclick="irPagina(${i+1})">
+          ${i+1}
+        </button>
+      `).join("")}
+      <button ${paginaAtual===totalPaginas?'disabled':''} onclick="irPagina(${paginaAtual+1})">»</button>
+    `;
+}
 </script>
 </body>
 </html>
