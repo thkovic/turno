@@ -112,15 +112,6 @@ button:hover{opacity:.95}
     <button class="pdf-btn" id="btnPDF">📄 Gerar PDF</button>
     
   </div>
-  <script>
-const searchInput = document.getElementById("searchInput");
-
-searchInput.oninput = () => {
-    paginaAtual = 1;
-    renderHistory(fullHistory);
-};
-</script>
-  <script>
 
   <div class="history">
     <h3>📊 Histórico de Registros</h3>
@@ -168,6 +159,24 @@ let historicoFiltrado = [];
 
 let fullHistory = [];
 let registroSelecionado = null;
+  /* 🔹 1. VARIÁVEIS GLOBAIS */
+let paginaAtual = 1;
+const porPagina = 10;
+let fullHistory = [];
+
+/* 🔹 2. ELEMENTOS DOM */
+const searchInput = document.getElementById("searchInput");
+
+/* 🔹 3. EVENTOS */
+searchInput.oninput = () => {
+    paginaAtual = 1;          // ← reset da página
+    renderHistory(fullHistory);
+};
+
+/* 🔹 4. FUNÇÕES */
+function renderHistory(data) {
+    ...
+}
 
 /* JSONP helper */
 function callGAS(params) {
