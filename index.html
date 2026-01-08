@@ -63,10 +63,40 @@ button:hover{opacity:.95}
   opacity:.4;
   cursor:not-allowed;
 }
+  #rankingEquipamentos{
+  position:fixed;
+  top:50px;
+  right:10px;
+  background:#f1faee;
+  color:#1d3557;
+  padding:10px;
+  border-radius:8px;
+  font-size:13px;
+  box-shadow:0 2px 6px rgba(0,0,0,.15);
+  max-width:220px;
+}
+#rankingEquipamentos ul{
+  list-style:none;
+  padding:0;
+  margin:8px 0 0;
+}
+#rankingEquipamentos li{
+  display:flex;
+  justify-content:space-between;
+  margin-bottom:4px;
+}
+@media(max-width:800px){
+  #rankingEquipamentos{display:none;}
+}
 </style>
 </head>
 <body>
 <div id="watchdog">Watchdog: --</div>
+  <div id="rankingEquipamentos">
+  <strong>🏆 Ranking de Equipamentos</strong>
+  <ul id="rankingLista"></ul>
+</div>
+
 <div class="container">
   <h1>📝 Sistema de Histórico</h1>
 
@@ -566,6 +596,32 @@ loadHistory(""); // carrega tudo ao abrir a página
   function irPagina(p) {
     paginaAtual = p;
     renderHistory(fullHistory);
+}
+function atualizarRanking(){
+  const contagem = {};
+
+  state.filtrado.forEach(r=>{
+    const eq = r[4];
+    if(eq) contagem[eq] = (contagem[eq] || 0) + 1;
+  });
+
+  const lista = $("rankingLista");
+  lista.innerHTML = "";
+
+  Object.entries(contagem)
+    .sort((a,b)=>b[1]-a[1]) // maior primeiro
+    .slice(0,10) // top 10
+    .forEach(([eq,qt])=>{
+      const li=document.createElement("li");
+      li.innerHTML=`<span>${esc(eq)}</span><span>${qt}</span>`;
+      lista.appendChild(li);
+    function render(){
+  ...
+  paginar();
+  atualizarRanking();
+}
+
+    });
 }
 </script>
 </body>
