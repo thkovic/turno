@@ -246,17 +246,46 @@ function renderHistory(data) {
     const t = document.querySelector("#historyTable tbody");
     const m = document.getElementById("mobileHistory");
 
-    historicoFiltrado = Array.isArray(data) ? data : [];
-
     t.innerHTML = "";
     m.innerHTML = "";
+
+    const searchTerm = (searchInput.value || "").toLowerCase();
+
+    // 🔹 1. Garante array
+    const lista = Array.isArray(data) ? data : [];
+
+    // 🔹 2. Aplica filtro de busca
+    historicoFiltrado = lista.filter(r =>
+        r.some((c, idx) => {
+            let val = String(c || "").toLowerCase();
+
+            if ([1,5,8].includes(idx)) {
+                const d = new Date(c);
+                if (!isNaN(d)) {
+                    const dataStr = d.toLocaleDateString("pt-BR").toLowerCase();
+                    const horaStr = d.toLocaleTimeString("pt-BR", {
+                        hour: "2-digit",
+                        minute: "2-digit"
+                    }).toLowerCase();
+                    return dataStr.includes(searchTerm) || horaStr.includes(searchTerm);
+                }
+            }
+            return val.includes(searchTerm);
+        })
+    );
 
     if (historicoFiltrado.length === 0) {
         t.innerHTML = '<tr><td colspan="9">Sem registros</td></tr>';
         m.innerHTML = '<p style="text-align:center;color:#888;">Sem registros</p>';
+        renderPaginacao();
         return;
     }
 
+    // 🔹 3. Ajusta página atual se necessário
+    const totalPaginas = Math.ceil(historicoFiltrado.length / porPagina);
+    if (paginaAtual > totalPaginas) paginaAtual = 1;
+
+    // 🔹 4. Paginação
     const inicio = (paginaAtual - 1) * porPagina;
     const fim = inicio + porPagina;
     const pagina = historicoFiltrado.slice(inicio, fim);
@@ -294,7 +323,6 @@ function renderHistory(data) {
 
     renderPaginacao();
 }
-
 /* MODAL */
 function abrirModal(r){
     registroSelecionado = r;
