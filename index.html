@@ -2,6 +2,7 @@
 <html lang="pt-br">
 <head>
   <link rel="manifest" href="manifest.json">
+  
 <meta name="theme-color" content="#2d6a4f">
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
@@ -109,21 +110,17 @@ button:hover{opacity:.95}
   <div class="search-bar">
     <input type="text" id="searchInput" placeholder="Buscar histórico (ID, nome, equipamento, data)">
     <button class="pdf-btn" id="btnPDF">📄 Gerar PDF</button>
+    
   </div>
-/* 🔹 VARIÁVEIS GLOBAIS */
-let paginaAtual = 1;
-const porPagina = 10;
-let historicoFiltrado = [];
-let fullHistory = [];
-
-/* 🔹 ELEMENTO DE BUSCA */
+  <script>
 const searchInput = document.getElementById("searchInput");
 
-/* 🔹 BUSCA COM RESET DE PÁGINA (AQUI 👇) */
 searchInput.oninput = () => {
     paginaAtual = 1;
     renderHistory(fullHistory);
 };
+</script>
+  <script>
 
   <div class="history">
     <h3>📊 Histórico de Registros</h3>
@@ -550,6 +547,10 @@ loadHistory(""); // carrega tudo ao abrir a página
       `).join("")}
       <button ${paginaAtual===totalPaginas?'disabled':''} onclick="irPagina(${paginaAtual+1})">»</button>
     `;
+}
+  function irPagina(p) {
+    paginaAtual = p;
+    renderHistory(fullHistory);
 }
 </script>
 </body>
