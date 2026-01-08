@@ -103,6 +103,59 @@ button:hover{opacity:.95}
   margin-bottom:2px;
   color:#1d3557;
 }
+  #rankingEquipamentos{
+  position:fixed;
+  top:50px;
+  right:10px;
+  width:260px;
+  background:#f8f9fa;
+  padding:10px;
+  border-radius:10px;
+  box-shadow:0 3px 10px rgba(0,0,0,.15);
+}
+
+#rankingEquipamentos strong{
+  display:block;
+  text-align:center;
+  margin-bottom:10px;
+}
+
+.ranking-item{
+  background:#fff;
+  border:1px solid #ddd;
+  border-radius:6px;
+  padding:8px;
+  margin-bottom:8px;
+  box-shadow:0 1px 3px rgba(0,0,0,.08);
+}
+
+.ranking-header{
+  display:flex;
+  justify-content:space-between;
+  font-weight:bold;
+  font-size:13px;
+  margin-bottom:6px;
+}
+
+.ranking-pos{
+  color:#2d6a4f;
+  margin-right:6px;
+}
+
+.barra{
+  height:10px;
+  background:#2d6a4f;
+  border-radius:4px;
+  margin-bottom:6px;
+}
+
+.ranking-info{
+  font-size:11px;
+  color:#555;
+  display:flex;
+  justify-content:space-between;
+}
+
 </style>
 </head>
 <body>
@@ -626,17 +679,14 @@ function irPagina(p){
 function atualizarRanking(){
   var contagem = {};
   var total = historicoFiltrado.length;
-  var lista = document.getElementById("rankingLista");
-  var graf = document.getElementById("rankingGrafico");
+  var container = document.getElementById("rankingLista");
 
-  if (!lista || !graf) return;
-
-  lista.innerHTML = "";
-  graf.innerHTML = "";
+  if (!container) return;
+  container.innerHTML = "";
 
   if (total === 0) return;
 
-  // Conta equipamentos
+  // Conta ocorrências
   for (var i = 0; i < historicoFiltrado.length; i++) {
     var eq = historicoFiltrado[i][4];
     if (!eq) continue;
@@ -650,29 +700,31 @@ function atualizarRanking(){
 
   // Top 10
   for (var j = 0; j < itens.length && j < 10; j++) {
-    var eqp = itens[j];
-    var qtd = contagem[eqp];
+    var nome = itens[j];
+    var qtd = contagem[nome];
     var pct = ((qtd / total) * 100).toFixed(1);
 
-    /* Lista textual */
-    var li = document.createElement("li");
-    li.innerHTML =
-      "<span>" + escapeHtml(eqp) + "</span>" +
-      "<span>" + qtd + " (" + pct + "%)</span>";
-    lista.appendChild(li);
+    var item = document.createElement("div");
+    item.className = "ranking-item";
 
-    /* Gráfico */
-    var lbl = document.createElement("div");
-    lbl.className = "barra-label";
-    lbl.innerText = eqp + " (" + pct + "%)";
-    graf.appendChild(lbl);
+    item.innerHTML =
+      '<div class="ranking-header">' +
+        '<span><span class="ranking-pos">' + (j+1) + 'º</span>' +
+        escapeHtml(nome) + '</span>' +
+        '<span>' + pct + '%</span>' +
+      '</div>' +
 
-    var barra = document.createElement("div");
-    barra.className = "barra";
-    barra.style.width = pct + "%";
-    graf.appendChild(barra);
+      '<div class="barra" style="width:' + pct + '%"></div>' +
+
+      '<div class="barra-info">' +
+        '<span>' + qtd + ' ocorrência(s)</span>' +
+        '<span>' + pct + '%</span>' +
+      '</div>';
+
+    container.appendChild(item);
   }
 }
+
 </script>
 </body>
 </html>
