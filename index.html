@@ -243,15 +243,15 @@ async function loadHistory(matriculaFiltro="") {
 
 function renderHistory(data) {
 
-    historicoFiltrado = data;
-
     const t = document.querySelector("#historyTable tbody");
     const m = document.getElementById("mobileHistory");
+
+    historicoFiltrado = Array.isArray(data) ? data : [];
 
     t.innerHTML = "";
     m.innerHTML = "";
 
-    if (!Array.isArray(historicoFiltrado) || historicoFiltrado.length === 0) {
+    if (historicoFiltrado.length === 0) {
         t.innerHTML = '<tr><td colspan="9">Sem registros</td></tr>';
         m.innerHTML = '<p style="text-align:center;color:#888;">Sem registros</p>';
         return;
@@ -285,7 +285,15 @@ function renderHistory(data) {
         card.addEventListener("click", () => abrirModal(r));
         card.innerHTML = `
           <p><strong>ID:</strong> ${r[0]}</p>
-          <p><strong>Data:</s
+          <p><strong>Data:</strong> ${formatDate(r[1])}</p>
+          <p><strong>Executante:</strong> ${escapeHtml(r[2])}</p>
+          <p><strong>Equipamento:</strong> ${escapeHtml(r[4])}</p>
+        `;
+        m.appendChild(card);
+    });
+
+    renderPaginacao();
+}
 
 /* MODAL */
 function abrirModal(r){
