@@ -209,15 +209,23 @@ loginForm.onsubmit = async (e) => {
 };
 
 /* LOGOUT */
-document.getElementById("btnLogout").onclick = async () => {
-    await callGAS({acao:"registrarLog", matricula: matricula.value, acaoTipo:"Logout"});
+async function fazerLogout() {
+    await callGAS({
+        acao: "registrarLog",
+        matricula: matricula.value,
+        acaoTipo: "Logout"
+    });
+
     registroDiv.style.display = "none";
     loginDiv.style.display = "block";
     turnoForm.reset();
     matricula.value = "";
+
     await loadHistory("");
     logDiv.style.display = "none";
-};
+}
+
+document.getElementById("btnLogout").onclick = fazerLogout;
 
 /* FUNÇÕES DE FORMATO */
 function formatDate(value){
