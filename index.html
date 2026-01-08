@@ -618,18 +618,19 @@ async function atualizarWatchdog(){
 }
 setInterval(atualizarWatchdog, 3000);
 atualizarWatchdog();
-
-/* PDF */
+  
+/* EXCEL */
 btnPDF.onclick = async () => {
     try {
-        const r = await callGAS({acao:"gerarPDF"});
-        if(r && r.url){
+        const r = await callGAS({ acao: "gerarExcel" });
+        if (r && r.url) {
             window.open(r.url, "_blank");
         } else {
-            alert("Não foi possível gerar PDF.");
+            alert("Não foi possível gerar o Excel.");
         }
-    } catch(e) {
-        alert("Erro ao solicitar PDF.");
+    } catch (e) {
+        console.error(e);
+        alert("Erro ao solicitar o Excel.");
     }
 };
 
