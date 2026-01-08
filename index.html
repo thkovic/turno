@@ -370,7 +370,8 @@ function renderHistory(data) {
         m.appendChild(card);
     });
 
-    renderPaginacao();
+  renderPaginacao();
+  atualizarRanking();
 }
 /* MODAL */
 function abrirModal(r){
@@ -563,65 +564,73 @@ btnPDF.onclick = async () => {
     }
 };
 
-/* Inicialização */
-loadHistory(""); // carrega tudo ao abrir a página
-   // Registro do Service Worker
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("sw.js")
-      .then(() => console.log("Service Worker registrado!"))
-      .catch(err => console.error("Erro ao registrar SW:", err));
+// Inicialização
+loadHistory("");
+
+// Service Worker
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("sw.js")
+    .then(function(){ console.log("Service Worker registrado!"); })
+    .catch(function(err){ console.error("Erro ao registrar SW:", err); });
+}
+
+/* ================= PAGINAÇÃO ================= */
+function renderPaginacao(){
+  var totalPaginas = Math.ceil(historicoFiltrado.length / porPagina);
+  if (totalPaginas <= 1) return;
+
+  var pag = document.getElementById("paginacao");
+  if (!pag) {
+    pag = document.createElement("div");
+    pag.id = "paginacao";
+    pag.className = "paginacao";
+    document.querySelector(".history").appendChild(pag);
   }
-  function renderPaginacao(){
-    const totalPaginas = Math.ceil(historicoFiltrado.length / porPagina);
-    if (totalPaginas <= 1) return;
 
-    let pag = document.getElementById("paginacao");
-    if (!pag) {
-        pag = document.createElement("div");
-        pag.id = "paginacao";
-        pag.className = "paginacao";
-        document.querySelector(".history").appendChild(pag);
-    }
+  var html = '<button '+(paginaAtual===1?'disabled':'')+
+             ' onclick="irPagina('+(paginaAtual-1)+')">«</button>';
 
-    pag.innerHTML = `
-      <button ${paginaAtual===1?'disabled':''} onclick="irPagina(${paginaAtual-1})">«</button>
-      ${Array.from({length: totalPaginas}, (_,i)=>`
-        <button class="${paginaAtual===i+1?'ativo':''}" onclick="irPagina(${i+1})">
-          ${i+1}
-        </button>
-      `).join("")}
-      <button ${paginaAtual===totalPaginas?'disabled':''} onclick="irPagina(${paginaAtual+1})">»</button>
-    `;
+  for (var i=1;i<=totalPaginas;i++){
+    html += '<button class="'+(paginaAtual===i?'ativo':'')+
+            '" onclick="irPagina('+i+')">'+i+'</button>';
+  }
+
+  html += '<button '+(paginaAtual===totalPaginas?'disabled':'')+
+          ' onclick="irPagina('+(paginaAtual+1)+')">»</button>';
+
+  pag.innerHTML = html;
 }
-  function irPagina(p) {
-    paginaAtual = p;
-    renderHistory(fullHistory);
+
+function irPagina(p){
+  paginaAtual = p;
+  renderHistory(fullHistory);
 }
+
+/* ================= RANKING ================= */
 function atualizarRanking(){
-  const contagem = {};
+  var contagem = {};
+  var lista = document.getElementById("rankingLista");
+  if (!lista) return;
 
-  state.filtrado.forEach(r=>{
-    const eq = r[4];
-    if(eq) contagem[eq] = (contagem[eq] || 0) + 1;
-  });
-
-  const lista = $("rankingLista");
   lista.innerHTML = "";
 
-  Object.entries(contagem)
-    .sort((a,b)=>b[1]-a[1]) // maior primeiro
-    .slice(0,10) // top 10
-    .forEach(([eq,qt])=>{
-      const li=document.createElement("li");
-      li.innerHTML=`<span>${esc(eq)}</span><span>${qt}</span>`;
-      lista.appendChild(li);
-    function render(){
-  ...
-  paginar();
-  atualizarRanking();
-}
+  for (var i=0;i<historicoFiltrado.length;i++){
+    var eq = historicoFiltrado[i][4];
+    if (!eq) continue;
+    contagem[eq] = (contagem[eq] || 0) + 1;
+  }
 
-    });
+  var itens = Object.keys(contagem).sort(function(a,b){
+    return contagem[b] - contagem[a];
+  });
+
+  for (var j=0;j<itens.length && j<10;j++){
+    var li = document.createElement("li");
+    li.innerHTML =
+      "<span>"+escapeHtml(itens[j])+"</span>" +
+      "<span>"+contagem[itens[j]]+"</span>";
+    lista.appendChild(li);
+  }
 }
 </script>
 </body>
