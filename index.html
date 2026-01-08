@@ -619,6 +619,38 @@ loadHistory(""); // carrega tudo ao abrir a página
     paginaAtual = p;
     renderHistory(fullHistory);
 }
+  function renderRankingEquipamentos(lista) {
+    const ul = document.getElementById("rankingEquipamentos");
+    if (!ul) return;
+
+    const contador = {};
+
+    lista.forEach(r => {
+        const equipamento = String(r[4] || "").trim();
+        if (!equipamento) return;
+        contador[equipamento] = (contador[equipamento] || 0) + 1;
+    });
+
+    const ranking = Object.entries(contador)
+        .sort((a, b) => b[1] - a[1]); // maior primeiro
+
+    ul.innerHTML = "";
+
+    if (ranking.length === 0) {
+        ul.innerHTML = "<li>Sem dados</li>";
+        return;
+    }
+
+    ranking.forEach(([nome, qtd]) => {
+        const li = document.createElement("li");
+        li.innerHTML = `
+          <span>${nome}</span>
+          <span>${qtd}</span>
+        `;
+        ul.appendChild(li);
+    });
+}
+
 </script>
 </body>
 </html>
