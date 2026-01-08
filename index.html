@@ -159,24 +159,15 @@ let historicoFiltrado = [];
 
 let fullHistory = [];
 let registroSelecionado = null;
-  /* 🔹 1. VARIÁVEIS GLOBAIS */
-let paginaAtual = 1;
-const porPagina = 10;
-let fullHistory = [];
-
-/* 🔹 2. ELEMENTOS DOM */
-const searchInput = document.getElementById("searchInput");
-
-/* 🔹 3. EVENTOS */
+function irPagina(p) {
+    paginaAtual = p;
+    renderHistory(fullHistory);
+}
 searchInput.oninput = () => {
-    paginaAtual = 1;          // ← reset da página
+    paginaAtual = 1;
     renderHistory(fullHistory);
 };
 
-/* 🔹 4. FUNÇÕES */
-function renderHistory(data) {
-    ...
-}
 
 /* JSONP helper */
 function callGAS(params) {
