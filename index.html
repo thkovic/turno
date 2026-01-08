@@ -475,6 +475,7 @@ async function confirmAndDelete(){
 /* REGISTRAR */
 turnoForm.onsubmit = async e => {
     e.preventDefault();
+
     const payload = {
         acao: "registrarTurno",
         nome: document.getElementById("nome").value.trim(),
@@ -486,16 +487,22 @@ turnoForm.onsubmit = async e => {
         solucao: document.getElementById("solucao").value.trim(),
         encerramento: document.getElementById("encerramento").value || ""
     };
+
     try {
         const res = await callGAS(payload);
-        if(res && res.success){
-            alert("Registro salvo!");
-            await loadHistory(matricula.value);
+
+        if (res && res.success) {
+            alert("Registro salvo! Faça login novamente.");
+
             turnoForm.reset();
+
+            // 🔐 força logout após salvar
+            await fazerLogout();
         } else {
             alert("Erro ao salvar: " + (res && res.message ? res.message : "desconhecido"));
         }
-    } catch(e) {
+
+    } catch (e) {
         alert("Falha na requisição de registro.");
     }
 };
