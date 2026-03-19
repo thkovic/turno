@@ -155,13 +155,7 @@ button:hover{opacity:.95}
   display:flex;
   justify-content:space-between;
 }
-#btnCSV {
-  padding: 6px 10px !important;
-  font-size: 13px !important;
-  width: auto !important;
-  display: inline-block !important;
-  margin: 0 !important;
-}
+
 </style>
 </head>
 <body>
@@ -209,7 +203,7 @@ button:hover{opacity:.95}
 
   <div class="search-bar">
     <input type="text" id="searchInput" placeholder="Buscar histórico (ID, nome, equipamento, data)">
-    <button class="pdf-btn" id="btnCSV">📄 Gerar CSV</button
+    <button class="pdf-btn" id="btnPDF">📄 Gerar EXCEL</button>
     
   </div>
 
@@ -653,28 +647,28 @@ async function atualizarWatchdog(){
 }
 setInterval(atualizarWatchdog, 3000);
 atualizarWatchdog();
+  
+/* EXCEL */
+/* EXCEL */
+btnPDF.onclick = async () => {
+    try {
+        const r = await callGAS({ acao: "gerarExcel" });
 
-  document.getElementById("btnCSV").onclick = () => {
-    let dadosParaExportar;
+        if (r && r.url) {
+            window.open(r.url, "_blank");
+        } else {
+            alert("Não foi possível gerar o Excel.");
+            console.error("Resposta GAS:", r);
+        }
 
-    if (historicoFiltrado.length > 0) {
-        // Exportar apenas o que está filtrado
-        dadosParaExportar = historicoFiltrado;
-    } else {
-        // Sem filtro → exporta tudo
-        dadosParaExportar = fullHistory;
+    } catch (e) {
+        console.error(e);
+        alert("Erro ao solicitar o Excel.");
     }
-
-    const csv = gerarCSV(dadosParaExportar);
-
-    if (!csv) {
-        alert("Não há dados para exportar.");
-        return;
-    }
-
-    const nomeArquivo = "historico_" + new Date().toISOString().split("T")[0] + ".csv";
-    baixarCSV(nomeArquivo, csv);
 };
+
+
+
 // Inicialização
 loadHistory("");
 
@@ -715,53 +709,6 @@ function renderPaginacao(){
 function irPagina(p){
   paginaAtual = p;
   renderHistory(fullHistory);
-}
-  // ===================== GERAR CSV =====================
-
-// Converte linhas do sistema em CSV
-function gerarCSV(dados) {
-    if (!dados || dados.length === 0) return "";
-
-    const colunas = [
-        "ID", "Data", "Executante", "Matrícula", "Equipamento",
-        "Acionamento", "Problema", "Solução", "Encerramento"
-    ];
-
-    // Constrói o header
-    let csv = colunas.join(";") + "\n";
-
-    // Constrói as linhas
-    dados.forEach(row => {
-        const linha = [
-            row[0],
-            formatDate(row[1]),
-            row[2],
-            row[3],
-            row[4],
-            formatTime(row[5]),
-            String(row[6]).replaceAll("\n", " "),
-            String(row[7]).replaceAll("\n", " "),
-            formatTime(row[8])
-        ].map(campo => `"${campo}"`).join(";");
-
-        csv += linha + "\n";
-    });
-
-    return csv;
-}
-
-// Baixa o arquivo no navegador
-function baixarCSV(nome, conteudo) {
-    const blob = new Blob([conteudo], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = nome;
-
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
 }
 /* ================= RANKING ================= */
 function atualizarRanking(){
