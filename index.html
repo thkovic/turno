@@ -155,97 +155,11 @@ button:hover{opacity:.95}
   display:flex;
   justify-content:space-between;
 }
-/* Botão de abrir/fechar */
-.toggle-btn {
-  background: #1d3557;
-  color: #fff;
-  padding: 8px 12px;
-  border-radius: 8px;
-  border: none;
-  cursor: pointer;
-  margin: 10px;
-  font-size: 14px;
-}
 
-.toggle-btn:hover {
-  opacity: 0.9;
-}
-
-/* Caixa dobrável */
-#rankingEquipamentos {
-  max-height: 0;
-  overflow: hidden;
-  transition: max-height .35s ease;
-}
-
-/* Estado aberto */
-#rankingEquipamentos.aberto {
-  max-height: 1000px; /* espaço suficiente */
-}
-  /* Botão de abrir */
-.toggle-btn {
-  background: #1d3557;
-  color: #fff;
-  padding: 6px 14px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  margin: 10px;
-}
-
-/* Caixa do ranking começa invisível */
-#rankingEquipamentos {
-  max-height: 0;
-  overflow: hidden;
-  transition: max-height .35s ease;
-  opacity: 0;
-}
-
-/* Quando estiver aberto */
-#rankingEquipamentos.aberto {
-  max-height: 1200px; 
-  opacity: 1;
-}
-
-/* Topo com título + X */
-.ranking-topbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.close-btn {
-  background: #e63946;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  padding: 4px 8px;
-  cursor: pointer;
-  font-weight: bold;
-}
-
-.close-btn:hover {
-  opacity: 0.8;
-}
-``
 </style>
 </head>
 <body>
 <div id="watchdog">Watchdog: --</div>
-<button id="btnRankingToggle" class="toggle-btn">
-  Mostrar Ranking
-</button>
-
-<div id="rankingEquipamentos" class="ranking-box">
-  <div class="ranking-topbar">
-    <strong>Equipamentos com mais chamados</strong>
-    <button id="btnRankingClose" class="close-btn">X</button>
-  </div>
-
-  <ul id="rankingLista"></ul>
-  <div id="rankingGrafico"></div>
-</div>
-``
 
 <div class="container">
   <h1>📝 Sistema de Histórico</h1>
@@ -308,6 +222,10 @@ button:hover{opacity:.95}
     <div id="mobileHistory"></div>
   </div>
 </div>
+<button id="btnRanking"
+        style="background:#457b9d; color:white; border:none; padding:8px 14px; border-radius:6px; margin-bottom:10px;">
+  📈 Ver Ranking
+</button>
 
 <!-- MODAL -->
 <div class="modal" id="modalDetalhes" aria-hidden="true">
@@ -316,6 +234,17 @@ button:hover{opacity:.95}
     <div id="modalFields"></div>
     <div id="modalButtons" style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;"></div>
   </div>
+</div>
+<div id="rankingPage" style="display:none; margin-top:20px;">
+  <h3>🏆 Ranking de Equipamentos</h3>
+
+  <div id="rankingLista"></div>
+  <div id="rankingGrafico"></div>
+
+  <button id="btnVoltarHistorico" 
+          style="margin-top:15px; background:#1d3557; color:white; border:none; padding:10px 18px; border-radius:6px;">
+    ⇦ Voltar ao Histórico
+  </button>
 </div>
 
 <script>
@@ -519,7 +448,26 @@ function renderHistory(data) {
         `;
         m.appendChild(card);
     });
+// ======================= TROCA ENTRE HISTÓRICO E RANKING =======================
 
+const btnRanking = document.getElementById("btnRanking");
+const rankingPage = document.getElementById("rankingPage");
+const historicoDiv = document.querySelector(".history");
+const btnVoltarHistorico = document.getElementById("btnVoltarHistorico");
+
+// Abrir o ranking
+btnRanking.addEventListener("click", () => {
+  historicoDiv.style.display = "none";
+  rankingPage.style.display = "block";
+  atualizarRanking(); // gera ranking ao abrir
+});
+
+// Voltar ao Histórico
+btnVoltarHistorico.addEventListener("click", () => {
+  rankingPage.style.display = "none";
+  historicoDiv.style.display = "block";
+});
+``
   renderPaginacao();
   atualizarRanking();
 }
@@ -762,23 +710,6 @@ function irPagina(p){
   paginaAtual = p;
   renderHistory(fullHistory);
 }
- // ================= TOGGLE DO RANKING =================
-const btnRankingToggle = document.getElementById("btnRankingToggle");
-const rankingBox = document.getElementById("rankingEquipamentos");
-const btnRankingClose = document.getElementById("btnRankingClose");
-
-// Abrir/fechar com o botão principal
-btnRankingToggle.addEventListener("click", function () {
-  const aberto = rankingBox.classList.toggle("aberto");
-  btnRankingToggle.textContent = aberto ? "Esconder Ranking" : "Mostrar Ranking";
-});
-
-// Botão X para fechar imediatamente
-btnRankingClose.addEventListener("click", function () {
-  rankingBox.classList.remove("aberto");
-  btnRankingToggle.textContent = "Mostrar Ranking";
-});
-
 /* ================= RANKING ================= */
 function atualizarRanking(){
   var contagem = {};
