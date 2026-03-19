@@ -155,11 +155,40 @@ button:hover{opacity:.95}
   display:flex;
   justify-content:space-between;
 }
+/* Botão de abrir/fechar */
+.toggle-btn {
+  background: #1d3557;
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  margin: 10px;
+  font-size: 14px;
+}
 
+.toggle-btn:hover {
+  opacity: 0.9;
+}
+
+/* Caixa dobrável */
+#rankingEquipamentos {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height .35s ease;
+}
+
+/* Estado aberto */
+#rankingEquipamentos.aberto {
+  max-height: 1000px; /* espaço suficiente */
+}
 </style>
 </head>
 <body>
 <div id="watchdog">Watchdog: --</div>
+  <button id="btnRankingToggle" class="toggle-btn">
+  Mostrar Ranking
+</button>
 <div id="rankingEquipamentos">
   <strong>Equipamentos com mais chamados</strong>
   <ul id="rankingLista"></ul>
@@ -682,6 +711,14 @@ function irPagina(p){
   paginaAtual = p;
   renderHistory(fullHistory);
 }
+  // ================= TOGGLE RANKING =================
+const btnRankingToggle = document.getElementById("btnRankingToggle");
+const rankingBox = document.getElementById("rankingEquipamentos");
+
+btnRankingToggle.addEventListener("click", function () {
+  const aberto = rankingBox.classList.toggle("aberto");
+  btnRankingToggle.textContent = aberto ? "Esconder Ranking" : "Mostrar Ranking";
+});
 /* ================= RANKING ================= */
 function atualizarRanking(){
   var contagem = {};
