@@ -681,7 +681,13 @@ function irPagina(p){
   paginaAtual = p;
   renderHistory(fullHistory);
 }
+<button id="btnToggleRanking" class="toggle-ranking">
+  Mostrar Ranking
+</button>
 
+<div id="rankingContainer" class="ranking-container fechado">
+  <div id="rankingLista"></div>
+</div>
 /* ================= RANKING ================= */
 function atualizarRanking(){
   var contagem = {};
