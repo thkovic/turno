@@ -171,11 +171,6 @@ button:hover{opacity:.95}
       <div class="full-width">
         <label>Matrícula</label>
         <input id="loginMatricula" required>
-        <button id="btnRelatorioDia"
-        type="button"
-        style="background:#457b9d; color:white; margin-top:10px; padding:10px; border:none; border-radius:6px; width:100%;">
-    📄 Gerar Relatório do Dia
-</button>
       </div>
       <div class="full-width">
         <button>Entrar</button>
@@ -764,32 +759,7 @@ function atualizarRanking(){
     container.appendChild(item);
   }
 }
-<div class="modal" id="modalRelatorioDia" style="display:none;">
-  <div class="modal-content">
-    <h3>Gerar Relatório Diário</h3>
-    <label>Escolha a data:</label>
-    <input type="date" id="relatorioData"/>
 
-    <div style="margin-top:15px; display:flex; gap:10px;">
-      <button id="btnGerarPDF" style="background:#2d6a4f; color:white; padding:8px 12px; border:none; border-radius:6px;">
-        Gerar PDF
-      </button>
-      <button id="btnFecharRelatorio" style="background:#ff6b6b; color:white; padding:8px 12px; border:none; border-radius:6px;">
-        Fechar
-      </button>
-    </div>
-  </div>
-</div>
-  const modalRelatorio = document.getElementById("modalRelatorioDia");
-const btnRelatorioDia = document.getElementById("btnRelatorioDia");
-
-btnRelatorioDia.onclick = () => {
-    modalRelatorio.style.display = "flex";
-};
-
-document.getElementById("btnFecharRelatorio").onclick = () => {
-    modalRelatorio.style.display = "none";
-};
 </script>
 </body>
 </html>
