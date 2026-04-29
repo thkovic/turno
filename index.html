@@ -1,75 +1,50 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<title>Sistema de Histórico</title>
-
-<style>
-body {
-    font-family: Arial, Helvetica, sans-serif;
-}
-
-.top-user {
-    position: fixed;
-    top: 10px;
-    right: 10px;
-    background: #f3f3f3;
-    padding: 8px 12px;
-    border-radius: 6px;
-    font-weight: bold;
-}
-</style>
+    <meta charset="UTF-8">
+    <title>Sistema de Histórico</title>
 </head>
 
 <body>
 
+<!-- ✅ CONTROLE DE ACESSO (INVISÍVEL) -->
 <script>
-/* 🔐 PROTEÇÃO GLOBAL
-   Login ocorre SOMENTE no teste.html */
-const MATRICULA_ATUAL = localStorage.getItem("usuario_logado");
-const NOME_ATUAL = localStorage.getItem("usuario_nome");
-
-if (!MATRICULA_ATUAL) {
-    window.location.href = "teste.html";
+/* Login é EXCLUSIVO do teste.html */
+const __usuarioLogado = localStorage.getItem("usuario_logado");
+if (!__usuarioLogado) {
+    window.location.replace("teste.html");
 }
-</script>
-
-<!-- Usuário logado (apenas identificação) -->
-<div class="top-user">
-    Usuário: <span id="usuarioTopo"></span>
-</div>
-
-<script>
-document.getElementById("usuarioTopo").innerText =
-    NOME_ATUAL ? `${NOME_ATUAL} (${MATRICULA_ATUAL})` : MATRICULA_ATUAL;
 </script>
 
 <h1>📝 Sistema de Histórico</h1>
 
 <p>Watchdog: <span id="watchdog">--</span></p>
 
-<!-- ✅ LOGIN REMOVIDO -->
+<!-- ❌ BLOCO DE LOGIN REMOVIDO
+     TODO o HTML de login que existia aqui foi removido
+     (inputs de matrícula, botões de entrar/logout)
+-->
 
 <h2>Registrar Passagem</h2>
 
 <form id="formRegistro">
     <label>Nome *</label><br>
-    <input type="text" id="nome" required><br><br>
+    <input type="text" id="nome"><br><br>
 
     <label>Matrícula *</label><br>
     <input type="text" id="matricula" readonly><br><br>
 
     <label>Data *</label><br>
-    <input type="date" id="data" required><br><br>
+    <input type="date" id="data"><br><br>
 
     <label>Equipamento *</label><br>
-    <input type="text" id="equipamento" required><br><br>
+    <input type="text" id="equipamento"><br><br>
 
     <label>Acionamento *</label><br>
-    <input type="text" id="acionamento" required><br><br>
+    <input type="text" id="acionamento"><br><br>
 
     <label>Problema *</label><br>
-    <textarea id="problema" required></textarea><br><br>
+    <textarea id="problema"></textarea><br><br>
 
     <label>Solução</label><br>
     <textarea id="solucao"></textarea><br><br>
@@ -85,24 +60,24 @@ document.getElementById("usuarioTopo").innerText =
 <h2>📊 Histórico de Registros</h2>
 
 <table border="1" width="100%">
-<thead>
-<tr>
-    <th>ID</th>
-    <th>Data</th>
-    <th>Executante</th>
-    <th>Matrícula</th>
-    <th>Equipamento</th>
-    <th>Acionamento</th>
-    <th>Problema</th>
-    <th>Solução</th>
-    <th>Encerramento</th>
-</tr>
-</thead>
-<tbody id="tabelaHistorico">
-<tr>
-    <td colspan="9">Carregando...</td>
-</tr>
-</tbody>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Data</th>
+            <th>Executante</th>
+            <th>Matrícula</th>
+            <th>Equipamento</th>
+            <th>Acionamento</th>
+            <th>Problema</th>
+            <th>Solução</th>
+            <th>Encerramento</th>
+        </tr>
+    </thead>
+    <tbody id="tabelaHistorico">
+        <tr>
+            <td colspan="9">Carregando...</td>
+        </tr>
+    </tbody>
 </table>
 
 <br>
@@ -118,8 +93,12 @@ document.getElementById("usuarioTopo").innerText =
 const URL_API =
 "https://script.google.com/macros/s/AKfycbzzfvwV3q7PFycspM95VBVWkEDbM2iPLUxR4rCTE4LALVFXoDAN9-ZvEoZmSDLqElYTig/exec";
 
-/* Preenche dados do usuário logado */
-document.getElementById("nome").value = NOME_ATUAL || "";
+/* Dados do login centralizado */
+const MATRICULA_ATUAL = localStorage.getItem("usuario_logado");
+const NOME_ATUAL      = localStorage.getItem("usuario_nome") || "";
+
+/* Preenche automaticamente (antes vinha do login local) */
+document.getElementById("nome").value = NOME_ATUAL;
 document.getElementById("matricula").value = MATRICULA_ATUAL;
 
 /* ================== WATCHDOG ================== */
