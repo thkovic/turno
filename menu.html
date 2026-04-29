@@ -56,6 +56,12 @@
             background-color: #ffdddd;
         }
 
+        .status {
+            margin-top: 20px;
+            font-weight: bold;
+            color: red;
+        }
+
         .user {
             margin-top: 15px;
             font-weight: bold;
@@ -68,7 +74,6 @@
 <script>
     // 🔐 PROTEÇÃO GLOBAL
     const usuarioLogado = localStorage.getItem("usuario_logado");
-
     if (!usuarioLogado) {
         window.location.href = "teste.html";
     }
@@ -80,19 +85,15 @@
     <div class="box">
         <h1>🏠 Principal</h1>
 
-        <button class="btn" onclick="location.href='histor
-        </button>
-
-        projeto.html
-            📁 Projeto
-        </button>
+        <button class="btn" onclick="location.href='historico.html'</button>
 
         <button class="btn" onclick="alert('MOC em desenvolvimento')">
             🧩 MOC
         </button>
 
         <div class="user">
-            Usuário logado: <span id="usuario"></span>
+            Usuário logado:<br>
+            <span id="usuarioPrincipal"></span>
         </div>
 
         <button class="btn btn-danger" onclick="logout()">
@@ -100,13 +101,31 @@
         </button>
     </div>
 
+    <!-- PROJETO (JUNTO COM O MENU) -->
+    <div class="box">
+        <h1>📁 Projeto</h1>
+
+        <button class="btn" disabled>
+            ⚙️ PCS7 EM USO
+        </button>
+
+        <div class="status">
+            Usuário acessando projeto:<br>
+            <span id="usuarioProjeto"></span>
+        </div>
+
+        <button class="btn btn-danger" onclick="logout()">
+            🔒 Encerrar acesso
+        </button>
+    </div>
+
 </div>
 
 <script>
-    // Exibir usuário logado
-    document.getElementById("usuario").innerText = usuarioLogado;
+    // Exibir usuário nas duas colunas
+    document.getElementById("usuarioPrincipal").innerText = usuarioLogado;
+    document.getElementById("usuarioProjeto").innerText = usuarioLogado;
 
-    // Logout global
     function logout() {
         localStorage.removeItem("usuario_logado");
         window.location.href = "teste.html";
@@ -115,3 +134,4 @@
 
 </body>
 </html>
+``
