@@ -15,7 +15,6 @@ body {
     background-color: #f5f5f5;
 }
 
-/* Usuário logado */
 .top-user {
     position: fixed;
     top: 12px;
@@ -27,7 +26,6 @@ body {
     box-shadow: 0 1px 4px rgba(0,0,0,0.15);
 }
 
-/* Avisos */
 .aviso {
     position: fixed;
     top: 0;
@@ -41,7 +39,6 @@ body {
     z-index: 9999;
     display: none;
 }
-
 .vermelho { background: red; }
 .verde { background: green; }
 
@@ -56,7 +53,7 @@ body {
     border-radius: 8px;
     text-align: center;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    min-width: 340px;
+    min-width: 320px;
 }
 
 .btn {
@@ -70,15 +67,10 @@ body {
     border: none;
     cursor: pointer;
 }
-
 .btn:hover { background-color: #d6d6d6; }
 .btn-danger { background-color: #ffdddd; }
 
-.status {
-    font-weight: bold;
-    margin: 12px 0;
-}
-
+.status { font-weight: bold; margin: 12px 0; }
 .green { color: green; }
 .red { color: red; }
 </style>
@@ -86,23 +78,19 @@ body {
 
 <body>
 
-<!-- Avisos globais -->
 <div id="avisoBackup" class="aviso vermelho"></div>
 <div id="avisoBackupFeito" class="aviso verde"></div>
 
-<!-- Usuário -->
 <div class="top-user">
     Usuário: <span id="usuarioTopo"></span>
 </div>
 
 <div class="container">
 
-<!-- PRINCIPAL -->
 <div class="box">
     <h2>🏠 Principal</h2>
 
-    historico.html
-        📝 Registro de Histórico - TURNO
+    <button class="btn"📝 Registro de Histórico - TURNO
     </button>
 
     <button class="btn" onclick="alert('MOC em desenvolvimento')">
@@ -114,7 +102,6 @@ body {
     </button>
 </div>
 
-<!-- PROJETO -->
 <div class="box">
     <h2>📁 Projeto</h2>
 
@@ -136,195 +123,89 @@ body {
 </div>
 
 <script>
-document.addEventListener("DOMContentLoaded", () => {
+const GAS_URL =
+"https://script.google.com/macros/s/AKfycbzzfvwV3q7PFycspM95VBVWkEDbM2iPLUxR4rCTE4LALVFXoDAN9-ZvEoZmSDLqElYTig/exec";
 
-    /* ========= CONFIG ========= */
-    const URL_API_LOG =
-        "AKfycbzzfvwV3q7PFycspM95VBVWkEDbM2iPLUxR4rCTE4LALVFXoDAN9-ZvEoZmSDLqElYTig";
-    /* ========================== */
+const matricula = localStorage.getItem("usuario_logado");
+const nome = localStorage.getItem("usuario_nome") || "";
 
-    const matricula = localStorage.getItem("usuario_logado");
-    const nome = localStorage.getItem("usuario_nome") || "";
+if (!matricula) window.location.href = "teste.html";
 
-    if (!matricula) {
-        window.location.href = "teste.html";
-        return;
-    }
+document.getElementById("usuarioTopo").innerText = `${nome} (${matricula})`;
 
-    document.getElementById("usuarioTopo").innerText =
-        `${nome} (${matricula})`;
+const status = document.getElementById("statusPCS7");
+const btnAcessar = document.getElementById("btnAcessar");
+const btnEncerrar = document.getElementById("btnEncerrar");
+const btnBackup = document.getElementById("btnBackup");
+const aviso = document.getElementById("avisoBackup");
+const avisoFeito = document.getElementById("avisoBackupFeito");
 
-    const status = document.getElementById("statusPCS7");
-    const btnAcessar = document.getElementById("btnAcessar");
-    const btnEncerrar = document.getElementById("btnEncerrar");
-    const btnBackup = document.getElementById("btnBackup");
-
-    const aviso = document.getElementById("avisoBackup");
-    const avisoFeito = document.getElementById("avisoBackupFeito");
-
-    function piscar(el) {
-        setInterval(() => {
-            el.style.visibility =
-                el.style.visibility === "hidden" ? "visible" : "hidden";
-        }, 600);
-    }
-
-    /* ========= LOG ========= */
-    function enviarLog(tipo, dados) {
-        fetch(URL_API_LOG, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                tipo,
-                ...dados
-            })
-        }).catch(() => {
-            console.warn("Falha ao registrar log:", tipo);
-        });
-    }
-
-    function atualizarAvisos() {
-        aviso.style.display = "none";
-        avisoFeito.style.display = "none";
-        btnBackup.style.display = "none";
-
-        if (localStorage.getItem("backup_pendente") === "true") {
-            aviso.style.display = "block";
-            aviso.innerHTML =
-                "⚠ MUDANÇA FEITA – NECESSITA FAZER BACKUP<br>" +
-                "Data da alteração: " +
-                localStorage.getItem("backup_data_alteracao");
-            piscar(aviso);
-            btnBackup.style.display = "block";
-        }
-
-        if (localStorage.getItem("backup_realizado") === "true") {
-            avisoFeito.style.display = "block";
-            avisoFeito.innerHTML =
-                "✅ BACKUP REALIZADO<br>" +
-                "Data: " + localStorage.getItem("backup_data") + "<br>" +
-                "Responsável: " +
-                localStorage.getItem("backup_responsavel");
-        }
-    }
-
-    function atualizarPCS7() {
-        const emUso = localStorage.getItem("pcs7_em_uso");
-
-        if (!emUso) {
-            status.innerHTML = 'PCS7 está <span class="green">LIVRE</span>';
-            btnAcessar.style.display = "block";
-            btnEncerrar.style.display = "none";
-        } else if (emUso === matricula) {
-            status.innerText = "Você está acessando o PCS7";
-            btnAcessar.style.display = "none";
-            btnEncerrar.style.display = "block";
-        } else {
-            status.innerHTML =
-                'PCS7 em uso por matrícula: <span class="red">' + emUso + '</span>';
-            btnAcessar.style.display = "none";
-            btnEncerrar.style.display = "none";
-        }
-    }
-
-    btnAcessar.onclick = () => {
-        localStorage.setItem("pcs7_em_uso", matricula);
-        localStorage.setItem("pcs7_nome", nome);
-
-        enviarLog("logPCS7", {
-            matricula,
-            nome,
-            acao: "ACESSO PCS7",
-            obs: "Usuário iniciou sessão no PCS7"
-        });
-
-        atualizarPCS7();
-    };
-
-    btnEncerrar.onclick = () => {
-        const alterou = confirm("Foi feita alguma alteração?");
-
-        enviarLog("logPCS7", {
-            matricula,
-            nome,
-            acao: "ENCERRAMENTO PCS7",
-            obs: alterou ? "Alteração realizada" : "Sem alteração"
-        });
-
-        if (alterou) {
-            localStorage.removeItem("backup_realizado");
-            localStorage.removeItem("backup_data");
-            localStorage.removeItem("backup_responsavel");
-
-            localStorage.setItem("backup_pendente", "true");
-            localStorage.setItem(
-                "backup_data_alteracao",
-                new Date().toLocaleString()
-            );
-
-            enviarLog("logBackup", {
-                matricula,
-                nome,
-                acao: "BACKUP PENDENTE",
-                ref: "Alteração realizada no PCS7"
-            });
-        }
-
-        localStorage.removeItem("pcs7_em_uso");
-        localStorage.removeItem("pcs7_nome");
-
-        atualizarPCS7();
-        atualizarAvisos();
-    };
-
-    btnBackup.onclick = () => {
-        if (confirm("Você realizou o backup?")) {
-            localStorage.removeItem("backup_pendente");
-
-            localStorage.setItem("backup_realizado", "true");
-            localStorage.setItem("backup_data", new Date().toLocaleString());
-            localStorage.setItem(
-                "backup_responsavel",
-                `${nome} (${matricula})`
-            );
-
-            enviarLog("logBackup", {
-                matricula,
-                nome,
-                acao: "BACKUP REALIZADO",
-                ref: "Backup confirmado pelo usuário"
-            });
-
-            atualizarAvisos();
-        }
-    };
-
-    atualizarPCS7();
-    atualizarAvisos();
-});
-
-/* LOGOUT */
-function logout() {
-    localStorage.removeItem("usuario_logado");
-    localStorage.removeItem("usuario_nome");
-    window.location.href = "teste.html";
+function piscar(el){
+  setInterval(() => {
+    el.style.visibility = el.style.visibility === "hidden" ? "visible" : "hidden";
+  }, 600);
 }
-    
-sync function carregarEstadoPCS7(){
-  const estado = await callGAS({ acao:"getEstadoPCS7" });
+
+async function carregarEstadoPCS7(){
+  const res = await fetch(`${GAS_URL}?acao=getEstadoPCS7`);
+  const estado = await res.json();
+
+  aviso.style.display = "none";
+  avisoFeito.style.display = "none";
+  btnBackup.style.display = "none";
+
+  if (estado.pcs7_em_uso) {
+    status.innerHTML =
+      estado.pcs7_em_uso === matricula
+        ? "Você está acessando o PCS7"
+        : `PCS7 em uso por <span class="red">${estado.pcs7_nome}</span>`;
+  } else {
+    status.innerHTML = 'PCS7 está <span class="green">LIVRE</span>';
+  }
 
   if (estado.backup_pendente === "SIM") {
-    mostrarAvisoBackup(estado);
+    aviso.style.display = "block";
+    aviso.innerHTML =
+      "⚠ MUDANÇA FEITA – NECESSITA FAZER BACKUP<br>Data: " + estado.backup_data;
+    piscar(aviso);
+    btnBackup.style.display = "block";
   }
 
   if (estado.backup_realizado === "SIM") {
-    mostrarBackupRealizado(estado);
-  }
-
-  if (estado.pcs7_em_uso) {
-    console.log("PCS7 em uso por:", estado.pcs7_nome);
+    avisoFeito.style.display = "block";
+    avisoFeito.innerHTML =
+      "✅ BACKUP REALIZADO<br>Data: " + estado.backup_data +
+      "<br>Responsável: " + estado.backup_responsavel;
   }
 }
+
+btnAcessar.onclick = async () => {
+  await fetch(`${GAS_URL}?acao=setEstadoPCS7&matricula=${matricula}&nome=${encodeURIComponent(nome)}`);
+  carregarEstadoPCS7();
+};
+
+btnEncerrar.onclick = async () => {
+  const alterou = confirm("Foi feita alguma alteração?");
+  if (alterou) {
+    await fetch(`${GAS_URL}?acao=setBackupPendente`);
+  }
+  carregarEstadoPCS7();
+};
+
+btnBackup.onclick = async () => {
+  if (confirm("Você realizou o backup?")) {
+    await fetch(`${GAS_URL}?acao=setBackupRealizado&nome=${encodeURIComponent(nome)}`);
+    carregarEstadoPCS7();
+  }
+};
+
+function logout(){
+  localStorage.removeItem("usuario_logado");
+  localStorage.removeItem("usuario_nome");
+  window.location.href = "teste.html";
+}
+
+carregarEstadoPCS7();
 </script>
 
 </body>
