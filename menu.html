@@ -15,18 +15,33 @@ body {
     background-color: #f5f5f5;
 }
 
-/* Usuário logado no canto superior esquerdo */
 .top-user {
     position: fixed;
     top: 12px;
     left: 12px;
-    background: #ffffff;
+    background: #fff;
     padding: 10px 14px;
     border-radius: 6px;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
     font-weight: bold;
-    font-size: 14px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
 }
+
+.aviso {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    text-align: center;
+    padding: 16px;
+    font-size: 20px;
+    font-weight: bold;
+    color: #fff;
+    z-index: 9999;
+    display: none;
+}
+
+.vermelho { background: red; }
+.verde { background: green; }
 
 .container {
     display: flex;
@@ -34,7 +49,7 @@ body {
 }
 
 .box {
-    background: #ffffff;
+    background: #fff;
     padding: 35px 45px;
     border-radius: 8px;
     text-align: center;
@@ -42,145 +57,162 @@ body {
     min-width: 320px;
 }
 
-h1 {
-    margin: 0 0 20px 0;
-    font-size: 22px;
-}
-
 .btn {
-    display: block;
     width: 100%;
     padding: 14px;
-    margin: 12px 0;
+    margin: 10px 0;
     font-size: 16px;
     font-weight: bold;
-    background-color: #eaeaea;
+    background: #eaeaea;
     border-radius: 6px;
     border: none;
     cursor: pointer;
 }
 
-.btn:hover { background-color: #d6d6d6; }
-.btn-danger { background-color: #ffdddd; }
+.btn-danger { background: #ffdddd; }
+.btn:hover { background: #d6d6d6; }
 
-.status {
-    margin-top: 15px;
-    font-weight: bold;
-}
-
-.green { color: green; }
-.red { color: red; }
+.status { font-weight: bold; margin: 10px 0; }
 </style>
 </head>
-
 <body>
 
-<!-- Usuário logado -->
+<div id="avisoBackup" class="aviso vermelho"></div>
+<div id="avisoBackupFeito" class="aviso verde"></div>
+
 <div class="top-user">
-    Usuário logado: <span id="usuarioTopo"></span>
+    Usuário: <span id="usuarioTopo"></span>
 </div>
 
 <div class="container">
 
-    <!-- PRINCIPAL -->
-    <div class="box">
-        <h1>🏠 Principal</h1>
+<div class="box">
+    <h2>🏠 Principal</h2>
 
-        <button class="btn"        📝 Sistema de Histórico
-        </button>
+    <button class="btn" onclick="location   </button>
 
-        <button class="btn" onclick="alert('MOC em desenvolvimento')">
-            🧩 MOC
-        </button>
+    <button class="btn btn-danger" onclick="logout()">
+        🔒 Logout
+    </button>
+</div>
 
-        <button class="btn btn-danger" onclick="logout()">
-            🔒 Logout
-        </button>
-    </div>
+<div class="box">
+    <h2>📁 Projeto</h2>
 
-    <!-- PROJETO -->
-    <div class="box">
-        <h1>📁 Projeto</h1>
+    <div id="statusPCS7" class="status"></div>
 
-        <div id="statusPCS7" class="status"></div>
+    <button class="btn" id="btnAcessar">
+        ⚙️ Acessar PCS7
+    </button>
 
-        <button class="btn" id="btnAcessar">
-            ⚙️ Acessar PCS7
-        </button>
+    <button class="btn btn-danger" id="btnEncerrar" style="display:none">
+        🔒 Encerrar PCS7
+    </button>
 
-        <button class="btn btn-danger" id="btnEncerrar" style="display:none">
-            🔒 Encerrar PCS7
-        </button>
-    </div>
+    <button class="btn" id="btnBackup" style="display:none">
+        💾 REALIZAR BACKUP
+    </button>
+</div>
 
 </div>
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
 
-    const usuarioLogado = localStorage.getItem("usuario_logado");
-    const nomeUsuario = localStorage.getItem("usuario_nome") || "";
+    const matricula = localStorage.getItem("usuario_logado");
+    const nome = localStorage.getItem("usuario_nome") || "";
+    if (!matricula) return location.href = "teste.html";
 
-    // Proteção de login
-    if (!usuarioLogado) {
-        window.location.href = "teste.html";
-        return;
-    }
-
-    // Exibe usuário logado
-    document.getElementById("usuarioTopo").innerText =
-        nomeUsuario ? `${nomeUsuario} (${usuarioLogado})` : usuarioLogado;
+    document.getElementById("usuarioTopo").innerText = `${nome} (${matricula})`;
 
     const status = document.getElementById("statusPCS7");
     const btnAcessar = document.getElementById("btnAcessar");
     const btnEncerrar = document.getElementById("btnEncerrar");
+    const btnBackup = document.getElementById("btnBackup");
 
-    function atualizarStatusPCS7() {
-        const pcs7EmUso = localStorage.getItem("pcs7_em_uso");
+    const aviso = document.getElementById("avisoBackup");
+    const avisoFeito = document.getElementById("avisoBackupFeito");
 
-        if (!pcs7EmUso) {
-            status.innerHTML = 'PCS7 está <span class="green">LIVRE</span>';
+    function piscar(el) {
+        setInterval(() => {
+            el.style.visibility =
+            el.style.visibility === "hidden" ? "visible" : "hidden";
+        }, 600);
+    }
+
+    function atualizarAvisos() {
+        if (localStorage.getItem("backup_pendente") === "true") {
+            aviso.style.display = "block";
+            aviso.innerHTML =
+                "⚠ MUDANÇA FEITA – NECESSITA FAZER BACKUP<br>" +
+                "Data da alteração: " + localStorage.getItem("backup_data_alteracao");
+            piscar(aviso);
+            btnBackup.style.display = "block";
+        }
+        if (localStorage.getItem("backup_realizado") === "true") {
+            avisoFeito.style.display = "block";
+            avisoFeito.innerHTML =
+                "✅ BACKUP REALIZADO<br>" +
+                "Data: " + localStorage.getItem("backup_data") + "<br>" +
+                "Responsável: " + localStorage.getItem("backup_responsavel");
+        }
+    }
+
+    function atualizarPCS7() {
+        const emUso = localStorage.getItem("pcs7_em_uso");
+        if (!emUso) {
+            status.innerText = "PCS7 LIVRE";
             btnAcessar.style.display = "block";
             btnEncerrar.style.display = "none";
-        } else if (pcs7EmUso === usuarioLogado) {
-            status.innerHTML = 'Você está acessando o PCS7';
+        } else if (emUso === matricula) {
+            status.innerText = "Você está acessando o PCS7";
             btnAcessar.style.display = "none";
             btnEncerrar.style.display = "block";
         } else {
-            status.innerHTML =
-                'PCS7 em uso por matrícula: <span class="red">' + pcs7EmUso + '</span>';
+            status.innerText = "PCS7 em uso por " + emUso;
             btnAcessar.style.display = "none";
             btnEncerrar.style.display = "none";
         }
     }
 
     btnAcessar.onclick = () => {
-        if (!localStorage.getItem("pcs7_em_uso")) {
-            localStorage.setItem("pcs7_em_uso", usuarioLogado);
-            atualizarStatusPCS7();
-        }
+        localStorage.setItem("pcs7_em_uso", matricula);
+        localStorage.setItem("pcs7_nome", nome);
+        atualizarPCS7();
     };
 
     btnEncerrar.onclick = () => {
-        if (localStorage.getItem("pcs7_em_uso") === usuarioLogado) {
-            localStorage.removeItem("pcs7_em_uso");
-            atualizarStatusPCS7();
-        } else {
-            alert("Você não é o usuário que está utilizando o PCS7.");
+        const alterou = confirm("Foi feita alguma alteração?");
+        if (alterou) {
+            localStorage.setItem("backup_pendente", "true");
+            localStorage.setItem("backup_data_alteracao", new Date().toLocaleString());
+        }
+        localStorage.removeItem("pcs7_em_uso");
+        localStorage.removeItem("pcs7_nome");
+        atualizarPCS7();
+        location.reload();
+    };
+
+    btnBackup.onclick = () => {
+        if (confirm("Você realizou o backup?")) {
+            localStorage.removeItem("backup_pendente");
+            localStorage.setItem("backup_realizado", "true");
+            localStorage.setItem("backup_data", new Date().toLocaleString());
+            localStorage.setItem("backup_responsavel", `${nome} (${matricula})`);
+            location.reload();
         }
     };
 
-    atualizarStatusPCS7();
+    atualizarPCS7();
+    atualizarAvisos();
 });
 
 function logout() {
-    // ❗ Logout NÃO libera o PCS7
     localStorage.removeItem("usuario_logado");
     localStorage.removeItem("usuario_nome");
-    window.location.href = "teste.html";
+    location.href = "teste.html";
 }
 </script>
 
 </body>
 </html>
-``
