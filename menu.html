@@ -1,10 +1,9 @@
 <script>
-const GAS_URL = "https://script.google.com/macros/s/AKfycbzzfvwV3q7PFycspM95VBVWkEDbM2iPLUxR4rCTE4LALVFXoDAN9-ZvEoZmSDLqElYTig/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbxsaVBnO2wO1k0xQA35r5_k7XO-INUij8HqAqZvNk_XtgqN7OXjDQ4efxMXx_yH-lEaZg/exec";
 
-function chamarGAS(acao, params = {}, depois) {
+function chamarGAS(acao, params={}, depois) {
   const cb = "cb_" + Math.random().toString(36).slice(2);
-
-  window[cb] = function(resp){
+  window[cb] = resp => {
     delete window[cb];
     if (depois) depois(resp);
   };
@@ -15,14 +14,28 @@ function chamarGAS(acao, params = {}, depois) {
   });
 
   const s = document.createElement("script");
-  s.src = `${GAS_URL}?${qs}`;
+  s.src = GAS_URL + "?" + qs;
   document.body.appendChild(s);
 }
 
-btnAcessar.onclick = () => {
-  chamarGAS("setEstadoPCS7", {
-    matricula: localStorage.getItem("usuario_logado"),
-    nome: localStorage.getItem("usuario_nome")
-  }, carregarEstadoPCS7);
-};
+function carregarEstadoPCS7() {
+  chamarGAS("getEstadoPCS7",{}, e=>{
+    const emUso = String(e.pcs7_em_uso||"").trim();
+    const minha = String(localStorage.getItem("usuario_logado")||"").trim();
+
+    if (!emUso) {
+      status.innerHTML = 'PCS7 <span class="green">LIVRE</span>';
+      btnAcessar.style.display="block";
+      btnEncerrar.style.display="none";
+    } else if (emUso === minha) {
+      status.innerText="Você está acessando o PCS7";
+      btnAcessar.style.display="none";
+      btnEncerrar.style.display="block";
+    } else {
+      status.innerHTML='PCS7 em uso por <span class="red">'+e.pcs7_nome+'</span>';
+      btnAcessar.style.display="none";
+      btnEncerrar.style.display="none";
+    }
+  });
+}
 </script>
