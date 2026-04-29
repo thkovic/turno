@@ -1,149 +1,60 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-<meta charset="UTF-8">
-<title>Menu Principal</title>
-
-<style>
-body {
-    margin: 0;
-    height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-family: Arial, Helvetica, sans-serif;
-    background-color: #f5f5f5;
-}
-.container {
-    display: flex;
-    gap: 40px;
-}
-.box {
-    background: #ffffff;
-    padding: 35px 45px;
-    border-radius: 8px;
-    text-align: center;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    min-width: 320px;
-}
-h1 {
-    margin: 0 0 20px 0;
-    font-size: 22px;
-}
-.btn {
-    display: block;
-    width: 100%;
-    padding: 14px;
-    margin: 12px 0;
-    font-size: 16px;
-    font-weight: bold;
-    background-color: #eaeaea;
-    border-radius: 6px;
-    border: none;
-    cursor: pointer;
-}
-.btn:hover { background-color: #d6d6d6; }
-.btn-danger { background-color: #ffdddd; }
-.status {
-    margin-top: 15px;
-    font-weight: bold;
-}
-.red { color: red; }
-.green { color: green; }
-</style>
-</head>
-<body>
-
 <script>
 const usuarioLogado = localStorage.getItem("usuario_logado");
 if (!usuarioLogado) {
     window.location.href = "teste.html";
 }
-</script>
 
-<div class="container">
+document.getElementById("usuarioTopo").innerText = usuarioLogado;
 
-<!-- PRINCIPAL -->
-<div class="box">
-    <h1>🏠 Principal</h1>
+atualizarStatusPCS7();
 
-    <button class="        📝 Sistema de Histórico
-    </button>
-
-    <button class="btn" onclick="alert('MOC em desenvolvimento')">
-        🧩 MOC
-    </button>
-
-    <div class="status">
-        Usuário logado:<br>
-        <b id="usuarioPrincipal"></b>
-    </div>
-
-    <button class="btn btn-danger" onclick="logout()">
-        🔒 Logout
-    </button>
-</div>
-
-<!-- PROJETO -->
-<div class="box">
-    <h1>📁 Projeto</h1>
-
-    <div id="statusPCS7" class="status"></div>
-
-    <button class="btn" id="btnAcessar" onclick="acessarPCS7()">
-        ⚙️ Acessar PCS7
-    </button>
-
-    <button class="btn btn-danger" id="btnEncerrar" style="display:none" onclick="encerrarPCS7()">
-        🔒 Encerrar PCS7
-    </button>
-</div>
-
-</div>
-
-<script>
-document.getElementById("usuarioPrincipal").innerText = usuarioLogado;
-atualizarStatus();
-
-function atualizarStatus() {
-    const emUso = localStorage.getItem("pcs7_em_uso");
+function atualizarStatusPCS7() {
+    const pcs7EmUso = localStorage.getItem("pcs7_em_uso");
     const status = document.getElementById("statusPCS7");
     const btnAcessar = document.getElementById("btnAcessar");
     const btnEncerrar = document.getElementById("btnEncerrar");
 
-    if (!emUso) {
+    if (!pcs7EmUso) {
         status.innerHTML = 'PCS7 está <span class="green">LIVRE</span>';
         btnAcessar.style.display = "block";
         btnEncerrar.style.display = "none";
-    } else if (emUso === usuarioLogado) {
+        return;
+    }
+
+    if (pcs7EmUso === usuarioLogado) {
         status.innerHTML = 'Você está acessando o PCS7';
         btnAcessar.style.display = "none";
         btnEncerrar.style.display = "block";
     } else {
-        status.innerHTML = 'PCS7 em uso por matrícula: <span class="red">' + emUso + '</span>';
+        status.innerHTML =
+            'PCS7 em uso por matrícula: <span class="red">' + pcs7EmUso + '</span>';
         btnAcessar.style.display = "none";
         btnEncerrar.style.display = "none";
     }
 }
 
 function acessarPCS7() {
-    localStorage.setItem("pcs7_em_uso", usuarioLogado);
-    atualizarStatus();
+    // Só acessa se estiver livre
+    if (!localStorage.getItem("pcs7_em_uso")) {
+        localStorage.setItem("pcs7_em_uso", usuarioLogado);
+        atualizarStatusPCS7();
+    }
 }
 
 function encerrarPCS7() {
-    localStorage.removeItem("pcs7_em_uso");
-    atualizarStatus();
+    const pcs7EmUso = localStorage.getItem("pcs7_em_uso");
+
+    if (pcs7EmUso === usuarioLogado) {
+        localStorage.removeItem("pcs7_em_uso");
+        atualizarStatusPCS7();
+    } else {
+        alert("Você não é o usuário que está utilizando o PCS7.");
+    }
 }
 
 function logout() {
-    if (localStorage.getItem("pcs7_em_uso") === usuarioLogado) {
-        localStorage.removeItem("pcs7_em_uso");
-    }
+    // ✅ LOGOUT NÃO LIBERA PCS7
     localStorage.removeItem("usuario_logado");
     window.location.href = "teste.html";
 }
 </script>
-
-</body>
-</html>
