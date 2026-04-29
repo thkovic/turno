@@ -83,54 +83,54 @@ body {
 .red { color: red; }
 </style>
 </head>
+
 <body>
 
-<!-- Avisos -->
+<!-- Avisos globais -->
 <div id="avisoBackup" class="aviso vermelho"></div>
 <div id="avisoBackupFeito" class="aviso verde"></div>
 
-<!-- Usuário -->
+<!-- Usuário logado -->
 <div class="top-user">
     Usuário: <span id="usuarioTopo"></span>
 </div>
 
 <div class="container">
 
-<!-- PRINCIPAL -->
-<div class="box">
-    <h2>🏠 Principal</h2>
+    <!-- PRINCIPAL -->
+    <div class="box">
+        <h2>🏠 Principal</h2>
 
-    historico.html
-        📝 Registro de Histórico - TURNO
-    </button>
+        <button class="btn" onclick="location.href='historico.html'
+        </button>
 
-    <button class="btn" onclick="alert('MOC em desenvolvimento')">
-        🧩 MOC
-    </button>
+        <button class="btn" onclick="alert('MOC em desenvolvimento')">
+            🧩 MOC
+        </button>
 
-    <button class="btn btn-danger" onclick="logout()">
-        🔒 Logout
-    </button>
-</div>
+        <button class="btn btn-danger" onclick="logout()">
+            🔒 Logout
+        </button>
+    </div>
 
-<!-- PROJETO -->
-<div class="box">
-    <h2>📁 Projeto</h2>
+    <!-- PROJETO -->
+    <div class="box">
+        <h2>📁 Projeto</h2>
 
-    <div id="statusPCS7" class="status"></div>
+        <div id="statusPCS7" class="status"></div>
 
-    <button class="btn" id="btnAcessar">
-        ⚙️ Acessar PCS7
-    </button>
+        <button class="btn" id="btnAcessar">
+            ⚙️ Acessar PCS7
+        </button>
 
-    <button class="btn btn-danger" id="btnEncerrar" style="display:none">
-        🔒 Encerrar PCS7
-    </button>
+        <button class="btn btn-danger" id="btnEncerrar" style="display:none">
+            🔒 Encerrar PCS7
+        </button>
 
-    <button class="btn" id="btnBackup" style="display:none">
-        💾 REALIZAR BACKUP
-    </button>
-</div>
+        <button class="btn" id="btnBackup" style="display:none">
+            💾 REALIZAR BACKUP
+        </button>
+    </div>
 
 </div>
 
@@ -146,7 +146,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     document.getElementById("usuarioTopo").innerText =
-        `${nome} (${matricula})`;
+        nome ? `${nome} (${matricula})` : matricula;
 
     const status = document.getElementById("statusPCS7");
     const btnAcessar = document.getElementById("btnAcessar");
@@ -164,6 +164,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function atualizarAvisos() {
+        aviso.style.display = "none";
+        avisoFeito.style.display = "none";
+        btnBackup.style.display = "none";
+
         if (localStorage.getItem("backup_pendente") === "true") {
             aviso.style.display = "block";
             aviso.innerHTML =
@@ -209,36 +213,41 @@ document.addEventListener("DOMContentLoaded", () => {
         atualizarPCS7();
     };
 
-if (alterou) {
-    // ✅ invalida qualquer backup anterior
-    localStorage.removeItem("backup_realizado");
-    localStorage.removeItem("backup_data");
-    localStorage.removeItem("backup_responsavel");
+    btnEncerrar.onclick = () => {
+        const alterou = confirm("Foi feita alguma alteração?");
 
-    // ✅ marca novo backup pendente
-    localStorage.setItem("backup_pendente", "true");
-    localStorage.setItem(
-        "backup_data_alteracao",
-        new Date().toLocaleString()
-    );
-}
+        if (alterou) {
+            // invalida backup anterior
+            localStorage.removeItem("backup_realizado");
+            localStorage.removeItem("backup_data");
+            localStorage.removeItem("backup_responsavel");
+
+            localStorage.setItem("backup_pendente", "true");
+            localStorage.setItem(
+                "backup_data_alteracao",
+                new Date().toLocaleString()
+            );
         }
+
         localStorage.removeItem("pcs7_em_uso");
         localStorage.removeItem("pcs7_nome");
+
         atualizarPCS7();
-        location.reload();
+        atualizarAvisos();
     };
 
     btnBackup.onclick = () => {
         if (confirm("Você realizou o backup?")) {
             localStorage.removeItem("backup_pendente");
+
             localStorage.setItem("backup_realizado", "true");
             localStorage.setItem("backup_data", new Date().toLocaleString());
             localStorage.setItem(
                 "backup_responsavel",
                 `${nome} (${matricula})`
             );
-            location.reload();
+
+            atualizarAvisos();
         }
     };
 
@@ -246,7 +255,7 @@ if (alterou) {
     atualizarAvisos();
 });
 
-/* ✅ LOGOUT FUNCIONAL */
+/* ✅ LOGOUT GLOBAL */
 function logout() {
     localStorage.removeItem("usuario_logado");
     localStorage.removeItem("usuario_nome");
