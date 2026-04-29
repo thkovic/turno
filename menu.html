@@ -124,22 +124,25 @@ const aviso = document.getElementById("avisoBackup");
 const avisoFeito = document.getElementById("avisoBackupFeito");
 
 /* ========== JSONP CORE ========= */
+
 function chamarGAS(acao, params = {}, depois) {
-    const cb = "cb_" + Math.random().toString(36).substr(2);
+  const cb = "cb_" + Math.random().toString(36).slice(2);
 
-    window[cb] = function (ret) {
-        delete window[cb];
-        if (depois) depois(ret);
-    };
+  window[cb] = function (resp) {
+    delete window[cb];
+    if (depois) depois(resp);
+  };
 
-    let qs = `acao=${acao}&callback=${cb}`;
-    Object.keys(params).forEach(k=>{
-        qs += `&${k}=${encodeURIComponent(params[k])}`;
-    });
+  let qs = "acao=" + encodeURIComponent(acao) + "&callback=" + cb;
 
-    const s = document.createElement("script");
-    s.src = GAS_URL + "?" + qs
-    document.body.appendChild(s);
+  Object.keys(params).forEach(k => {
+    qs += "&" + encodeURIComponent(k) + "=" +
+          encodeURIComponent(params[k]);
+  });
+
+  const s = document.createElement("script");
+  s.src = GAS_URL + "?" + qs;
+  document.body.appendChild(s);
 }
 
 /* ========== ESTADO PCS7 ========= */
