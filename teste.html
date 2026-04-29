@@ -140,21 +140,32 @@ async function carregarEstadoPCS7() {
 }
 
 /* LOGIN */
-btnLogin.onclick = () => {
-  const mat = inputMatricula.value.trim();
-  if (!mat) { alert("Digite a matrícula!"); return; }
+btnLogin.onclick = async () => {
+  const matricula = inputMatricula.value.trim();
+  if (!matricula) {
+    alert("Digite a matrícula!");
+    return;
+  }
 
-  fetch(`${GAS_URL}?acao=validarMatricula&matricula=${encodeURIComponent(mat)}`)
-    .then(r => r.json())
-    .then(d => {
-      if (d.success) {
-        localStorage.setItem("usuario_logado", mat);
-        localStorage.setItem("usuario_nome", d.nome || "");
-        window.location.href = "menu.html";
-      } else {
-        alert("Matrícula não encontrada.");
-      }
-    });
+  try {
+    const res = await fetch(
+      `${URL_API}?acao=validarMatricula&matricula=${encodeURIComponent(matricula)}`
+    );
+    const dados = await res.json();
+
+    if (dados.success) {
+      localStorage.setItem("usuario_logado", matricula);
+      localStorage.setItem("usuario_nome", dados.nome || "");
+      window.location.href = "menu.html";
+    } else {
+      alert(dados.message || "Matrícula não encontrada");
+    }
+  } catch (err) {
+    console.error(err);
+    alert("Erro ao comunicar com o servidor.");
+  }
+};
+
 };
 
 /* Se já estiver logado */
