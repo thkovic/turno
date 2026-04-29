@@ -243,8 +243,6 @@ if (!__usuarioLogado) {
 }
 const GAS_URL = "https://script.google.com/macros/s/AKfycbzzfvwV3q7PFycspM95VBVWkEDbM2iPLUxR4rCTE4LALVFXoDAN9-ZvEoZmSDLqElYTig/exec";
 
-const loginForm = document.getElementById("loginForm");
-const loginDiv = document.getElementById("loginDiv");
 const registroDiv = document.getElementById("registroDiv");
 const matricula = document.getElementById("matricula");
 const turnoForm = document.getElementById("turnoForm");
@@ -426,7 +424,6 @@ btnVoltarHistorico.addEventListener("click", () => {
   rankingPage.style.display = "none";
   historicoDiv.style.display = "block";
 });
-``
   renderPaginacao();
   atualizarRanking();
 }
@@ -580,7 +577,7 @@ turnoForm.onsubmit = async e => {
         const res = await callGAS(payload);
 
         if (res && res.success) {
-            alert("Registro salvo! Faça login novamente.");
+           alert("Registro salvo com sucesso.");
 
             turnoForm.reset();
 
@@ -628,7 +625,7 @@ btnPDF.onclick = async () => {
 
 
 // Inicialização
-loadHistory("");
+loadHistory(__usuarioLogado);
 
 // Service Worker
 if ("serviceWorker" in navigator) {
