@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Sistema Principal</title>
+    <title>Login</title>
 
     <style>
         body {
@@ -25,22 +25,28 @@
         }
 
         h1 {
-            margin: 0 0 25px 0;
+            margin-bottom: 20px;
             font-size: 22px;
         }
 
+        .input {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+        }
+
         .btn {
-            display: block;
             width: 100%;
             padding: 14px;
-            margin: 12px 0;
+            margin-top: 15px;
             font-size: 16px;
             font-weight: bold;
-            color: #000;
             background-color: #eaeaea;
             border-radius: 6px;
-            text-decoration: none;
-            transition: background 0.2s ease;
+            border: none;
+            cursor: pointer;
         }
 
         .btn:hover {
@@ -50,17 +56,39 @@
 </head>
 <body>
 
-    <div class="box">
-        <h1> Principal</h1>
+<div class="box">
+    <h1>🔐 Login</h1>
 
-        <a class="btn" href="https://thkovic.github.io/turno/?">
-             Registro de Histórico - TURNO
-        </a>
+    <input
+        type="text"
+        id="matricula"
+        class="input"
+        placeholder="Digite sua matrícula"
+    />
 
-        <a class="btn" href="moc.html">
-            Registro de Mudanças e Melhoria
-        </a>
-    </div>
+    <button class="btn" onclick="login()">
+        Entrar
+    </button>
+</div>
+
+<script>
+    // Se já estiver logado, pula o login
+    if (localStorage.getItem("usuario_logado")) {
+        window.location.href = "menu.html";
+    }
+
+    function login() {
+        const matricula = document.getElementById("matricula").value.trim();
+
+        if (!matricula) {
+            alert("Digite a matrícula!");
+            return;
+        }
+
+        localStorage.setItem("usuario_logado", matricula);
+        window.location.href = "menu.html";
+    }
+</script>
 
 </body>
 </html>
