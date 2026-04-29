@@ -90,52 +90,57 @@ body {
 <div id="avisoBackup" class="aviso vermelho"></div>
 <div id="avisoBackupFeito" class="aviso verde"></div>
 
-<!-- Usuário logado -->
+<!-- Usuário -->
 <div class="top-user">
     Usuário: <span id="usuarioTopo"></span>
 </div>
 
 <div class="container">
 
-    <!-- PRINCIPAL -->
-    <div class="box">
-        <h2>🏠 Principal</h2>
+<!-- PRINCIPAL -->
+<div class="box">
+    <h2>🏠 Principal</h2>
 
-        <button class="btn" onclick="location.href='historico.html'
-        </button>
+    <button class="btn" onclick="location.href='historicoNO
+    </button>
 
-        <button class="btn" onclick="alert('MOC em desenvolvimento')">
-            🧩 MOC
-        </button>
+    <button class="btn" onclick="alert('MOC em desenvolvimento')">
+        🧩 MOC
+    </button>
 
-        <button class="btn btn-danger" onclick="logout()">
-            🔒 Logout
-        </button>
-    </div>
+    <button class="btn btn-danger" onclick="logout()">
+        🔒 Logout
+    </button>
+</div>
 
-    <!-- PROJETO -->
-    <div class="box">
-        <h2>📁 Projeto</h2>
+<!-- PROJETO -->
+<div class="box">
+    <h2>📁 Projeto</h2>
 
-        <div id="statusPCS7" class="status"></div>
+    <div id="statusPCS7" class="status"></div>
 
-        <button class="btn" id="btnAcessar">
-            ⚙️ Acessar PCS7
-        </button>
+    <button class="btn" id="btnAcessar">
+        ⚙️ Acessar PCS7
+    </button>
 
-        <button class="btn btn-danger" id="btnEncerrar" style="display:none">
-            🔒 Encerrar PCS7
-        </button>
+    <button class="btn btn-danger" id="btnEncerrar" style="display:none">
+        🔒 Encerrar PCS7
+    </button>
 
-        <button class="btn" id="btnBackup" style="display:none">
-            💾 REALIZAR BACKUP
-        </button>
-    </div>
+    <button class="btn" id="btnBackup" style="display:none">
+        💾 REALIZAR BACKUP
+    </button>
+</div>
 
 </div>
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
+
+    /* ========= CONFIG ========= */
+    const URL_API_LOG =
+        "AKfycbzzfvwV3q7PFycspM95VBVWkEDbM2iPLUxR4rCTE4LALVFXoDAN9-ZvEoZmSDLqElYTig";
+    /* ========================== */
 
     const matricula = localStorage.getItem("usuario_logado");
     const nome = localStorage.getItem("usuario_nome") || "";
@@ -146,7 +151,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     document.getElementById("usuarioTopo").innerText =
-        nome ? `${nome} (${matricula})` : matricula;
+        `${nome} (${matricula})`;
 
     const status = document.getElementById("statusPCS7");
     const btnAcessar = document.getElementById("btnAcessar");
@@ -161,6 +166,20 @@ document.addEventListener("DOMContentLoaded", () => {
             el.style.visibility =
                 el.style.visibility === "hidden" ? "visible" : "hidden";
         }, 600);
+    }
+
+    /* ========= LOG ========= */
+    function enviarLog(tipo, dados) {
+        fetch(URL_API_LOG, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                tipo,
+                ...dados
+            })
+        }).catch(() => {
+            console.warn("Falha ao registrar log:", tipo);
+        });
     }
 
     function atualizarAvisos() {
@@ -210,14 +229,28 @@ document.addEventListener("DOMContentLoaded", () => {
     btnAcessar.onclick = () => {
         localStorage.setItem("pcs7_em_uso", matricula);
         localStorage.setItem("pcs7_nome", nome);
+
+        enviarLog("logPCS7", {
+            matricula,
+            nome,
+            acao: "ACESSO PCS7",
+            obs: "Usuário iniciou sessão no PCS7"
+        });
+
         atualizarPCS7();
     };
 
     btnEncerrar.onclick = () => {
         const alterou = confirm("Foi feita alguma alteração?");
 
+        enviarLog("logPCS7", {
+            matricula,
+            nome,
+            acao: "ENCERRAMENTO PCS7",
+            obs: alterou ? "Alteração realizada" : "Sem alteração"
+        });
+
         if (alterou) {
-            // invalida backup anterior
             localStorage.removeItem("backup_realizado");
             localStorage.removeItem("backup_data");
             localStorage.removeItem("backup_responsavel");
@@ -227,6 +260,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 "backup_data_alteracao",
                 new Date().toLocaleString()
             );
+
+            enviarLog("logBackup", {
+                matricula,
+                nome,
+                acao: "BACKUP PENDENTE",
+                ref: "Alteração realizada no PCS7"
+            });
         }
 
         localStorage.removeItem("pcs7_em_uso");
@@ -247,6 +287,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 `${nome} (${matricula})`
             );
 
+            enviarLog("logBackup", {
+                matricula,
+                nome,
+                acao: "BACKUP REALIZADO",
+                ref: "Backup confirmado pelo usuário"
+            });
+
             atualizarAvisos();
         }
     };
@@ -255,7 +302,7 @@ document.addEventListener("DOMContentLoaded", () => {
     atualizarAvisos();
 });
 
-/* ✅ LOGOUT GLOBAL */
+/* LOGOUT */
 function logout() {
     localStorage.removeItem("usuario_logado");
     localStorage.removeItem("usuario_nome");
