@@ -212,7 +212,10 @@ button:hover{opacity:.95}
         style="background:#457b9d; color:white; border:none; padding:8px 14px; border-radius:6px; margin-bottom:10px;">
   📈 Ver Ranking
 </button>
-
+<button onclick="voltarMenu()"
+        style="background:#6c757d; color:white; border:none; padding:8px 14px; border-radius:6px; margin-bottom:10px;">
+  ⇦ Voltar ao Menu
+</button>
 <!-- MODAL -->
 <div class="modal" id="modalDetalhes" aria-hidden="true">
   <div class="modal-content" role="dialog" aria-modal="true">
@@ -714,7 +717,9 @@ function atualizarRanking(){
     container.appendChild(item);
   }
 }
-
+function voltarMenu() {
+    window.location.href = "menu.html";
+}
 </script>
 </body>
 </html>
