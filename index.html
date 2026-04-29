@@ -164,9 +164,22 @@ button:hover{opacity:.95}
 <div class="container">
   <h1>📝 Sistema de Histórico</h1>
 
+  <!-- LOGIN -->
+  <div id="loginDiv">
+    <h3>🔐 Login</h3>
+    <form id="loginForm" class="full-width">
+      <div class="full-width">
+        <label>Matrícula</label>
+        <input id="loginMatricula" required>
+      </div>
+      <div class="full-width">
+        <button>Entrar</button>
+      </div>
+    </form>
+  </div>
 
   <!-- REGISTRO -->
-  <div id="registroDiv">
+  <div id="registroDiv" style="display:none;">
     <h3>Registrar Passagem</h3>
     <form id="turnoForm">
       <div><label>Nome *</label><input id="nome" required></div>
@@ -179,6 +192,7 @@ button:hover{opacity:.95}
       <div><label>Encerramento</label><input type="time" id="encerramento"></div>
       <div class="full-width">
         <button id="btnSubmit">Registrar</button>
+        <button type="button" id="btnLogout" style="background:#ff6b6b;margin-top:8px;">Logout</button>
       </div>
     </form>
   </div>
@@ -212,10 +226,7 @@ button:hover{opacity:.95}
         style="background:#457b9d; color:white; border:none; padding:8px 14px; border-radius:6px; margin-bottom:10px;">
   📈 Ver Ranking
 </button>
-<button onclick="voltarMenu()"
-        style="background:#6c757d; color:white; border:none; padding:8px 14px; border-radius:6px; margin-bottom:10px;">
-  ⇦ Voltar ao Menu
-</button>
+
 <!-- MODAL -->
 <div class="modal" id="modalDetalhes" aria-hidden="true">
   <div class="modal-content" role="dialog" aria-modal="true">
@@ -237,15 +248,10 @@ button:hover{opacity:.95}
 </div>
 
 <script>
-    /* LOGIN CENTRALIZADO NO teste.html */
-const __usuarioLogado = localStorage.getItem("usuario_logado");
-const __nomeUsuario   = localStorage.getItem("usuario_nome");
-
-if (!__usuarioLogado) {
-  window.location.replace("teste.html");
-}
 const GAS_URL = "https://script.google.com/macros/s/AKfycbzzfvwV3q7PFycspM95VBVWkEDbM2iPLUxR4rCTE4LALVFXoDAN9-ZvEoZmSDLqElYTig/exec";
 
+const loginForm = document.getElementById("loginForm");
+const loginDiv = document.getElementById("loginDiv");
 const registroDiv = document.getElementById("registroDiv");
 const matricula = document.getElementById("matricula");
 const turnoForm = document.getElementById("turnoForm");
@@ -266,11 +272,6 @@ function irPagina(p) {
     paginaAtual = p;
     renderHistory(fullHistory);
 }
-    
-// Preenche dados do usuário autenticado via teste.html
-document.getElementById("nome").value = __nomeUsuario || "";
-document.getElementById("matricula").value = __usuarioLogado;
-
 searchInput.oninput = () => {
     paginaAtual = 1;
     renderHistory(fullHistory);
@@ -295,6 +296,45 @@ function callGAS(params) {
         document.body.appendChild(script);
     });
 }
+
+/* LOGIN */
+loginForm.onsubmit = async (e) => {
+    e.preventDefault();
+    const mat = document.getElementById("loginMatricula").value.trim();
+    if (!mat) {
+        alert("Informe a matrícula.");
+        return;
+    }
+    loginDiv.style.display = "none";
+    registroDiv.style.display = "block";
+    matricula.value = mat;
+    await loadHistory(mat);
+    logDiv.style.display = (mat === "991631240") ? "block" : "none";
+    try {
+        await callGAS({acao:"registrarLog", matricula: mat, acaoTipo:"Login"});
+    } catch (err) {
+        console.error("Erro ao registrar log de login:", err);
+    }
+};
+
+/* LOGOUT */
+async function fazerLogout() {
+    await callGAS({
+        acao: "registrarLog",
+        matricula: matricula.value,
+        acaoTipo: "Logout"
+    });
+
+    registroDiv.style.display = "none";
+    loginDiv.style.display = "block";
+    turnoForm.reset();
+    matricula.value = "";
+
+    await loadHistory("");
+    logDiv.style.display = "none";
+}
+
+document.getElementById("btnLogout").onclick = fazerLogout;
 
 /* FUNÇÕES DE FORMATO */
 function formatDate(value){
@@ -427,6 +467,7 @@ btnVoltarHistorico.addEventListener("click", () => {
   rankingPage.style.display = "none";
   historicoDiv.style.display = "block";
 });
+``
   renderPaginacao();
   atualizarRanking();
 }
@@ -580,11 +621,12 @@ turnoForm.onsubmit = async e => {
         const res = await callGAS(payload);
 
         if (res && res.success) {
-           alert("Registro salvo com sucesso.");
+            alert("Registro salvo! Faça login novamente.");
 
             turnoForm.reset();
 
             // 🔐 força logout após salvar
+            await fazerLogout();
         } else {
             alert("Erro ao salvar: " + (res && res.message ? res.message : "desconhecido"));
         }
@@ -628,7 +670,7 @@ btnPDF.onclick = async () => {
 
 
 // Inicialização
-loadHistory(__usuarioLogado);
+loadHistory("");
 
 // Service Worker
 if ("serviceWorker" in navigator) {
@@ -717,9 +759,7 @@ function atualizarRanking(){
     container.appendChild(item);
   }
 }
-function voltarMenu() {
-    window.location.href = "menu.html";
-}
+
 </script>
 </body>
 </html>
