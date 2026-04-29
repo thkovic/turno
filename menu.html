@@ -138,7 +138,7 @@ function chamarGAS(acao, params = {}, depois) {
     });
 
     const s = document.createElement("script");
-    s.src = `${GAS_URL}?${qs}`;
+    s.src = GAS_URL + "?" + qs
     document.body.appendChild(s);
 }
 
