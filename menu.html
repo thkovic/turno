@@ -2,313 +2,78 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Menu Principal</title>
+<title>Sistema de Histórico</title>
 
 <style>
 body {
-    margin: 0;
-    height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
     font-family: Arial, Helvetica, sans-serif;
-    background-color: #f5f5f5;
 }
 
-/* Usuário logado */
 .top-user {
     position: fixed;
-    top: 12px;
-    left: 12px;
-    background: #ffffff;
-    padding: 10px 14px;
+    top: 10px;
+    right: 10px;
+    background: #f3f3f3;
+    padding: 8px 12px;
     border-radius: 6px;
     font-weight: bold;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
 }
-
-/* Avisos */
-.aviso {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    text-align: center;
-    padding: 16px;
-    font-size: 20px;
-    font-weight: bold;
-    color: white;
-    z-index: 9999;
-    display: none;
-}
-
-.vermelho { background: red; }
-.verde { background: green; }
-
-.container {
-    display: flex;
-    gap: 40px;
-}
-
-.box {
-    background: #ffffff;
-    padding: 35px 45px;
-    border-radius: 8px;
-    text-align: center;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    min-width: 340px;
-}
-
-.btn {
-    width: 100%;
-    padding: 14px;
-    margin: 10px 0;
-    font-size: 16px;
-    font-weight: bold;
-    background-color: #eaeaea;
-    border-radius: 6px;
-    border: none;
-    cursor: pointer;
-}
-
-.btn:hover { background-color: #d6d6d6; }
-.btn-danger { background-color: #ffdddd; }
-
-.status {
-    font-weight: bold;
-    margin: 12px 0;
-}
-
-.green { color: green; }
-.red { color: red; }
 </style>
 </head>
 
 <body>
 
-<!-- Avisos globais -->
-<div id="avisoBackup" class="aviso vermelho"></div>
-<div id="avisoBackupFeito" class="aviso verde"></div>
-
-<!-- Usuário -->
-<div class="top-user">
-    Usuário: <span id="usuarioTopo"></span>
-</div>
-
-<div class="container">
-
-<!-- PRINCIPAL -->
-<div class="box">
-    <h2>🏠 Principal</h2>
-
-    <button class="btn" onclick="location.href='historicoNO
-    </button>
-
-    <button class="btn" onclick="/index.html">
-        🧩 MOC
-    </button>
-
-    <button class="btn btn-danger" onclick="logout()">
-        🔒 Logout
-    </button>
-</div>
-
-<!-- PROJETO -->
-<div class="box">
-    <h2>📁 Projeto</h2>
-
-    <div id="statusPCS7" class="status"></div>
-
-    <button class="btn" id="btnAcessar">
-        ⚙️ Acessar PCS7
-    </button>
-
-    <button class="btn btn-danger" id="btnEncerrar" style="display:none">
-        🔒 Encerrar PCS7
-    </button>
-
-    <button class="btn" id="btnBackup" style="display:none">
-        💾 REALIZAR BACKUP
-    </button>
-</div>
-
-</div>
-
 <script>
-document.addEventListener("DOMContentLoaded", () => {
+/* 🔐 PROTEÇÃO GLOBAL
+   Login ocorre SOMENTE no teste.html */
+const MATRICULA_ATUAL = localStorage.getItem("usuario_logado");
+const NOME_ATUAL = localStorage.getItem("usuario_nome");
 
-    /* ========= CONFIG ========= */
-    const URL_API_LOG =
-        "AKfycbzzfvwV3q7PFycspM95VBVWkEDbM2iPLUxR4rCTE4LALVFXoDAN9-ZvEoZmSDLqElYTig";
-    /* ========================== */
-
-    const matricula = localStorage.getItem("usuario_logado");
-    const nome = localStorage.getItem("usuario_nome") || "";
-
-    if (!matricula) {
-        window.location.href = "teste.html";
-        return;
-    }
-
-    document.getElementById("usuarioTopo").innerText =
-        `${nome} (${matricula})`;
-
-    const status = document.getElementById("statusPCS7");
-    const btnAcessar = document.getElementById("btnAcessar");
-    const btnEncerrar = document.getElementById("btnEncerrar");
-    const btnBackup = document.getElementById("btnBackup");
-
-    const aviso = document.getElementById("avisoBackup");
-    const avisoFeito = document.getElementById("avisoBackupFeito");
-
-    function piscar(el) {
-        setInterval(() => {
-            el.style.visibility =
-                el.style.visibility === "hidden" ? "visible" : "hidden";
-        }, 600);
-    }
-
-    /* ========= LOG ========= */
-    function enviarLog(tipo, dados) {
-        fetch(URL_API_LOG, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                tipo,
-                ...dados
-            })
-        }).catch(() => {
-            console.warn("Falha ao registrar log:", tipo);
-        });
-    }
-
-    function atualizarAvisos() {
-        aviso.style.display = "none";
-        avisoFeito.style.display = "none";
-        btnBackup.style.display = "none";
-
-        if (localStorage.getItem("backup_pendente") === "true") {
-            aviso.style.display = "block";
-            aviso.innerHTML =
-                "⚠ MUDANÇA FEITA – NECESSITA FAZER BACKUP<br>" +
-                "Data da alteração: " +
-                localStorage.getItem("backup_data_alteracao");
-            piscar(aviso);
-            btnBackup.style.display = "block";
-        }
-
-        if (localStorage.getItem("backup_realizado") === "true") {
-            avisoFeito.style.display = "block";
-            avisoFeito.innerHTML =
-                "✅ BACKUP REALIZADO<br>" +
-                "Data: " + localStorage.getItem("backup_data") + "<br>" +
-                "Responsável: " +
-                localStorage.getItem("backup_responsavel");
-        }
-    }
-
-    function atualizarPCS7() {
-        const emUso = localStorage.getItem("pcs7_em_uso");
-
-        if (!emUso) {
-            status.innerHTML = 'PCS7 está <span class="green">LIVRE</span>';
-            btnAcessar.style.display = "block";
-            btnEncerrar.style.display = "none";
-        } else if (emUso === matricula) {
-            status.innerText = "Você está acessando o PCS7";
-            btnAcessar.style.display = "none";
-            btnEncerrar.style.display = "block";
-        } else {
-            status.innerHTML =
-                'PCS7 em uso por matrícula: <span class="red">' + emUso + '</span>';
-            btnAcessar.style.display = "none";
-            btnEncerrar.style.display = "none";
-        }
-    }
-
-    btnAcessar.onclick = () => {
-        localStorage.setItem("pcs7_em_uso", matricula);
-        localStorage.setItem("pcs7_nome", nome);
-
-        enviarLog("logPCS7", {
-            matricula,
-            nome,
-            acao: "ACESSO PCS7",
-            obs: "Usuário iniciou sessão no PCS7"
-        });
-
-        atualizarPCS7();
-    };
-
-    btnEncerrar.onclick = () => {
-        const alterou = confirm("Foi feita alguma alteração?");
-
-        enviarLog("logPCS7", {
-            matricula,
-            nome,
-            acao: "ENCERRAMENTO PCS7",
-            obs: alterou ? "Alteração realizada" : "Sem alteração"
-        });
-
-        if (alterou) {
-            localStorage.removeItem("backup_realizado");
-            localStorage.removeItem("backup_data");
-            localStorage.removeItem("backup_responsavel");
-
-            localStorage.setItem("backup_pendente", "true");
-            localStorage.setItem(
-                "backup_data_alteracao",
-                new Date().toLocaleString()
-            );
-
-            enviarLog("logBackup", {
-                matricula,
-                nome,
-                acao: "BACKUP PENDENTE",
-                ref: "Alteração realizada no PCS7"
-            });
-        }
-
-        localStorage.removeItem("pcs7_em_uso");
-        localStorage.removeItem("pcs7_nome");
-
-        atualizarPCS7();
-        atualizarAvisos();
-    };
-
-    btnBackup.onclick = () => {
-        if (confirm("Você realizou o backup?")) {
-            localStorage.removeItem("backup_pendente");
-
-            localStorage.setItem("backup_realizado", "true");
-            localStorage.setItem("backup_data", new Date().toLocaleString());
-            localStorage.setItem(
-                "backup_responsavel",
-                `${nome} (${matricula})`
-            );
-
-            enviarLog("logBackup", {
-                matricula,
-                nome,
-                acao: "BACKUP REALIZADO",
-                ref: "Backup confirmado pelo usuário"
-            });
-
-            atualizarAvisos();
-        }
-    };
-
-    atualizarPCS7();
-    atualizarAvisos();
-});
-
-/* LOGOUT */
-function logout() {
-    localStorage.removeItem("usuario_logado");
-    localStorage.removeItem("usuario_nome");
+if (!MATRICULA_ATUAL) {
     window.location.href = "teste.html";
 }
 </script>
 
-</body>
-</html>
+<!-- Usuário logado (apenas identificação) -->
+<div class="top-user">
+    Usuário: <span id="usuarioTopo"></span>
+</div>
+
+<script>
+document.getElementById("usuarioTopo").innerText =
+    NOME_ATUAL ? `${NOME_ATUAL} (${MATRICULA_ATUAL})` : MATRICULA_ATUAL;
+</script>
+
+<h1>📝 Sistema de Histórico</h1>
+
+<p>Watchdog: <span id="watchdog">--</span></p>
+
+<!-- ✅ LOGIN REMOVIDO -->
+
+<h2>Registrar Passagem</h2>
+
+<form id="formRegistro">
+    <label>Nome *</label><br>
+    <input type="text" id="nome" required><br><br>
+
+    <label>Matrícula *</label><br>
+    <input type="text" id="matricula" readonly><br><br>
+
+    <label>Data *</label><br>
+    <input type="date" id="data" required><br><br>
+
+    <label>Equipamento *</label><br>
+    <input type="text" id="equipamento" required><br><br>
+
+    <label>Acionamento *</label><br>
+    <input type="text" id="acionamento" required><br><br>
+
+    <label>Problema *</label><br>
+    <textarea id="problema" required></textarea><br><br>
+
+    <label>Solução</label><br>
+    <textarea id="solucao"></textarea><br><br>
+
+    <label>Encerramento</label><br>
+    <textarea id="encerramento"></textarea><br><br>
+
