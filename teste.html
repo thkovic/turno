@@ -25,9 +25,17 @@ body {
 }
 
 h1 {
-    margin-bottom: 20px;
+    margin-bottom: 15px;
     font-size: 22px;
 }
+
+.status {
+    margin-bottom: 15px;
+    font-weight: bold;
+}
+
+.green { color: green; }
+.red { color: red; }
 
 input {
     width: 100%;
@@ -49,7 +57,12 @@ button {
     cursor: pointer;
 }
 
-button:hover {
+button:disabled {
+    background: #eee;
+    cursor: not-allowed;
+}
+
+button:hover:not(:disabled) {
     background-color: #d6d6d6;
 }
 </style>
@@ -60,16 +73,19 @@ button:hover {
 <div class="box">
     <h1>🔐 Login</h1>
 
+    <!-- Status PCS7 -->
+    <div id="statusPCS7" class="status"></div>
+
     <input id="matricula" placeholder="Digite sua matrícula" />
     <button id="btnLogin">Entrar</button>
 </div>
 
 <script>
 /* ========= CONFIG ========= */
-const GAS_URL =
-"https://script.google.com/macros/s/AKfycbxsaVBnO2wO1k0xQA35r5_k7XO-INUij8HqAqZvNk_XtgqN7OXjDQ4efxMXx_yH-lEaZg/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbxsaVBnO2wO1k0xQA35r5_k7XO-INUij8HqAqZvNk_XtgqN7OXjDQ4efxMXx_yH-lEaZg/exec";
 /* ========================== */
 
+const statusPCS7 = document.getElementById("statusPCS7");
 const inputMatricula = document.getElementById("matricula");
 const btnLogin = document.getElementById("btnLogin");
 
@@ -90,6 +106,25 @@ function chamarGAS(acao, params = {}, depois) {
     const s = document.createElement("script");
     s.src = GAS_URL + "?" + qs;
     document.body.appendChild(s);
+}
+
+/* ========= ESTADO PCS7 ========= */
+function carregarEstadoPCS7() {
+    chamarGAS("getEstadoPCS7", {}, (estado) => {
+        const emUso = String(estado.pcs7_em_uso || "").trim();
+
+        if (!emUso) {
+            statusPCS7.innerHTML =
+                'PCS7 está <span class="green">LIVRE</span>';
+            btnLogin.disabled = false;
+        } else {
+            statusPCS7.innerHTML =
+                'PCS7 em uso por <span class="red">' +
+                estado.pcs7_nome + " (" + emUso + ")" +
+                '</span>';
+            btnLogin.disabled = true;
+        }
+    });
 }
 
 /* ========= LOGIN ========= */
@@ -120,6 +155,9 @@ btnLogin.onclick = () => {
 if (localStorage.getItem("usuario_logado")) {
     window.location.href = "menu.html";
 }
+
+/* Init */
+carregarEstadoPCS7();
 </script>
 
 </body>
