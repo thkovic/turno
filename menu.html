@@ -1,3 +1,111 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Menu Principal</title>
+
+<style>
+body {
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: Arial, Helvetica, sans-serif;
+    background-color: #f5f5f5;
+}
+.top-user {
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    background: #ffffff;
+    padding: 10px 14px;
+    border-radius: 6px;
+    font-weight: bold;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+}
+.aviso {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    text-align: center;
+    padding: 16px;
+    font-size: 20px;
+    font-weight: bold;
+    color: white;
+    z-index: 9999;
+    display: none;
+}
+.vermelho{background:red}
+.verde{background:green}
+.container{display:flex;gap:40px}
+.box{
+    background:#fff;
+    padding:35px 45px;
+    border-radius:8px;
+    text-align:center;
+    box-shadow:0 2px 8px rgba(0,0,0,.1);
+    min-width:320px
+}
+.btn{
+    width:100%;
+    padding:14px;
+    margin:10px 0;
+    font-size:16px;
+    font-weight:bold;
+    background:#eaeaea;
+    border-radius:6px;
+    border:none;
+    cursor:pointer
+}
+.btn:hover{background:#d6d6d6}
+.btn-danger{background:#ffdddd}
+.status{font-weight:bold;margin:12px 0}
+.green{color:green}
+.red{color:red}
+</style>
+</head>
+
+<body>
+
+<div id="avisoBackup" class="aviso vermelho"></div>
+<div id="avisoBackupFeito" class="aviso verde"></div>
+
+<div class="top-user">
+    Usuário: <span id="usuarioTopo"></span>
+</div>
+
+<div class="container">
+
+<div class="box">
+    <h2>🏠 Principal</h2>
+
+    index.html
+        📝 Registro de Histórico - TURNO
+    </button>
+
+    <button class="btn" onclick="alert('MOC em desenvolvimento')">
+        🧩 MOC
+    </button>
+
+    <button class="btn btn-danger" onclick="logout()">
+        🔒 Logout
+    </button>
+</div>
+
+<div class="box">
+    <h2>📁 Projeto</h2>
+
+    <div id="statusPCS7" class="status"></div>
+
+    <button class="btn" id="btnAcessar">⚙️ Acessar PCS7</button>
+    <button class="btn btn-danger" id="btnEncerrar" style="display:none">🔒 Encerrar PCS7</button>
+    <button class="btn" id="btnBackup" style="display:none">💾 REALIZAR BACKUP</button>
+</div>
+
+</div>
+
 <script>
 const GAS_URL = "https://script.google.com/macros/s/AKfycbzzfvwV3q7PFycspM95VBVWkEDbM2iPLUxR4rCTE4LALVFXoDAN9-ZvEoZmSDLqElYTig/exec";
 
@@ -26,3 +134,6 @@ btnAcessar.onclick = () => {
   }, carregarEstadoPCS7);
 };
 </script>
+
+</body>
+</html>
