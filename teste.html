@@ -77,11 +77,14 @@ button:hover { background-color: #d6d6d6; }
 
 <body>
 
+<!-- Avisos -->
 <div id="avisoBackup" class="aviso vermelho"></div>
 <div id="avisoBackupFeito" class="aviso verde"></div>
 
 <div class="box">
     <h1>🔐 Login</h1>
+
+    <!-- Status PCS7 -->
     <div id="statusPCS7" class="status"></div>
 
     <input id="matricula" placeholder="Digite sua matrícula" />
@@ -108,74 +111,91 @@ function piscar(el){
   }, 650);
 }
 
-/* ESTADO PCS7 */
-async function carregarEstadoPCS7() {
-  const res = await fetch(`${GAS_URL}?acao=getEstadoPCS7`);
-  const estado = await res.json();
+/* ========= JSONP CORE ========= */
+function chamarGAS(acao, params = {}, depois) {
+  const cb = "cb_" + Math.random().toString(36).slice(2);
 
-  avisoBackup.style.display = "none";
-  avisoBackupFeito.style.display = "none";
+  window[cb] = function (resp) {
+    delete window[cb];
+    if (depois) depois(resp);
+  };
 
-  if (!estado.pcs7_em_uso) {
-    statusPCS7.innerHTML =
-      'PCS7 está <span class="green-text">LIVRE</span>';
-  } else {
-    statusPCS7.innerHTML =
-      'PCS7 em uso por:<br><span class="red-text">' +
-      estado.pcs7_nome + " (" + estado.pcs7_em_uso + ")" +
-      "</span>";
-  }
+  let qs = "acao=" + encodeURIComponent(acao) + "&callback=" + cb;
+  Object.keys(params).forEach(k => {
+    qs += "&" + encodeURIComponent(k) + "=" +
+          encodeURIComponent(params[k]);
+  });
 
-  if (estado.backup_pendente === "SIM") {
-    avisoBackup.style.display = "block";
-    avisoBackup.innerHTML =
-      "⚠ MUDANÇA FEITA – NECESSITA FAZER BACKUP<br>" +
-      "Data: " + estado.backup_data;
-    piscar(avisoBackup);
-  }
-
-  if (estado.backup_realizado === "SIM") {
-    avisoBackupFeito.style.display = "block";
-    avisoBackupFeito.innerHTML =
-      "✅ BACKUP REALIZADO<br>" +
-      "Data: " + estado.backup_data +
-      "<br>Responsável: " + estado.backup_responsavel;
-  }
+  const s = document.createElement("script");
+  s.src = GAS_URL + "?" + qs;
+  document.body.appendChild(s);
 }
 
-/* LOGIN */
-btnLogin.onclick = async () => {
+/* ========= ESTADO PCS7 ========= */
+function carregarEstadoPCS7() {
+  chamarGAS("getEstadoPCS7", {}, (estado) => {
+
+    avisoBackup.style.display = "none";
+    avisoBackupFeito.style.display = "none";
+
+    if (!estado.pcs7_em_uso) {
+      statusPCS7.innerHTML =
+        'PCS7 está <span class="green-text">LIVRE</span>';
+    } else {
+      statusPCS7.innerHTML =
+        'PCS7 em uso por:<br><span class="red-text">' +
+        estado.pcs7_nome + " (" + estado.pcs7_em_uso + ")" +
+        '</span>';
+    }
+
+    if (estado.backup_pendente === "SIM") {
+      avisoBackup.style.display = "block";
+      avisoBackup.innerHTML =
+        "⚠ MUDANÇA FEITA – NECESSITA FAZER BACKUP<br>" +
+        "Data: " + (estado.backup_data || "");
+      piscar(avisoBackup);
+    }
+
+    if (estado.backup_realizado === "SIM") {
+      avisoBackupFeito.style.display = "block";
+      avisoBackupFeito.innerHTML =
+        "✅ BACKUP REALIZADO<br>" +
+        "Data: " + estado.backup_data +
+        "<br>Responsável: " + estado.backup_responsavel;
+    }
+  });
+}
+
+/* ========= LOGIN ========= */
+btnLogin.onclick = () => {
   const matricula = inputMatricula.value.trim();
+
   if (!matricula) {
     alert("Digite a matrícula!");
     return;
   }
 
-  try {
-    const res = await fetch(
-      `${GAS_URL}?acao=validarMatricula&matricula=${encodeURIComponent(matricula)}`
-    );
-    const dados = await res.json();
-
-    if (dados.success) {
-      localStorage.setItem("usuario_logado", matricula);
-      localStorage.setItem("usuario_nome", dados.nome || "");
-      window.location.href = "menu.html";
-    } else {
-      alert(dados.message || "Matrícula não encontrada");
+  chamarGAS(
+    "validarMatricula",
+    { matricula },
+    (dados) => {
+      if (dados.success) {
+        localStorage.setItem("usuario_logado", matricula);
+        localStorage.setItem("usuario_nome", dados.nome || "");
+        window.location.href = "menu.html";
+      } else {
+        alert(dados.message || "Matrícula não encontrada");
+      }
     }
-  } catch (err) {
-    console.error(err);
-    alert("Erro ao comunicar com o servidor.");
-  }
+  );
 };
 
-/* Se já estiver logado */
+/* Já logado */
 if (localStorage.getItem("usuario_logado")) {
   window.location.href = "menu.html";
 }
 
-/* Inicialização */
+/* Init */
 carregarEstadoPCS7();
 </script>
 
