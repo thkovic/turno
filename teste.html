@@ -21,13 +21,21 @@ body {
     border-radius: 8px;
     text-align: center;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    min-width: 320px;
+    min-width: 340px;
 }
 
 h1 {
-    margin-bottom: 20px;
+    margin-bottom: 15px;
     font-size: 22px;
 }
+
+.status {
+    margin-bottom: 20px;
+    font-weight: bold;
+}
+
+.green { color: green; }
+.red { color: red; }
 
 input {
     width: 100%;
@@ -59,6 +67,9 @@ button:hover {
 <div class="box">
     <h1>🔐 Login</h1>
 
+    <!-- STATUS PCS7 -->
+    <div id="statusPCS7" class="status"></div>
+
     <input
         type="text"
         id="matricula"
@@ -75,14 +86,30 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const URL_API = "https://script.google.com/macros/s/AKfycbzzfvwV3q7PFycspM95VBVWkEDbM2iPLUxR4rCTE4LALVFXoDAN9-ZvEoZmSDLqElYTig/exec";
 
+    const statusPCS7 = document.getElementById("statusPCS7");
+    const inputMatricula = document.getElementById("matricula");
+    const btnLogin = document.getElementById("btnLogin");
+
+    // === STATUS PCS7 NO LOGIN ===
+    const pcs7EmUso = localStorage.getItem("pcs7_em_uso");
+    const pcs7Nome = localStorage.getItem("pcs7_nome");
+
+    if (!pcs7EmUso) {
+        statusPCS7.innerHTML = 'PCS7 está <span class="green">LIVRE</span>';
+    } else {
+        statusPCS7.innerHTML =
+            'PCS7 em uso por:<br><span class="red">' +
+            (pcs7Nome ? pcs7Nome : '') +
+            ' (' + pcs7EmUso + ')</span>';
+    }
+
+    // Se já estiver logado, pula login
     if (localStorage.getItem("usuario_logado")) {
         window.location.href = "menu.html";
         return;
     }
 
-    const inputMatricula = document.getElementById("matricula");
-    const btnLogin = document.getElementById("btnLogin");
-
+    // === LOGIN ===
     btnLogin.addEventListener("click", () => {
         const matricula = inputMatricula.value.trim();
 
@@ -105,8 +132,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     alert("Matrícula não encontrada.");
                 }
             })
-            .catch(err => {
-                console.error(err);
+            .catch(() => {
                 alert("Erro ao validar matrícula.");
             })
             .finally(() => {
