@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Login</title>
+<title>Login PCS7</title>
 
 <style>
 body {
@@ -15,13 +15,31 @@ body {
     background-color: #f5f5f5;
 }
 
+/* AVISOS */
+.aviso {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    text-align: center;
+    padding: 16px;
+    font-size: 20px;
+    font-weight: bold;
+    color: #fff;
+    z-index: 9999;
+    display: none;
+}
+
+.vermelho { background: red; }
+.verde { background: green; }
+
 .box {
     background: #ffffff;
-    padding: 35px 45px;
+    padding: 40px 45px;
     border-radius: 8px;
     text-align: center;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    min-width: 340px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    min-width: 360px;
 }
 
 h1 {
@@ -34,8 +52,8 @@ h1 {
     font-weight: bold;
 }
 
-.green { color: green; }
-.red { color: red; }
+.green-text { color: green; }
+.red-text { color: red; }
 
 input {
     width: 100%;
@@ -62,7 +80,14 @@ button:hover {
 }
 </style>
 </head>
+
 <body>
+
+<!-- AVISO BACKUP PENDENTE -->
+<div id="avisoBackup" class="aviso vermelho"></div>
+
+<!-- AVISO BACKUP REALIZADO -->
+<div id="avisoBackupFeito" class="aviso verde"></div>
 
 <div class="box">
     <h1>🔐 Login</h1>
@@ -84,32 +109,63 @@ button:hover {
 <script>
 document.addEventListener("DOMContentLoaded", () => {
 
-    const URL_API = "https://script.google.com/macros/s/AKfycbzzfvwV3q7PFycspM95VBVWkEDbM2iPLUxR4rCTE4LALVFXoDAN9-ZvEoZmSDLqElYTig/exec";
+    const URL_API =
+        "https://script.google.com/macros/s/AKfycbzzfvwV3q7PFycspM95VBVWkEDbM2iPLUxR4rCTE4LALVFXoDAN9-ZvEoZmSDLqElYTig/exec";
 
     const statusPCS7 = document.getElementById("statusPCS7");
+    const avisoBackup = document.getElementById("avisoBackup");
+    const avisoBackupFeito = document.getElementById("avisoBackupFeito");
     const inputMatricula = document.getElementById("matricula");
     const btnLogin = document.getElementById("btnLogin");
 
-    // === STATUS PCS7 NO LOGIN ===
+    /* === FUNÇÃO PARA PISCAR AVISO === */
+    function piscar(elemento) {
+        setInterval(() => {
+            elemento.style.visibility =
+                elemento.style.visibility === "hidden" ? "visible" : "hidden";
+        }, 650);
+    }
+
+    /* === STATUS PCS7 === */
     const pcs7EmUso = localStorage.getItem("pcs7_em_uso");
     const pcs7Nome = localStorage.getItem("pcs7_nome");
 
     if (!pcs7EmUso) {
-        statusPCS7.innerHTML = 'PCS7 está <span class="green">LIVRE</span>';
+        statusPCS7.innerHTML =
+            'PCS7 está <span class="green-text">LIVRE</span>';
     } else {
         statusPCS7.innerHTML =
-            'PCS7 em uso por:<br><span class="red">' +
+            'PCS7 em uso por:<br><span class="red-text">' +
             (pcs7Nome ? pcs7Nome : '') +
             ' (' + pcs7EmUso + ')</span>';
     }
 
-    // Se já estiver logado, pula login
+    /* === AVISO BACKUP PENDENTE === */
+    if (localStorage.getItem("backup_pendente") === "true") {
+        avisoBackup.style.display = "block";
+        avisoBackup.innerHTML =
+            "⚠ MUDANÇA FEITA – NECESSITA FAZER BACKUP<br>" +
+            "Data da alteração: " +
+            localStorage.getItem("backup_data_alteracao");
+        piscar(avisoBackup);
+    }
+
+    /* === AVISO BACKUP REALIZADO === */
+    if (localStorage.getItem("backup_realizado") === "true") {
+        avisoBackupFeito.style.display = "block";
+        avisoBackupFeito.innerHTML =
+            "✅ BACKUP REALIZADO<br>" +
+            "Data: " + localStorage.getItem("backup_data") + "<br>" +
+            "Responsável: " + localStorage.getItem("backup_responsavel");
+    }
+
+    /* === SE JÁ ESTIVER LOGADO, REDIRECIONA === */
     if (localStorage.getItem("usuario_logado")) {
         window.location.href = "menu.html";
         return;
     }
 
-    // === LOGIN ===
+    /* === LOGIN COM PLANILHA === */
     btnLogin.addEventListener("click", () => {
         const matricula = inputMatricula.value.trim();
 
