@@ -75,7 +75,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const URL_API = "https://script.google.com/macros/s/AKfycbzzfvwV3q7PFycspM95VBVWkEDbM2iPLUxR4rCTE4LALVFXoDAN9-ZvEoZmSDLqElYTig/exec";
 
-    // Se já estiver logado, pula login
     if (localStorage.getItem("usuario_logado")) {
         window.location.href = "menu.html";
         return;
@@ -96,18 +95,20 @@ document.addEventListener("DOMContentLoaded", () => {
         btnLogin.innerText = "Validando...";
 
         fetch(`${URL_API}?acao=validarMatricula&matricula=${encodeURIComponent(matricula)}`)
-            .then(resposta => resposta.json())
+            .then(res => res.json())
             .then(dados => {
-                if (dados.sucesso) {
+                if (dados.success) { ✅
+                    // salva matrícula e nome
                     localStorage.setItem("usuario_logado", matricula);
+                    localStorage.setItem("usuario_nome", dados.nome || "");
+
                     window.location.href = "menu.html";
                 } else {
                     alert("Matrícula não encontrada.");
                 }
             })
-            .catch(err => {
-                alert("Erro ao validar matrícula.\nVerifique sua conexão.");
-                console.error(err);
+            .catch(() => {
+                alert("Erro ao validar matrícula.");
             })
             .finally(() => {
                 btnLogin.disabled = false;
