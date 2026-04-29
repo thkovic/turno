@@ -107,32 +107,103 @@ body {
 </div>
 
 <script>
-const GAS_URL = "https://script.google.com/macros/s/AKfycbzzfvwV3q7PFycspM95VBVWkEDbM2iPLUxR4rCTE4LALVFXoDAN9-ZvEoZmSDLqElYTig/exec"";
+const GAS_URL =
+"https://script.google.com/macros/s/AKfycbzzfvwV3q7PFycspM95VBVWkEDbM2iPLUxR4rCTE4LALVFXoDAN9-ZvEoZmSDLqElYTig/exec";
 
+const matricula = localStorage.getItem("usuario_logado");
+const nome = localStorage.getItem("usuario_nome") || "";
+
+if (!matricula) location.href = "teste.html";
+document.getElementById("usuarioTopo").innerText = `${nome} (${matricula})`;
+
+const status = document.getElementById("statusPCS7");
+const btnAcessar = document.getElementById("btnAcessar");
+const btnEncerrar = document.getElementById("btnEncerrar");
+const btnBackup = document.getElementById("btnBackup");
+const aviso = document.getElementById("avisoBackup");
+const avisoFeito = document.getElementById("avisoBackupFeito");
+
+/* ========== JSONP CORE ========= */
 function chamarGAS(acao, params = {}, depois) {
-  const cb = "cb_" + Math.random().toString(36).slice(2);
+    const cb = "cb_" + Math.random().toString(36).substr(2);
 
-  window[cb] = function(resp){
-    delete window[cb];
-    if (depois) depois(resp);
-  };
+    window[cb] = function (ret) {
+        delete window[cb];
+        if (depois) depois(ret);
+    };
 
-  let qs = `acao=${acao}&callback=${cb}`;
-  Object.keys(params).forEach(k=>{
-    qs += `&${k}=${encodeURIComponent(params[k])}`;
-  });
+    let qs = `acao=${acao}&callback=${cb}`;
+    Object.keys(params).forEach(k=>{
+        qs += `&${k}=${encodeURIComponent(params[k])}`;
+    });
 
-  const s = document.createElement("script");
-  s.src = `${GAS_URL}?${qs}`;
-  document.body.appendChild(s);
+    const s = document.createElement("script");
+    s.src = `${GAS_URL}?${qs}`;
+    document.body.appendChild(s);
 }
 
-btnAcessar.onclick = () => {
-  chamarGAS("setEstadoPCS7", {
-    matricula: localStorage.getItem("usuario_logado"),
-    nome: localStorage.getItem("usuario_nome")
-  }, carregarEstadoPCS7);
+/* ========== ESTADO PCS7 ========= */
+function carregarEstadoPCS7(){
+    chamarGAS("getEstadoPCS7", {}, (e)=>{
+        aviso.style.display = "none";
+        avisoFeito.style.display = "none";
+        btnBackup.style.display = "none";
+
+        if (!e.pcs7_em_uso) {
+            status.innerHTML = 'PCS7 está <span class="green">LIVRE</span>';
+            btnAcessar.style.display = "block";
+            btnEncerrar.style.display = "none";
+        } else if (e.pcs7_em_uso === matricula) {
+            status.innerText = "Você está acessando o PCS7";
+            btnAcessar.style.display = "none";
+            btnEncerrar.style.display = "block";
+        } else {
+            status.innerHTML =
+              `PCS7 em uso por <span class="red">${e.pcs7_nome}</span>`;
+            btnAcessar.style.display = "none";
+            btnEncerrar.style.display = "none";
+        }
+
+        if (e.backup_pendente === "SIM") {
+            aviso.style.display = "block";
+            aviso.innerHTML = "⚠ BACKUP PENDENTE";
+            btnBackup.style.display = "block";
+        }
+
+        if (e.backup_realizado === "SIM") {
+            avisoFeito.style.display = "block";
+            avisoFeito.innerHTML =
+              "✅ BACKUP REALIZADO<br>Responsável: " + e.backup_responsavel;
+        }
+    });
+}
+
+/* ========== BOTÕES ========= */
+btnAcessar.onclick = ()=>{
+    chamarGAS("setEstadoPCS7",{matricula,nome},carregarEstadoPCS7);
 };
+
+btnEncerrar.onclick = ()=>{
+    if(confirm("Foi feita alguma alteração?")){
+        chamarGAS("setBackupPendente",{},carregarEstadoPCS7);
+    }else{
+        chamarGAS("setEstadoPCS7",{matricula:"",nome:""},carregarEstadoPCS7);
+    }
+};
+
+btnBackup.onclick = ()=>{
+    if(confirm("Você realizou o backup?")){
+        chamarGAS("setBackupRealizado",{nome},carregarEstadoPCS7);
+    }
+};
+
+function logout(){
+    localStorage.clear();
+    location.href="teste.html";
+}
+
+/* INIT */
+carregarEstadoPCS7();
 </script>
 
 </body>
