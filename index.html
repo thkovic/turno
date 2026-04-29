@@ -9,7 +9,6 @@ body {
     font-family: Arial, Helvetica, sans-serif;
 }
 
-/* Usuário logado */
 .top-user {
     position: fixed;
     top: 10px;
@@ -25,48 +24,52 @@ body {
 <body>
 
 <script>
-/* 🔐 PROTEÇÃO GLOBAL – LOGIN APENAS NO teste.html */
-const matricula = localStorage.getItem("usuario_logado");
-const nome = localStorage.getItem("usuario_nome");
+/* 🔐 PROTEÇÃO GLOBAL
+   Login ocorre SOMENTE no teste.html */
+const MATRICULA_ATUAL = localStorage.getItem("usuario_logado");
+const NOME_ATUAL = localStorage.getItem("usuario_nome");
 
-if (!matricula) {
+if (!MATRICULA_ATUAL) {
     window.location.href = "teste.html";
 }
 </script>
 
-<!-- USUÁRIO LOGADO -->
+<!-- Usuário logado (apenas identificação) -->
 <div class="top-user">
     Usuário: <span id="usuarioTopo"></span>
 </div>
 
 <script>
 document.getElementById("usuarioTopo").innerText =
-    nome ? `${nome} (${matricula})` : matricula;
+    NOME_ATUAL ? `${NOME_ATUAL} (${MATRICULA_ATUAL})` : MATRICULA_ATUAL;
 </script>
 
 <h1>📝 Sistema de Histórico</h1>
 
-<!-- 🔹 REGISTRO DE PASSAGEM -->
+<p>Watchdog: <span id="watchdog">--</span></p>
+
+<!-- ✅ LOGIN REMOVIDO -->
+
 <h2>Registrar Passagem</h2>
 
 <form id="formRegistro">
     <label>Nome *</label><br>
-    <input type="text" id="nome"><br><br>
+    <input type="text" id="nome" required><br><br>
 
     <label>Matrícula *</label><br>
     <input type="text" id="matricula" readonly><br><br>
 
     <label>Data *</label><br>
-    <input type="date" id="data"><br><br>
+    <input type="date" id="data" required><br><br>
 
     <label>Equipamento *</label><br>
-    <input type="text" id="equipamento"><br><br>
+    <input type="text" id="equipamento" required><br><br>
 
     <label>Acionamento *</label><br>
-    <input type="text" id="acionamento"><br><br>
+    <input type="text" id="acionamento" required><br><br>
 
     <label>Problema *</label><br>
-    <textarea id="problema"></textarea><br><br>
+    <textarea id="problema" required></textarea><br><br>
 
     <label>Solução</label><br>
     <textarea id="solucao"></textarea><br><br>
@@ -74,14 +77,8 @@ document.getElementById("usuarioTopo").innerText =
     <label>Encerramento</label><br>
     <textarea id="encerramento"></textarea><br><br>
 
-    <button type="button">Registrar</button>
+    <button type="button" onclick="registrarTurno()">Registrar</button>
 </form>
-
-<script>
-/* Preenche dados do usuário logado automaticamente */
-document.getElementById("nome").value = nome || "";
-document.getElementById("matricula").value = matricula;
-</script>
 
 <hr>
 
@@ -101,7 +98,7 @@ document.getElementById("matricula").value = matricula;
     <th>Encerramento</th>
 </tr>
 </thead>
-<tbody>
+<tbody id="tabelaHistorico">
 <tr>
     <td colspan="9">Carregando...</td>
 </tr>
@@ -110,8 +107,99 @@ document.getElementById("matricula").value = matricula;
 
 <br>
 
-<button>📄 Gerar EXCEL</button>
-<button>📈 Ver Ranking</button>
+<button onclick="gerarExcel()">📄 Gerar EXCEL</button>
+<button onclick="verRanking()">📈 Ver Ranking</button>
+
+<h3>🏆 Ranking de Equipamentos</h3>
+<div id="ranking"></div>
+
+<script>
+/* ================== API ================== */
+const URL_API =
+"https://script.google.com/macros/s/AKfycbzzfvwV3q7PFycspM95VBVWkEDbM2iPLUxR4rCTE4LALVFXoDAN9-ZvEoZmSDLqElYTig/exec";
+
+/* Preenche dados do usuário logado */
+document.getElementById("nome").value = NOME_ATUAL || "";
+document.getElementById("matricula").value = MATRICULA_ATUAL;
+
+/* ================== WATCHDOG ================== */
+setInterval(() => {
+    fetch(`${URL_API}?acao=getWatchdog&callback=?`)
+        .then(r => r.text())
+        .then(t => {
+            const json = JSON.parse(t.replace(/^[^(]*\(|\)$/g,""));
+            document.getElementById("watchdog").innerText = json.watchdog;
+        });
+}, 5000);
+
+/* ================== HISTÓRICO ================== */
+function carregarHistorico() {
+    fetch(`${URL_API}?acao=getHistorico&matricula=${MATRICULA_ATUAL}&callback=?`)
+        .then(r => r.text())
+        .then(t => {
+            const dados = JSON.parse(t.replace(/^[^(]*\(|\)$/g,""));
+            const tbody = document.getElementById("tabelaHistorico");
+            tbody.innerHTML = "";
+
+            if (!dados.length) {
+                tbody.innerHTML =
+                    "<tr><td colspan='9'>Sem registros.</td></tr>";
+                return;
+            }
+
+            dados.forEach(l => {
+                tbody.innerHTML += `
+                <tr>
+                    <td>${l[0]}</td>
+                    <td>${l[1]}</td>
+                    <td>${l[2]}</td>
+                    <td>${l[3]}</td>
+                    <td>${l[4]}</td>
+                    <td>${l[5]}</td>
+                    <td>${l[6]}</td>
+                    <td>${l[7]}</td>
+                    <td>${l[8]}</td>
+                </tr>`;
+            });
+        });
+}
+
+/* ================== REGISTRAR TURNO ================== */
+function registrarTurno() {
+    const p = new URLSearchParams({
+        acao: "registrarTurno",
+        nome: NOME_ATUAL,
+        matricula: MATRICULA_ATUAL,
+        data: data.value,
+        equipamento: equipamento.value,
+        acionamento: acionamento.value,
+        problema: problema.value,
+        solucao: solucao.value,
+        encerramento: encerramento.value,
+        callback: "cb"
+    });
+
+    fetch(`${URL_API}?${p}`)
+        .then(() => {
+            carregarHistorico();
+            formRegistro.reset();
+            nome.value = NOME_ATUAL;
+            matricula.value = MATRICULA_ATUAL;
+        });
+}
+
+/* ================== EXTRAS ================== */
+function gerarExcel() {
+    window.open(`${URL_API}?acao=gerarExcel`);
+}
+
+function verRanking() {
+    alert("Ranking em desenvolvimento");
+}
+
+/* Inicial */
+carregarHistorico();
+</script>
 
 </body>
 </html>
