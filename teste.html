@@ -89,8 +89,10 @@ button:hover { background-color: #d6d6d6; }
 </div>
 
 <script>
+/* ========= CONFIG ========= */
 const GAS_URL =
 "https://script.google.com/macros/s/AKfycbxsaVBnO2wO1k0xQA35r5_k7XO-INUij8HqAqZvNk_XtgqN7OXjDQ4efxMXx_yH-lEaZg/exec";
+/* ========================== */
 
 const statusPCS7 = document.getElementById("statusPCS7");
 const avisoBackup = document.getElementById("avisoBackup");
@@ -101,11 +103,12 @@ const btnLogin = document.getElementById("btnLogin");
 /* Piscar aviso */
 function piscar(el){
   setInterval(() => {
-    el.style.visibility = el.style.visibility === "hidden" ? "visible" : "hidden";
+    el.style.visibility =
+      el.style.visibility === "hidden" ? "visible" : "hidden";
   }, 650);
 }
 
-/* ✅ ESTADO PCS7 VINDO DA PLANILHA */
+/* ESTADO PCS7 */
 async function carregarEstadoPCS7() {
   const res = await fetch(`${GAS_URL}?acao=getEstadoPCS7`);
   const estado = await res.json();
@@ -114,7 +117,8 @@ async function carregarEstadoPCS7() {
   avisoBackupFeito.style.display = "none";
 
   if (!estado.pcs7_em_uso) {
-    statusPCS7.innerHTML = 'PCS7 está <span class="green-text">LIVRE</span>';
+    statusPCS7.innerHTML =
+      'PCS7 está <span class="green-text">LIVRE</span>';
   } else {
     statusPCS7.innerHTML =
       'PCS7 em uso por:<br><span class="red-text">' +
@@ -149,7 +153,7 @@ btnLogin.onclick = async () => {
 
   try {
     const res = await fetch(
-      `${URL_API}?acao=validarMatricula&matricula=${encodeURIComponent(matricula)}`
+      `${GAS_URL}?acao=validarMatricula&matricula=${encodeURIComponent(matricula)}`
     );
     const dados = await res.json();
 
@@ -177,4 +181,3 @@ carregarEstadoPCS7();
 
 </body>
 </html>
-``
