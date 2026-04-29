@@ -209,11 +209,19 @@ document.addEventListener("DOMContentLoaded", () => {
         atualizarPCS7();
     };
 
-    btnEncerrar.onclick = () => {
-        const alterou = confirm("Foi feita alguma alteração?");
-        if (alterou) {
-            localStorage.setItem("backup_pendente", "true");
-            localStorage.setItem("backup_data_alteracao", new Date().toLocaleString());
+if (alterou) {
+    // ✅ invalida qualquer backup anterior
+    localStorage.removeItem("backup_realizado");
+    localStorage.removeItem("backup_data");
+    localStorage.removeItem("backup_responsavel");
+
+    // ✅ marca novo backup pendente
+    localStorage.setItem("backup_pendente", "true");
+    localStorage.setItem(
+        "backup_data_alteracao",
+        new Date().toLocaleString()
+    );
+}
         }
         localStorage.removeItem("pcs7_em_uso");
         localStorage.removeItem("pcs7_nome");
