@@ -309,6 +309,22 @@ function logout() {
     localStorage.removeItem("usuario_nome");
     window.location.href = "teste.html";
 }
+    
+sync function carregarEstadoPCS7(){
+  const estado = await callGAS({ acao:"getEstadoPCS7" });
+
+  if (estado.backup_pendente === "SIM") {
+    mostrarAvisoBackup(estado);
+  }
+
+  if (estado.backup_realizado === "SIM") {
+    mostrarBackupRealizado(estado);
+  }
+
+  if (estado.pcs7_em_uso) {
+    console.log("PCS7 em uso por:", estado.pcs7_nome);
+  }
+}
 </script>
 
 </body>
