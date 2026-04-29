@@ -6,58 +6,56 @@
 
 <style>
 body {
-    margin: 0;
-    height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-family: Arial, Helvetica, sans-serif;
-    background-color: #f5f5f5;
+  margin:0;
+  height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  font-family:Arial,Helvetica,sans-serif;
+  background:#f5f5f5;
 }
-.top-user {
-    position: fixed;
-    top: 12px;
-    left: 12px;
-    background: #ffffff;
-    padding: 10px 14px;
-    border-radius: 6px;
-    font-weight: bold;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+.top-user{
+  position:fixed;
+  top:12px;left:12px;
+  background:#fff;
+  padding:10px 14px;
+  border-radius:6px;
+  font-weight:bold;
+  box-shadow:0 1px 4px rgba(0,0,0,.15);
 }
-.aviso {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    text-align: center;
-    padding: 16px;
-    font-size: 20px;
-    font-weight: bold;
-    color: white;
-    z-index: 9999;
-    display: none;
+.aviso{
+  position:fixed;
+  top:0;left:0;
+  width:100%;
+  text-align:center;
+  padding:16px;
+  font-size:20px;
+  font-weight:bold;
+  color:#fff;
+  display:none;
+  z-index:9999;
 }
 .vermelho{background:red}
 .verde{background:green}
 .container{display:flex;gap:40px}
 .box{
-    background:#fff;
-    padding:35px 45px;
-    border-radius:8px;
-    text-align:center;
-    box-shadow:0 2px 8px rgba(0,0,0,.1);
-    min-width:320px
+  background:#fff;
+  padding:35px 45px;
+  border-radius:8px;
+  text-align:center;
+  box-shadow:0 2px 8px rgba(0,0,0,.1);
+  min-width:320px;
 }
 .btn{
-    width:100%;
-    padding:14px;
-    margin:10px 0;
-    font-size:16px;
-    font-weight:bold;
-    background:#eaeaea;
-    border-radius:6px;
-    border:none;
-    cursor:pointer
+  width:100%;
+  padding:14px;
+  margin:10px 0;
+  font-size:16px;
+  font-weight:bold;
+  background:#eaeaea;
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
 }
 .btn:hover{background:#d6d6d6}
 .btn-danger{background:#ffdddd}
@@ -73,35 +71,30 @@ body {
 <div id="avisoBackupFeito" class="aviso verde"></div>
 
 <div class="top-user">
-    Usuário: <span id="usuarioTopo"></span>
+  Usuário: <span id="usuarioTopo"></span>
 </div>
 
 <div class="container">
 
 <div class="box">
-    <h2>🏠 Principal</h2>
-
-    index.html
-        📝 Registro de Histórico - TURNO
-    </button>
-
-    <button class="btn" onclick="alert('MOC em desenvolvimento')">
-        🧩 MOC
-    </button>
-
-    <button class="btn btn-danger" onclick="logout()">
-        🔒 Logout
-    </button>
+  <h2>🏠 Principal</h2>
+  index.html
+    📝 Registro de Histórico - TURNO
+  </button>
+  <button class="btn" onclick="alert('MOC em desenvolvimento')">
+    🧩 MOC
+  </button>
+  <button class="btn btn-danger" onclick="logout()">🔒 Logout</button>
 </div>
 
 <div class="box">
-    <h2>📁 Projeto</h2>
+  <h2>📁 Projeto</h2>
 
-    <div id="statusPCS7" class="status"></div>
+  <div id="statusPCS7" class="status"></div>
 
-    <button class="btn" id="btnAcessar">⚙️ Acessar PCS7</button>
-    <button class="btn btn-danger" id="btnEncerrar" style="display:none">🔒 Encerrar PCS7</button>
-    <button class="btn" id="btnBackup" style="display:none">💾 REALIZAR BACKUP</button>
+  <button class="btn" id="btnAcessar">⚙️ Acessar PCS7</button>
+  <button class="btn btn-danger" id="btnEncerrar" style="display:none">🔒 Encerrar PCS7</button>
+  <button class="btn" id="btnBackup" style="display:none">💾 REALIZAR BACKUP</button>
 </div>
 
 </div>
@@ -113,7 +106,7 @@ const GAS_URL =
 const matricula = localStorage.getItem("usuario_logado");
 const nome = localStorage.getItem("usuario_nome") || "";
 
-if (!matricula) location.href = "teste.html";
+if (!matricula) location.href="teste.html";
 document.getElementById("usuarioTopo").innerText = `${nome} (${matricula})`;
 
 const status = document.getElementById("statusPCS7");
@@ -123,86 +116,80 @@ const btnBackup = document.getElementById("btnBackup");
 const aviso = document.getElementById("avisoBackup");
 const avisoFeito = document.getElementById("avisoBackupFeito");
 
-/* ========== JSONP CORE ========= */
+/* JSONP CORE */
+function chamarGAS(acao, params={}, depois){
+  const cb="cb_"+Math.random().toString(36).slice(2);
 
-function chamarGAS(acao, params = {}, depois) {
-  const cb = "cb_" + Math.random().toString(36).slice(2);
-
-  window[cb] = function (resp) {
+  window[cb]=function(resp){
     delete window[cb];
-    if (depois) depois(resp);
+    if(depois) depois(resp);
   };
 
-  let qs = "acao=" + encodeURIComponent(acao) + "&callback=" + cb;
-
-  Object.keys(params).forEach(k => {
-    qs += "&" + encodeURIComponent(k) + "=" +
-          encodeURIComponent(params[k]);
+  let qs="acao="+encodeURIComponent(acao)+"&callback="+cb;
+  Object.keys(params).forEach(k=>{
+    qs+="&"+encodeURIComponent(k)+"="+encodeURIComponent(params[k]);
   });
 
-  const s = document.createElement("script");
-  s.src = GAS_URL + "?" + qs;
+  console.log("URL GERADA:", GAS_URL+"?"+qs);
+
+  const s=document.createElement("script");
+  s.src=GAS_URL+"?"+qs;
   document.body.appendChild(s);
 }
 
-/* ========== ESTADO PCS7 ========= */
+/* ESTADO */
 function carregarEstadoPCS7(){
-    chamarGAS("getEstadoPCS7", {}, (e)=>{
-        aviso.style.display = "none";
-        avisoFeito.style.display = "none";
-        btnBackup.style.display = "none";
+  chamarGAS("getEstadoPCS7",{},(e)=>{
+    aviso.style.display="none";
+    avisoFeito.style.display="none";
+    btnBackup.style.display="none";
 
-        if (!e.pcs7_em_uso) {
-            status.innerHTML = 'PCS7 está <span class="green">LIVRE</span>';
-            btnAcessar.style.display = "block";
-            btnEncerrar.style.display = "none";
-        } else if (e.pcs7_em_uso === matricula) {
-            status.innerText = "Você está acessando o PCS7";
-            btnAcessar.style.display = "none";
-            btnEncerrar.style.display = "block";
-        } else {
-            status.innerHTML =
-              `PCS7 em uso por <span class="red">${e.pcs7_nome}</span>`;
-            btnAcessar.style.display = "none";
-            btnEncerrar.style.display = "none";
-        }
+    if(!e.pcs7_em_uso){
+      status.innerHTML='PCS7 está <span class="green">LIVRE</span>';
+      btnAcessar.style.display="block";
+      btnEncerrar.style.display="none";
+    }else if(e.pcs7_em_uso===matricula){
+      status.innerText="Você está acessando o PCS7";
+      btnAcessar.style.display="none";
+      btnEncerrar.style.display="block";
+    }else{
+      status.innerHTML='PCS7 em uso por <span class="red">'+e.pcs7_nome+'</span>';
+      btnAcessar.style.display="none";
+      btnEncerrar.style.display="none";
+    }
 
-        if (e.backup_pendente === "SIM") {
-            aviso.style.display = "block";
-            aviso.innerHTML = "⚠ BACKUP PENDENTE";
-            btnBackup.style.display = "block";
-        }
+    if(e.backup_pendente==="SIM"){
+      aviso.style.display="block";
+      aviso.innerText="⚠ BACKUP PENDENTE";
+      btnBackup.style.display="block";
+    }
 
-        if (e.backup_realizado === "SIM") {
-            avisoFeito.style.display = "block";
-            avisoFeito.innerHTML =
-              "✅ BACKUP REALIZADO<br>Responsável: " + e.backup_responsavel;
-        }
-    });
+    if(e.backup_realizado==="SIM"){
+      avisoFeito.style.display="block";
+      avisoFeito.innerHTML="✅ BACKUP REALIZADO<br>Responsável: "+e.backup_responsavel;
+    }
+  });
 }
 
-/* ========== BOTÕES ========= */
-btnAcessar.onclick = ()=>{
-    chamarGAS("setEstadoPCS7",{matricula,nome},carregarEstadoPCS7);
+/* BOTÕES */
+btnAcessar.onclick=()=>{
+  chamarGAS("setEstadoPCS7",{matricula,nome},carregarEstadoPCS7);
 };
-
-btnEncerrar.onclick = ()=>{
-    if(confirm("Foi feita alguma alteração?")){
-        chamarGAS("setBackupPendente",{},carregarEstadoPCS7);
-    }else{
-        chamarGAS("setEstadoPCS7",{matricula:"",nome:""},carregarEstadoPCS7);
-    }
+btnEncerrar.onclick=()=>{
+  if(confirm("Foi feita alguma alteração?")){
+    chamarGAS("setBackupPendente",{},carregarEstadoPCS7);
+  }else{
+    chamarGAS("setEstadoPCS7",{matricula:"",nome:""},carregarEstadoPCS7);
+  }
 };
-
-btnBackup.onclick = ()=>{
-    if(confirm("Você realizou o backup?")){
-        chamarGAS("setBackupRealizado",{nome},carregarEstadoPCS7);
-    }
+btnBackup.onclick=()=>{
+  if(confirm("Você realizou o backup?")){
+    chamarGAS("setBackupRealizado",{nome},carregarEstadoPCS7);
+  }
 };
-
 function logout(){
-    localStorage.clear();
-    location.href="teste.html";
+  localStorage.clear();
+  location.href="teste.html";
 }
 
 /* INIT */
