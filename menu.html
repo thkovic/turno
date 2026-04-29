@@ -77,3 +77,129 @@ document.getElementById("usuarioTopo").innerText =
     <label>Encerramento</label><br>
     <textarea id="encerramento"></textarea><br><br>
 
+    <button type="button" onclick="registrarTurno()">Registrar</button>
+</form>
+
+<hr>
+
+<h2>📊 Histórico de Registros</h2>
+
+<table border="1" width="100%">
+<thead>
+<tr>
+    <th>ID</th>
+    <th>Data</th>
+    <th>Executante</th>
+    <th>Matrícula</th>
+    <th>Equipamento</th>
+    <th>Acionamento</th>
+    <th>Problema</th>
+    <th>Solução</th>
+    <th>Encerramento</th>
+</tr>
+</thead>
+<tbody id="tabelaHistorico">
+<tr>
+    <td colspan="9">Carregando...</td>
+</tr>
+</tbody>
+</table>
+
+<br>
+
+<button onclick="gerarExcel()">📄 Gerar EXCEL</button>
+<button onclick="verRanking()">📈 Ver Ranking</button>
+
+<h3>🏆 Ranking de Equipamentos</h3>
+<div id="ranking"></div>
+
+<script>
+/* ================== API ================== */
+const URL_API =
+"https://script.google.com/macros/s/AKfycbzzfvwV3q7PFycspM95VBVWkEDbM2iPLUxR4rCTE4LALVFXoDAN9-ZvEoZmSDLqElYTig/exec";
+
+/* Preenche dados do usuário logado */
+document.getElementById("nome").value = NOME_ATUAL || "";
+document.getElementById("matricula").value = MATRICULA_ATUAL;
+
+/* ================== WATCHDOG ================== */
+setInterval(() => {
+    fetch(`${URL_API}?acao=getWatchdog&callback=?`)
+        .then(r => r.text())
+        .then(t => {
+            const json = JSON.parse(t.replace(/^[^(]*\(|\)$/g,""));
+            document.getElementById("watchdog").innerText = json.watchdog;
+        });
+}, 5000);
+
+/* ================== HISTÓRICO ================== */
+function carregarHistorico() {
+    fetch(`${URL_API}?acao=getHistorico&matricula=${MATRICULA_ATUAL}&callback=?`)
+        .then(r => r.text())
+        .then(t => {
+            const dados = JSON.parse(t.replace(/^[^(]*\(|\)$/g,""));
+            const tbody = document.getElementById("tabelaHistorico");
+            tbody.innerHTML = "";
+
+            if (!dados.length) {
+                tbody.innerHTML =
+                    "<tr><td colspan='9'>Sem registros.</td></tr>";
+                return;
+            }
+
+            dados.forEach(l => {
+                tbody.innerHTML += `
+                <tr>
+                    <td>${l[0]}</td>
+                    <td>${l[1]}</td>
+                    <td>${l[2]}</td>
+                    <td>${l[3]}</td>
+                    <td>${l[4]}</td>
+                    <td>${l[5]}</td>
+                    <td>${l[6]}</td>
+                    <td>${l[7]}</td>
+                    <td>${l[8]}</td>
+                </tr>`;
+            });
+        });
+}
+
+/* ================== REGISTRAR TURNO ================== */
+function registrarTurno() {
+    const p = new URLSearchParams({
+        acao: "registrarTurno",
+        nome: NOME_ATUAL,
+        matricula: MATRICULA_ATUAL,
+        data: data.value,
+        equipamento: equipamento.value,
+        acionamento: acionamento.value,
+        problema: problema.value,
+        solucao: solucao.value,
+        encerramento: encerramento.value,
+        callback: "cb"
+    });
+
+    fetch(`${URL_API}?${p}`)
+        .then(() => {
+            carregarHistorico();
+            formRegistro.reset();
+            nome.value = NOME_ATUAL;
+            matricula.value = MATRICULA_ATUAL;
+        });
+}
+
+/* ================== EXTRAS ================== */
+function gerarExcel() {
+    window.open(`${URL_API}?acao=gerarExcel`);
+}
+
+function verRanking() {
+    alert("Ranking em desenvolvimento");
+}
+
+/* Inicial */
+carregarHistorico();
+</script>
+
+</body>
+</html>
