@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Menu Principal</title>
+
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: Arial, Helvetica, sans-serif;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            display: flex;
+            gap: 40px;
+        }
+
+        .box {
+            background: #ffffff;
+            padding: 35px 45px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            min-width: 320px;
+        }
+
+        h1 {
+            margin: 0 0 20px 0;
+            font-size: 22px;
+        }
+
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            margin: 12px 0;
+            font-size: 16px;
+            font-weight: bold;
+            color: #000;
+            background-color: #eaeaea;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background-color: #d6d6d6;
+        }
+
+        .btn-danger {
+            background-color: #ffdddd;
+        }
+
+        .user {
+            margin-top: 15px;
+            font-weight: bold;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+
+<script>
+    // 🔐 PROTEÇÃO GLOBAL
+    const usuarioLogado = localStorage.getItem("usuario_logado");
+
+    if (!usuarioLogado) {
+        window.location.href = "teste.html";
+    }
+</script>
+
+<div class="container">
+
+    <!-- PRINCIPAL -->
+    <div class="box">
+        <h1>🏠 Principal</h1>
+
+        <button class="btn" onclick="location.href='histor
+        </button>
+
+        projeto.html
+            📁 Projeto
+        </button>
+
+        <button class="btn" onclick="alert('MOC em desenvolvimento')">
+            🧩 MOC
+        </button>
+
+        <div class="user">
+            Usuário logado: <span id="usuario"></span>
+        </div>
+
+        <button class="btn btn-danger" onclick="logout()">
+            🔒 Logout
+        </button>
+    </div>
+
+</div>
+
+<script>
+    // Exibir usuário logado
+    document.getElementById("usuario").innerText = usuarioLogado;
+
+    // Logout global
+    function logout() {
+        localStorage.removeItem("usuario_logado");
+        window.location.href = "teste.html";
+    }
+</script>
+
+</body>
+</html>
