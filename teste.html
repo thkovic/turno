@@ -30,7 +30,7 @@ h1 {
 }
 
 .status {
-    margin-bottom: 15px;
+    margin-bottom: 12px;
     font-weight: bold;
 }
 
@@ -60,10 +60,6 @@ button {
 button:disabled {
     background: #eee;
     cursor: not-allowed;
-}
-
-button:hover:not(:disabled) {
-    background-color: #d6d6d6;
 }
 </style>
 </head>
@@ -100,7 +96,8 @@ function chamarGAS(acao, params = {}, depois) {
 
     let qs = "acao=" + encodeURIComponent(acao) + "&callback=" + cb;
     Object.keys(params).forEach(k => {
-        qs += "&" + encodeURIComponent(k) + "=" + encodeURIComponent(params[k]);
+        qs += "&" + encodeURIComponent(k) + "=" +
+              encodeURIComponent(params[k]);
     });
 
     const s = document.createElement("script");
@@ -108,7 +105,9 @@ function chamarGAS(acao, params = {}, depois) {
     document.body.appendChild(s);
 }
 
-/* ========= ESTADO PCS7 ========= */
+/* ========= VERIFICA PCS7 ========= */
+let pcs7Livre = false;
+
 function carregarEstadoPCS7() {
     chamarGAS("getEstadoPCS7", {}, (estado) => {
         const emUso = String(estado.pcs7_em_uso || "").trim();
@@ -116,12 +115,14 @@ function carregarEstadoPCS7() {
         if (!emUso) {
             statusPCS7.innerHTML =
                 'PCS7 está <span class="green">LIVRE</span>';
+            pcs7Livre = true;
             btnLogin.disabled = false;
         } else {
             statusPCS7.innerHTML =
                 'PCS7 em uso por <span class="red">' +
-                estado.pcs7_nome + " (" + emUso + ")" +
+                estado.pcs7_nome + ' (' + emUso + ')' +
                 '</span>';
+            pcs7Livre = false;
             btnLogin.disabled = true;
         }
     });
@@ -133,6 +134,11 @@ btnLogin.onclick = () => {
 
     if (!matricula) {
         alert("Digite a matrícula!");
+        return;
+    }
+
+    if (!pcs7Livre) {
+        alert("PCS7 está em uso. Não é possível entrar.");
         return;
     }
 
