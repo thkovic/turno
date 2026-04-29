@@ -15,17 +15,19 @@ body {
     background-color: #f5f5f5;
 }
 
+/* Usuário logado */
 .top-user {
     position: fixed;
     top: 12px;
     left: 12px;
-    background: #fff;
+    background: #ffffff;
     padding: 10px 14px;
     border-radius: 6px;
     font-weight: bold;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
 }
 
+/* Avisos */
 .aviso {
     position: fixed;
     top: 0;
@@ -35,7 +37,7 @@ body {
     padding: 16px;
     font-size: 20px;
     font-weight: bold;
-    color: #fff;
+    color: white;
     z-index: 9999;
     display: none;
 }
@@ -49,12 +51,12 @@ body {
 }
 
 .box {
-    background: #fff;
+    background: #ffffff;
     padding: 35px 45px;
     border-radius: 8px;
     text-align: center;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    min-width: 320px;
+    min-width: 340px;
 }
 
 .btn {
@@ -63,39 +65,55 @@ body {
     margin: 10px 0;
     font-size: 16px;
     font-weight: bold;
-    background: #eaeaea;
+    background-color: #eaeaea;
     border-radius: 6px;
     border: none;
     cursor: pointer;
 }
 
-.btn-danger { background: #ffdddd; }
-.btn:hover { background: #d6d6d6; }
+.btn:hover { background-color: #d6d6d6; }
+.btn-danger { background-color: #ffdddd; }
 
-.status { font-weight: bold; margin: 10px 0; }
+.status {
+    font-weight: bold;
+    margin: 12px 0;
+}
+
+.green { color: green; }
+.red { color: red; }
 </style>
 </head>
 <body>
 
+<!-- Avisos -->
 <div id="avisoBackup" class="aviso vermelho"></div>
 <div id="avisoBackupFeito" class="aviso verde"></div>
 
+<!-- Usuário -->
 <div class="top-user">
     Usuário: <span id="usuarioTopo"></span>
 </div>
 
 <div class="container">
 
+<!-- PRINCIPAL -->
 <div class="box">
     <h2>🏠 Principal</h2>
 
-    <button class="btn" onclick="location   </button>
+    historico.html
+        📝 Registro de Histórico - TURNO
+    </button>
+
+    <button class="btn" onclick="alert('MOC em desenvolvimento')">
+        🧩 MOC
+    </button>
 
     <button class="btn btn-danger" onclick="logout()">
         🔒 Logout
     </button>
 </div>
 
+<!-- PROJETO -->
 <div class="box">
     <h2>📁 Projeto</h2>
 
@@ -121,9 +139,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const matricula = localStorage.getItem("usuario_logado");
     const nome = localStorage.getItem("usuario_nome") || "";
-    if (!matricula) return location.href = "teste.html";
 
-    document.getElementById("usuarioTopo").innerText = `${nome} (${matricula})`;
+    if (!matricula) {
+        window.location.href = "teste.html";
+        return;
+    }
+
+    document.getElementById("usuarioTopo").innerText =
+        `${nome} (${matricula})`;
 
     const status = document.getElementById("statusPCS7");
     const btnAcessar = document.getElementById("btnAcessar");
@@ -136,7 +159,7 @@ document.addEventListener("DOMContentLoaded", () => {
     function piscar(el) {
         setInterval(() => {
             el.style.visibility =
-            el.style.visibility === "hidden" ? "visible" : "hidden";
+                el.style.visibility === "hidden" ? "visible" : "hidden";
         }, 600);
     }
 
@@ -145,23 +168,27 @@ document.addEventListener("DOMContentLoaded", () => {
             aviso.style.display = "block";
             aviso.innerHTML =
                 "⚠ MUDANÇA FEITA – NECESSITA FAZER BACKUP<br>" +
-                "Data da alteração: " + localStorage.getItem("backup_data_alteracao");
+                "Data da alteração: " +
+                localStorage.getItem("backup_data_alteracao");
             piscar(aviso);
             btnBackup.style.display = "block";
         }
+
         if (localStorage.getItem("backup_realizado") === "true") {
             avisoFeito.style.display = "block";
             avisoFeito.innerHTML =
                 "✅ BACKUP REALIZADO<br>" +
                 "Data: " + localStorage.getItem("backup_data") + "<br>" +
-                "Responsável: " + localStorage.getItem("backup_responsavel");
+                "Responsável: " +
+                localStorage.getItem("backup_responsavel");
         }
     }
 
     function atualizarPCS7() {
         const emUso = localStorage.getItem("pcs7_em_uso");
+
         if (!emUso) {
-            status.innerText = "PCS7 LIVRE";
+            status.innerHTML = 'PCS7 está <span class="green">LIVRE</span>';
             btnAcessar.style.display = "block";
             btnEncerrar.style.display = "none";
         } else if (emUso === matricula) {
@@ -169,7 +196,8 @@ document.addEventListener("DOMContentLoaded", () => {
             btnAcessar.style.display = "none";
             btnEncerrar.style.display = "block";
         } else {
-            status.innerText = "PCS7 em uso por " + emUso;
+            status.innerHTML =
+                'PCS7 em uso por matrícula: <span class="red">' + emUso + '</span>';
             btnAcessar.style.display = "none";
             btnEncerrar.style.display = "none";
         }
@@ -198,7 +226,10 @@ document.addEventListener("DOMContentLoaded", () => {
             localStorage.removeItem("backup_pendente");
             localStorage.setItem("backup_realizado", "true");
             localStorage.setItem("backup_data", new Date().toLocaleString());
-            localStorage.setItem("backup_responsavel", `${nome} (${matricula})`);
+            localStorage.setItem(
+                "backup_responsavel",
+                `${nome} (${matricula})`
+            );
             location.reload();
         }
     };
@@ -207,10 +238,11 @@ document.addEventListener("DOMContentLoaded", () => {
     atualizarAvisos();
 });
 
+/* ✅ LOGOUT FUNCIONAL */
 function logout() {
     localStorage.removeItem("usuario_logado");
     localStorage.removeItem("usuario_nome");
-    location.href = "teste.html";
+    window.location.href = "teste.html";
 }
 </script>
 
