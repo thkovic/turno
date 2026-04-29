@@ -97,17 +97,16 @@ document.addEventListener("DOMContentLoaded", () => {
         fetch(`${URL_API}?acao=validarMatricula&matricula=${encodeURIComponent(matricula)}`)
             .then(res => res.json())
             .then(dados => {
-                if (dados.success) { ✅
-                    // salva matrícula e nome
+                if (dados.success) {
                     localStorage.setItem("usuario_logado", matricula);
                     localStorage.setItem("usuario_nome", dados.nome || "");
-
                     window.location.href = "menu.html";
                 } else {
                     alert("Matrícula não encontrada.");
                 }
             })
-            .catch(() => {
+            .catch(err => {
+                console.error(err);
                 alert("Erro ao validar matrícula.");
             })
             .finally(() => {
